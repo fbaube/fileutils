@@ -1,5 +1,6 @@
 package fileutils
 
+// WriterCloser is like an io.Discard but it implements io.CLoser too.
 type WriterCloser struct {
 }
 

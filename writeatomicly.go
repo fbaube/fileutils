@@ -1,3 +1,7 @@
+// Original code:
+// https://github.com/nnev/frank/writeatomically.go
+// Licensed under the ISC license.
+
 package fileutils
 
 import (
