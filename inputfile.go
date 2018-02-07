@@ -70,6 +70,10 @@ type InputFile struct {
 	Contents string
 }
 
+func (p *InputFile) String() string {
+	return p.FileFullName.String()
+}
+
 // DString is for debug output.
 func (p *InputFile) DString() string {
 	return fmt.Sprintf(

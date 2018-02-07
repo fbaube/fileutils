@@ -65,7 +65,7 @@ func (pIF *InputFile) NewOutputFiles(subdirSuffix string) (*OutputFiles, error) 
 		return p, nil
 	}
 	// Transform the file name into a nearly-same directory name.
-	dn, ok := SU.DirNameFromFileName(pIF.String(), "_gxml")
+	dn, ok := SU.DirNameFromFileName(pIF.String(), subdirSuffix)
 	// !ok indicates a name pattern where no subdirectory is desired.
 	if !ok {
 		return nil, nil
