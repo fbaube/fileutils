@@ -1,0 +1,1 @@
+File utilities for Golang. Type InputFile completely characterizes a file. OutputFiles associates one or more simlarly-named output files with an InputFile, possibly in a separate directory whose name is based on the InputFile. 
