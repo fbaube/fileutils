@@ -3,7 +3,6 @@ package fileutils
 import (
 	"bufio"
 	"bytes"
-	"fmt"
 	"os"
 
 	"github.com/pkg/errors"
@@ -13,13 +12,11 @@ import (
 func MustOpenRW(path string) (*os.File, error) {
 	f, e := os.OpenFile(path, os.O_RDWR, 0666)
 	if e != nil {
-		return nil, errors.Wrap(e,
-			fmt.Sprintf("fileutils.MustOpenRW.OpenFile<%s>", path))
+		return nil, errors.Wrapf(e, "fu.MustOpenRW.OpenFile<%s>", path)
 	}
 	fi, e := os.Lstat(path)
 	if e != nil || !fi.Mode().IsRegular() {
-		return nil, errors.Wrap(e,
-			fmt.Sprintf("fileutils.MustOpenRW.notafile<%s>", path))
+		return nil, errors.Wrapf(e, "fu.MustOpenRW.notaFile<%s>", path)
 	}
 	return f, nil
 }
@@ -28,13 +25,11 @@ func MustOpenRW(path string) (*os.File, error) {
 func MustOpenRO(path string) (*os.File, error) {
 	f, e := os.Open(path)
 	if e != nil {
-		return nil, errors.Wrap(e,
-			fmt.Sprintf("fileutils.MustOpenRO.OpenFile<%s>", path))
+		return nil, errors.Wrapf(e, "fu.MustOpenRO.OpenFile<%s>", path)
 	}
 	fi, e := os.Lstat(path)
 	if e != nil || fi.IsDir() {
-		return nil, errors.Wrap(e,
-			fmt.Sprintf("fileutils.MustOpenRO.notafile<%s>", path))
+		return nil, errors.Wrapf(e, "fu.MustOpenRO.notaFile<%s>", path)
 	}
 	return f, nil
 }
@@ -48,13 +43,11 @@ func MustCreateEmpty(path string) (*os.File, error) {
 	// it will be of type *PathError.
 	f, e := os.Create(path)
 	if e != nil {
-		return nil, errors.Wrap(e,
-			fmt.Sprintf("fileutils.MustCreateEmpty.Create<%s>", path))
+		return nil, errors.Wrapf(e, "fu.MustCreateEmpty.Create<%s>", path)
 	}
 	fi, e := os.Stat(path)
 	if e != nil || !fi.Mode().IsRegular() {
-		return nil, errors.Wrap(e,
-			fmt.Sprintf("fileutils.MustCreateEmpty.notafile<%s>", path))
+		return nil, errors.Wrapf(e, "fu.MustCreateEmpty.notaFile<%s>", path)
 	}
 	return f, nil
 }

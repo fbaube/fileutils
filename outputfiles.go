@@ -1,7 +1,6 @@
 package fileutils
 
 import (
-	"fmt"
 	"io"
 	"os"
 	fp "path/filepath"
@@ -33,6 +32,13 @@ type OutputFileExt struct {
 	// Includes the period "."
 	FileExt string
 	io.WriteCloser
+}
+
+func (of OutputFiles) String() string {
+	return "[OutputFiles]"
+}
+func (of OutputFiles) DString() string {
+	return "[dbg.OutputFiles]"
 }
 
 // OutputFiles is a list of all output files associated with the InputFile.
@@ -71,11 +77,10 @@ func (pIF *InputFile) NewOutputFiles(subdirSuffix string) (*OutputFiles, error) 
 		return nil, nil
 	}
 	// Create (or open) the directory
-	f, e := MustOpenOrCreateDir(dn)
+	f, e := MustOpenOrCreateDir(FilePath(dn))
 	defer f.Close()
 	if e != nil {
-		return p, errors.Wrap(e,
-			fmt.Sprintf("fileutils.NewOutputFiles.MustOpenOrCreateDir<%s>", dn))
+		return p, errors.Wrapf(e, "fu.NewOutputFiles.MustOpenOrCreateDir<%s>", dn)
 	}
 	p.OutputDirPath = dn
 	return p, nil
@@ -90,7 +95,7 @@ func (pOF *OutputFiles) NewOutputExt(filext string) (*OutputFileExt, error) {
 	var pOFE *OutputFileExt
 	var e error
 	if filext == "" {
-		return nil, fmt.Errorf("fileutils.NewOutputExt.emptyArg")
+		return nil, errors.New("fu.NewOutputExt.emptyArg")
 	}
 	if !S.HasPrefix(filext, ".") {
 		filext = "." + filext
@@ -99,7 +104,7 @@ func (pOF *OutputFiles) NewOutputExt(filext string) (*OutputFileExt, error) {
 	f, e = os.OpenFile(newpath, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0666)
 	// Alternatively: f,e = MustCreate(newpath)
 	if e != nil {
-		return nil, errors.Wrap(e, "fileutils.NewOutputExt<"+filext+">")
+		return nil, errors.Wrapf(e, "fu.NewOutputExt<%s>", filext)
 	}
 	pOFE = new(OutputFileExt)
 	pOFE.FileExt = filext

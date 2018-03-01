@@ -2,8 +2,8 @@ package fileutils
 
 import "github.com/pkg/errors"
 
-// The hosom/gomagic library is licensed BSD-3.
-// This file (fileutils.go) borrows heavily from it.
+// NOTE The hosom/gomagic library is licensed BSD-3,
+// and this file (mimeguesser.go) borrows heavily from it.
 //
 // Three different libraries for determining MIME types were evaluated.
 // All three produced the same results on common files.
@@ -36,11 +36,11 @@ func MimeFile(filename string, mode MimeFlag) (string, error) {
 	m, e := hosom.Open(hosom.Flag(mode))
 	defer m.Close()
 	if e != nil {
-		return "", errors.Wrap(e, "MimeFile open-analyzer failed")
+		return "", errors.Wrapf(e, "fu.MimeFile.hosomOpen<%s:%x>", filename, mode)
 	}
 	mt, e := m.File(filename)
 	if e != nil {
-		return "", errors.Wrap(e, "MimeFile analyze-file failed")
+		return "", errors.Wrapf(e, "fu.MimeFile.hosomFile<%s>", filename)
 	}
 	return mt, nil
 }
@@ -51,11 +51,11 @@ func MimeBuffer(buf []byte, mode int) (string, error) {
 	m, e := hosom.Open(hosom.Flag(mode))
 	defer m.Close()
 	if e != nil {
-		return "", errors.Wrap(e, "MimeBuffer open-analyzer failed")
+		return "", errors.Wrap(e, "fu.MimeBuffer.hosomOpen")
 	}
 	mt, e := m.Buffer(buf)
 	if e != nil {
-		return "", errors.Wrap(e, "MimeBuffer analyze-buffer failed")
+		return "", errors.Wrap(e, "fu.MimeBuffer.hosomBuffer")
 	}
 	return mt, nil
 }

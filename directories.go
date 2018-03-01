@@ -8,40 +8,39 @@ import (
 )
 
 // IsDirectory returns true IFF the directory exists and is in fact a directory.
-func IsDirectory(path string) bool {
-	fi, err := os.Lstat(path)
+func IsDirectory(path FilePath) bool {
+	fi, err := os.Lstat(string(path))
 	return (err == nil && fi.IsDir())
 }
 
 // MustOpenExistingDir returns the directory IFF it exists and can be opened.
-func MustOpenExistingDir(path string) (*os.File, error) {
-	f, e := os.Open(path)
+func MustOpenExistingDir(path FilePath) (*os.File, error) {
+	f, e := os.Open(string(path))
 	if e != nil {
-		return nil, errors.Wrap(e,
-			fmt.Sprintf("fileutils.MustOpenExistingDir.Open<%s>", path))
+		return nil, errors.Wrapf(e, "fu.MustOpenExistingDir.Open<%s>", path)
 	}
-	fi, e := os.Lstat(path)
+	fi, e := os.Lstat(string(path))
 	if e != nil || !fi.IsDir() {
-		return nil, fmt.Errorf("%s: not a directory", path)
+		return nil, errors.New(fmt.Sprintf("fu.MustOpenExistingDir.notaDir<%s>", path))
 	}
 	return f, nil
 }
 
 // MustOpenOrCreateDir returns true if (a) the directory exists and can
 // be opened, or (b) it does not exist, and/but it can be created anew.
-func MustOpenOrCreateDir(path string) (*os.File, error) {
+func MustOpenOrCreateDir(path FilePath) (*os.File, error) {
 	// Does it already exist ?
 	f, e := MustOpenExistingDir(path)
 	if e == nil {
 		return f, nil
 	}
 	// Try to create it
-	e = os.Mkdir(path, 0777)
+	e = os.Mkdir(string(path), 0777)
 	if e == nil {
 		// Now we *have* to open it
 		f, e = MustOpenExistingDir(path)
 		if e != nil {
-			return nil, fmt.Errorf("fileutils.MustOpenDir<%s>", path)
+			return nil, errors.New(fmt.Sprintf("fu.MustOpenDir<%s>", path))
 		}
 		// Succeeded
 		return f, nil
@@ -56,17 +55,16 @@ func MustOpenOrCreateDir(path string) (*os.File, error) {
 // and returns a slice of FileInfo values, as would be returned by
 // Lstat(..), in directory order.
 func DirectoryContents(f *os.File) ([]os.FileInfo, error) {
-	f, e := MustOpenExistingDir(f.Name())
+	f, e := MustOpenExistingDir(FilePath(f.Name()))
 	if e != nil {
-		return nil, errors.Wrap(e,
-			fmt.Sprintf("fileutils.DirectoryContents.MustOpenExistingDir<%s>", f.Name()))
+		return nil, errors.Wrapf(e,
+			"fu.DirectoryContents.MustOpenExistingDir<%s>", f.Name())
 	}
 	defer f.Close()
 	// 0 means No limit, read'em all
 	fis, e := f.Readdir(0)
 	if e != nil {
-		return nil, errors.Wrap(e,
-			fmt.Sprintf("fileutils.DirectoryContents.Readdir<%s>", f.Name()))
+		return nil, errors.Wrapf(e, "fu.DirectoryContents.Readdir<%s>", f.Name())
 	}
 	return fis, nil
 }
@@ -77,7 +75,7 @@ func DirectoryContents(f *os.File) ([]os.FileInfo, error) {
 func DirectoryFiles(f *os.File) (int, []os.FileInfo, error) {
 	fis, e := DirectoryContents(f)
 	if e != nil {
-		return 0, nil, errors.Wrap(e, "futil.GetDirFiles")
+		return 0, nil, errors.Wrapf(e, "fu.DirectoryFiles<%s>", f.Name())
 	}
 	nFiles := 0
 	for i := range fis {
