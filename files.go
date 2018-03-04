@@ -22,14 +22,14 @@ func MustOpenRW(path string) (*os.File, error) {
 }
 
 // MustOpenRO opens (ansd returns) the filepath as a readable file.
-func MustOpenRO(path string) (*os.File, error) {
+func TryOpenRO(path string) (*os.File, error) {
 	f, e := os.Open(path)
 	if e != nil {
-		return nil, errors.Wrapf(e, "fu.MustOpenRO.OpenFile<%s>", path)
+		return nil, errors.Wrapf(e, "fu.TryOpenRO.OpenFile<%s>", path)
 	}
 	fi, e := os.Lstat(path)
 	if e != nil || fi.IsDir() {
-		return nil, errors.Wrapf(e, "fu.MustOpenRO.notaFile<%s>", path)
+		return nil, errors.Wrapf(e, "fu.TryOpenRO.notaFile<%s>", path)
 	}
 	return f, nil
 }
