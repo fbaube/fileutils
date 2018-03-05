@@ -10,6 +10,8 @@ import (
 
 	SU "github.com/fbaube/stringutils"
 	"github.com/pkg/errors"
+	// TODO/FIXME
+	// "github.com/dimchansky/utfbom"
 )
 
 // FileFullName holds the complete, fully-qualified
@@ -154,6 +156,7 @@ func NewInputFile(path FilePath) (*InputFile, error) {
 			fullpath, p.Size()))
 	}
 	// Read it in !
+	// TODO/FIXME Use github.com/dimchansky/utfbom Skip()
 	bb, e = ioutil.ReadFile(fullpath)
 	if e != nil {
 		return nil, errors.Wrapf(e, "fu.NewInputFile.ioutilReadFile<%s>", fullpath)
