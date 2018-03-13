@@ -55,14 +55,13 @@ type OutputFiles struct {
 }
 
 // NewOutputFiles creates the directory specified by adding subdirSuffix
-// to the InputFile's name (unless the InputFile is binary and/or an image).
+// to the InputFile's name.
+// It does not examine the file content, so it cannot decide not to create
+// the directory for inappropriate file types, such as binary images.
 // For convenience, if subdirSuffix is "", output files are placed in the
 // same directory as the InputFile.
 func (pIF *InputFile) NewOutputFiles(subdirSuffix string) (*OutputFiles, error) {
-	// If associated files make no sense, return with no action and no error.
-	if pIF.IsBinary || pIF.IsImage {
-		return nil, nil
-	}
+
 	p := new(OutputFiles)
 	p.pInputFile = pIF
 

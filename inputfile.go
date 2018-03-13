@@ -14,6 +14,9 @@ import (
 	// "github.com/dimchansky/utfbom"
 )
 
+var DTDtypeFileExtensions = []string{".dtd", ".mod", ".ent"}
+var MarkdownFileExtensions = []string{".md", ".mdown", ".markdown", ".mkdn"}
+
 // FileFullName holds the complete, fully-qualified
 // absolute path and name of a file or directory.
 // If DirPath is "", the FileFullName is empty/invalid.
@@ -73,18 +76,26 @@ func (p FileFullName) DString() string {
 }
 
 // InputFile describes in detail a file we have redd or will read.
-// It does not though include any XML-specific stuff; it is generic.
+// It does not deeply examine XML-specific stuff; it is mostly generic.
 // In normal usage, when the InputFile is created, the file is opened
-// and its contents are redd into "Contents".
+// and its contents are redd into "Contents", and then we are mostly
+// decoupled from the file system.
+// Because our goal is to process LwDITA, we examine a text file (and
+// its DTDs, if present) and set a type of XDITA, HDITA, MDITA, or DITA.
+// This amounts to making an assertion, and can be rolled back (i.e. the
+// bool can be set to false) if further processing of the file shows that
+// it does not in fact even try to conform to the asserted file type.
 // NOTE An SVG or EPS file (for example) can be IsImage but !IsBinary.
 // FIXME It is not currently implemented.
 type InputFile struct {
-	FilePath // "short" argument passed in at creation time
+	// Path is the "short" argument passed in at creation time
+	Path string
 	FileFullName
 	os.FileInfo
+	// MimeType is the type returned by a third-party Mime-type library,
+	// with some possible modifications (e.g. recognising DTDs). Deeper
+	// analysis of the file's contents occurs elsewhere.
 	MimeType string
-	IsImage  bool
-	IsBinary bool
 	FileContent
 }
 
@@ -94,11 +105,12 @@ func (p InputFile) String() string {
 
 // DString is for debug output.
 func (p InputFile) DString() string {
-	return fmt.Sprintf(
-		"InputFile<%s>sz<%d>dir?<%s>bin?<%s>img?<%s>mime<%s>",
-		p.FileFullName.DString(), p.FileInfo.Size(),
-		SU.Yn(p.FileInfo.IsDir()), SU.Yn(p.IsBinary),
-		SU.Yn(p.IsImage), p.MimeType)
+	var s = "Dir"
+	if !p.FileInfo.IsDir() {
+		s = fmt.Sprintf("Len<%d>Mime<%s>", p.FileInfo.Size(), p.MimeType)
+	}
+	return fmt.Sprintf("InputFile<%s=%s>:%s",
+		p.Path, p.FileFullName.DString(), s)
 }
 
 // NewFileFullName uses fp.Abs(path) to initialize the structure,
@@ -162,21 +174,18 @@ func NewInputFile(path FilePath) (*InputFile, error) {
 		return nil, errors.Wrapf(e, "fu.NewInputFile.ioutilReadFile<%s>", fullpath)
 	}
 	p.MimeType, _ = MimeBuffer(bb, int(MimeType))
-	if S.HasPrefix(p.MimeType, "image/") {
-		p.IsImage = true
-		// FIXME Not true for SVG, EPS
-		p.IsBinary = true
-	}
 	// Trim away whitespace! We do this so that other code can
 	// check for known patterns at the "start" of the file.
 	p.FileContent = FileContent(S.TrimSpace(string(bb)))
 	// println("(DD:fu.InF) MIME as analyzed:", p.FileFullName.FileExt, p.MimeType)
 	// application/xml-dtd ?
 	if S.HasPrefix(S.TrimSpace(string(p.FileContent)), "<!") &&
-		(p.FileFullName.FileExt == ".dtd" ||
-			p.FileFullName.FileExt == ".mod" ||
-			p.FileFullName.FileExt == ".ent") {
+		SU.IsInSliceIgnoreCase(p.FileFullName.FileExt, DTDtypeFileExtensions) {
 		p.MimeType = "application/xml-dtd"
+	}
+	if p.MimeType == "text/plain" &&
+		SU.IsInSliceIgnoreCase(p.FileFullName.FileExt, MarkdownFileExtensions) {
+		p.MimeType = "text/markdown"
 	}
 	return p, nil
 }
@@ -205,8 +214,7 @@ func GatherInputFiles(path FilePath, okayExts []string) (okayFiles []FilePath, e
 	// A single file ?
 	if !IsDirectory(path) {
 		sfx := fp.Ext(string(path))
-		_, found := SU.InSliceIgnoreCase(sfx, okayExts)
-		if found || !gotOkayExts {
+		if SU.IsInSliceIgnoreCase(sfx, okayExts) || !gotOkayExts {
 			abs, _ := fp.Abs(string(path))
 			theOkayFiles = append(theOkayFiles, FilePath(abs))
 		}
@@ -243,8 +251,7 @@ func myWalkFunc(path string, finfo os.FileInfo, inerr error) error {
 	if finfo.IsDir() {
 		return nil
 	}
-	if _, found := SU.InSliceIgnoreCase(
-		fp.Ext(path), theOkayExts); gotOkayExts && !found {
+	if gotOkayExts && !SU.IsInSliceIgnoreCase(fp.Ext(path), theOkayExts) {
 		return nil
 	}
 	abspath, e = fp.Abs(path)
