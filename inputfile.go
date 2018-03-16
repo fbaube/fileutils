@@ -14,9 +14,6 @@ import (
 	// "github.com/dimchansky/utfbom"
 )
 
-var DTDtypeFileExtensions = []string{".dtd", ".mod", ".ent"}
-var MarkdownFileExtensions = []string{".md", ".mdown", ".markdown", ".mkdn"}
-
 // FileFullName holds the complete, fully-qualified
 // absolute path and name of a file or directory.
 // If DirPath is "", the FileFullName is empty/invalid.
@@ -178,15 +175,6 @@ func NewInputFile(path FilePath) (*InputFile, error) {
 	// check for known patterns at the "start" of the file.
 	p.FileContent = FileContent(S.TrimSpace(string(bb)))
 	// println("(DD:fu.InF) MIME as analyzed:", p.FileFullName.FileExt, p.MimeType)
-	// application/xml-dtd ?
-	if S.HasPrefix(S.TrimSpace(string(p.FileContent)), "<!") &&
-		SU.IsInSliceIgnoreCase(p.FileFullName.FileExt, DTDtypeFileExtensions) {
-		p.MimeType = "application/xml-dtd"
-	}
-	if p.MimeType == "text/plain" &&
-		SU.IsInSliceIgnoreCase(p.FileFullName.FileExt, MarkdownFileExtensions) {
-		p.MimeType = "text/markdown"
-	}
 	return p, nil
 }
 
