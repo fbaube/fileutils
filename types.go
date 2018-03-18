@@ -40,16 +40,23 @@ func (rpf RelFilePath) ResolveToAbsolute() AbsFilePath {
 }
 
 func (afp AbsFilePath) MakeRelativeWRT(wrt AbsFilePath) RelFilePath {
-	panic("ShortenAbsFPtoRelWRT")
-	return RelFilePath(afp)
+	if !afp.StartsWith(homedir) {
+		return RelFilePath(afp)
+	}
+	bytesToTrim := len(wrt) + 1
+	return RelFilePath("~" + PathSep + string(afp)[bytesToTrim:])
 }
 
-func (afp AbsFilePath) MakeRelativeWRTuserHome() RelFilePath {
+func (afp AbsFilePath) ElideUserHome() RelFilePath {
 	return afp.MakeRelativeWRT(homedir)
 }
 
 func (afp AbsFilePath) Append(rfp RelFilePath) AbsFilePath {
 	return AbsFilePath(string(afp) + string(rfp))
+}
+
+func (afp AbsFilePath) StartsWith(beg AbsFilePath) bool {
+	return S.HasPrefix(string(afp), string(beg))
 }
 
 func init() {
