@@ -27,6 +27,25 @@ func GetHomeDir() string {
 	return string(homedir)
 }
 
+func (afp AbsFilePath) S() string {
+	s := string(afp)
+	if !S.HasPrefix(s, "/") {
+		panic("FU.types: AbsFP is Rel: " + s)
+	}
+	return string(s)
+}
+
+func (rfp RelFilePath) S() string {
+	return string(rfp)
+}
+
+func ResolveToAbsoluteFP(s string) AbsFilePath {
+	if S.HasPrefix(s, PathSep) {
+		return AbsFilePath(s)
+	}
+	return RelFilePath(s).ResolveToAbsolute()
+}
+
 // ResolveToAbsolute relies on fp.Abs(path).
 func (rpf RelFilePath) ResolveToAbsolute() AbsFilePath {
 	if S.HasPrefix(string(rpf), PathSep) {
