@@ -8,13 +8,13 @@ import (
 )
 
 // IsDirectory returns true IFF the directory exists and is in fact a directory.
-func IsDirectory(path FilePath) bool {
+func IsDirectory(path AbsFilePath) bool {
 	fi, err := os.Lstat(string(path))
 	return (err == nil && fi.IsDir())
 }
 
 // MustOpenExistingDir returns the directory IFF it exists and can be opened.
-func MustOpenExistingDir(path FilePath) (*os.File, error) {
+func MustOpenExistingDir(path AbsFilePath) (*os.File, error) {
 	f, e := os.Open(string(path))
 	if e != nil {
 		return nil, errors.Wrapf(e, "fu.MustOpenExistingDir.Open<%s>", path)
@@ -28,7 +28,7 @@ func MustOpenExistingDir(path FilePath) (*os.File, error) {
 
 // MustOpenOrCreateDir returns true if (a) the directory exists and can
 // be opened, or (b) it does not exist, and/but it can be created anew.
-func MustOpenOrCreateDir(path FilePath) (*os.File, error) {
+func MustOpenOrCreateDir(path AbsFilePath) (*os.File, error) {
 	// Does it already exist ?
 	f, e := MustOpenExistingDir(path)
 	if e == nil {
@@ -49,13 +49,14 @@ func MustOpenOrCreateDir(path FilePath) (*os.File, error) {
 	return nil, e
 }
 
-// DirectoryContents returns the results of (os.*File)Readdir(..):
-//
+// DirectoryContents returns the results of (os.*File)Readdir(..).
+// File.Name() might be a relative filepath but if it was Open()ed
+// okay then it at least functions as an absolute filepath.
 // Readdir reads the contents of the directory associated with file
 // and returns a slice of FileInfo values, as would be returned by
 // Lstat(..), in directory order.
 func DirectoryContents(f *os.File) ([]os.FileInfo, error) {
-	f, e := MustOpenExistingDir(FilePath(f.Name()))
+	f, e := MustOpenExistingDir(AbsFilePath(f.Name()))
 	if e != nil {
 		return nil, errors.Wrapf(e,
 			"fu.DirectoryContents.MustOpenExistingDir<%s>", f.Name())

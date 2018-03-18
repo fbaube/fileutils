@@ -50,7 +50,7 @@ type OutputFiles struct {
 	// name or file extension). Normally it is the same as the input file's,
 	// but it can also be a subdirectory whose name is based on the input file.
 	// See func ../stringutils.DirNameFromFileName(..)
-	OutputDirPath   string
+	OutputDirPath   AbsFilePath
 	pOutputFileExts []*OutputFileExt
 }
 
@@ -69,14 +69,17 @@ func (pIF *InputFile) NewOutputFiles(subdirSuffix string) (*OutputFiles, error) 
 		p.OutputDirPath = pIF.DirPath
 		return p, nil
 	}
-	// Transform the file name into a nearly-same directory name.
-	dn, ok := SU.DirNameFromFileName(pIF.String(), subdirSuffix)
+	// Transform the file name (an absolute filepath)
+	// into a nearly-same directory name.
+	var dn AbsFilePath
+	sdn, ok := SU.DirNameFromFileName(pIF.String(), subdirSuffix)
 	// !ok indicates a name pattern where no subdirectory is desired.
 	if !ok {
 		return nil, nil
 	}
+	dn = AbsFilePath(sdn)
 	// Create (or open) the directory
-	f, e := MustOpenOrCreateDir(FilePath(dn))
+	f, e := MustOpenOrCreateDir(dn)
 	defer f.Close()
 	if e != nil {
 		return p, errors.Wrapf(e, "fu.NewOutputFiles.MustOpenOrCreateDir<%s>", dn)
@@ -99,7 +102,7 @@ func (pOF *OutputFiles) NewOutputExt(filext string) (*OutputFileExt, error) {
 	if !S.HasPrefix(filext, ".") {
 		filext = "." + filext
 	}
-	newpath = fp.Join(pOF.OutputDirPath, pOF.pInputFile.BaseName+filext)
+	newpath = fp.Join(string(pOF.OutputDirPath), pOF.pInputFile.BaseName+filext)
 	f, e = os.OpenFile(newpath, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0666)
 	// Alternatively: f,e = MustCreate(newpath)
 	if e != nil {

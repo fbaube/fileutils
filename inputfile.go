@@ -31,7 +31,7 @@ import (
 type FileFullName struct {
 	// DirPath holds the absolute path (from "filepath.Ext(path)"),
 	// up to (and including) the last "/" directory separator.
-	DirPath string
+	DirPath AbsFilePath
 	// BaseName has no path (absolute OR relative), no "/"
 	// directory separator, no final "." dot, no suffix.
 	BaseName string
@@ -43,7 +43,7 @@ type FileFullName struct {
 // String yields the full absolute path and name, so it is OK for
 // production use. If "DirPath" is "", the FileFullName is empty/invalid.
 func (p FileFullName) String() string {
-	dp := p.DirPath
+	dp := string(p.DirPath)
 	fx := p.FileExt
 	if dp == "" {
 		return ""
@@ -86,7 +86,7 @@ func (p FileFullName) DString() string {
 // FIXME It is not currently implemented.
 type InputFile struct {
 	// Path is the "short" argument passed in at creation time
-	Path string
+	RelFilePath
 	FileFullName
 	os.FileInfo
 	// MimeType is the type returned by a third-party Mime-type library,
@@ -107,26 +107,27 @@ func (p InputFile) DString() string {
 		s = fmt.Sprintf("Len<%d>Mime<%s>", p.FileInfo.Size(), p.MimeType)
 	}
 	return fmt.Sprintf("InputFile<%s=%s>:%s",
-		p.Path, p.FileFullName.DString(), s)
+		p.RelFilePath, p.FileFullName.DString(), s)
 }
 
-// NewFileFullName uses fp.Abs(path) to initialize the structure,
-// but it does not check existence or file mode.
-// fp.Abs(path) has the nice side effect that if path is a directory,
+// NewFileFullName accepts a relative filepath and uses fp.Abs(path) to
+// initialize the structure, but it does not check existence or file mode.
+// fp.Abs(path) has the nice side effect that if "path" is a directory,
 // then the directory path that is returned by fp.Split(abspath) is
-// guaranteed to end with a slash "/". Also, for convenience, the
-// file extension is forced to all lower-case.
-func NewFileFullName(path FilePath) *FileFullName {
+// guaranteed to end with a path separator slash "/". Also, for
+// convenience, the file extension is forced to all lower-case.
+func NewFileFullName(path RelFilePath) *FileFullName {
 	if path == "" {
 		return nil // BAD ARGUMENT !
 	}
-	var abspath, filext string
+	var abspath, filext, sdp string
 	p := new(FileFullName)
 	abspath, _ = fp.Abs(string(path))
-	p.DirPath, p.BaseName = fp.Split(abspath)
-	if !S.HasSuffix(p.DirPath, "/") {
+	sdp, p.BaseName = fp.Split(abspath)
+	if !S.HasSuffix(sdp, "/") {
 		panic("fu.NewFileFullName.DirPath.missingEndSlash<" + p.DirPath + ">")
 	}
+	p.DirPath = AbsFilePath(sdp)
 	if p.BaseName == "" {
 		return p // DIRECTORY !
 	}
@@ -140,7 +141,7 @@ func NewFileFullName(path FilePath) *FileFullName {
 
 // NewInputFile reads in the file's content. So, it can return
 // an error. It is currently limited to about 2 megabytes.
-func NewInputFile(path FilePath) (*InputFile, error) {
+func NewInputFile(path RelFilePath) (*InputFile, error) {
 	var f *os.File
 	var bb []byte
 	var fullpath string
@@ -180,7 +181,7 @@ func NewInputFile(path FilePath) (*InputFile, error) {
 
 var gotOkayExts bool
 var theOkayExts []string
-var theOkayFiles []FilePath
+var theOkayFiles []AbsFilePath
 
 // GatherInputFiles handles the case where the path is a directory
 // (altho it can also handle a simple file argument).
@@ -191,7 +192,7 @@ var theOkayFiles []FilePath
 // slice argument should include the period; the function will get
 // additional functionality if & when the periods are not included.
 // If "okayExts" is nil, *all* file extensions are included.
-func GatherInputFiles(path FilePath, okayExts []string) (okayFiles []FilePath, err error) {
+func GatherInputFiles(path AbsFilePath, okayExts []string) (okayFiles []AbsFilePath, err error) {
 
 	theOkayExts = okayExts
 	gotOkayExts = (okayExts != nil && len(okayExts) > 0)
@@ -204,7 +205,7 @@ func GatherInputFiles(path FilePath, okayExts []string) (okayFiles []FilePath, e
 		sfx := fp.Ext(string(path))
 		if SU.IsInSliceIgnoreCase(sfx, okayExts) || !gotOkayExts {
 			abs, _ := fp.Abs(string(path))
-			theOkayFiles = append(theOkayFiles, FilePath(abs))
+			theOkayFiles = append(theOkayFiles, AbsFilePath(abs))
 		}
 		return theOkayFiles, nil
 	}
@@ -217,9 +218,13 @@ func GatherInputFiles(path FilePath, okayExts []string) (okayFiles []FilePath, e
 }
 
 func myWalkFunc(path string, finfo os.FileInfo, inerr error) error {
-	var abspath string
+	var abspath AbsFilePath
 	var f *os.File
 	var e error
+	// Do we get a REL or ABS ?
+	if !S.HasPrefix(path, PathSep) {
+		panic("myWalkFunc got rel not abs: " + path)
+	}
 	// print("path|" + path + "|finfo|" + finfo.Name() + "|\n")
 	if !S.HasSuffix(path, finfo.Name()) {
 		panic("fu.myWalkFunc<" + path + ">")
@@ -242,7 +247,8 @@ func myWalkFunc(path string, finfo os.FileInfo, inerr error) error {
 	if gotOkayExts && !SU.IsInSliceIgnoreCase(fp.Ext(path), theOkayExts) {
 		return nil
 	}
-	abspath, e = fp.Abs(path)
+	apath, e := fp.Abs(path)
+	abspath = AbsFilePath(apath)
 	if e != nil {
 		return errors.Wrapf(e, "fu.myWalkFunc<%s>", path)
 	}
@@ -252,6 +258,6 @@ func myWalkFunc(path string, finfo os.FileInfo, inerr error) error {
 		return errors.Wrapf(e, "fu.myWalkFunc.MustOpenRO<%s>", path)
 	}
 	// fmt.Printf("(DD) Infile OK: %+v \n", abspath)
-	theOkayFiles = append(theOkayFiles, FilePath(abspath))
+	theOkayFiles = append(theOkayFiles, abspath)
 	return nil
 }
