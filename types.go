@@ -46,6 +46,11 @@ func ResolveToAbsoluteFP(s string) AbsFilePath {
 	return RelFilePath(s).ResolveToAbsolute()
 }
 
+// RelFP is a downcast and is totally kosher.
+func (apr AbsFilePath) RelFP() RelFilePath {
+	return RelFilePath(apr)
+}
+
 // ResolveToAbsolute relies on fp.Abs(path).
 func (rpf RelFilePath) ResolveToAbsolute() AbsFilePath {
 	if S.HasPrefix(string(rpf), PathSep) {
