@@ -8,7 +8,6 @@ import (
 	fp "path/filepath"
 	S "strings"
 
-	SU "github.com/fbaube/stringutils"
 	"github.com/pkg/errors"
 	// TODO/FIXME
 	// "github.com/dimchansky/utfbom"
@@ -94,14 +93,17 @@ type InputFile struct {
 	// analysis of the file's contents occurs elsewhere.
 	MimeType string
 	FileContent
+	IsXML   bool
+	MMCtype []string
 }
 
-func (p InputFile) String() string {
+// Echo implements Markupper.
+func (p InputFile) Echo() string {
 	return p.FileFullName.String()
 }
 
-// DString is for debug output.
-func (p InputFile) DString() string {
+// String implements Markupper.
+func (p InputFile) String() string {
 	var s = "Dir"
 	if !p.FileInfo.IsDir() {
 		s = fmt.Sprintf("Len<%d>Mime<%s>", p.FileInfo.Size(), p.MimeType)
@@ -179,85 +181,19 @@ func NewInputFile(path RelFilePath) (*InputFile, error) {
 	return p, nil
 }
 
-var gotOkayExts bool
-var theOkayExts []string
-var theOkayFiles []AbsFilePath
+// NewInputFileFromStdin currently takes a buffer but
+// TODO could actually do the reading from Stdin.
+func NewInputFileFromStdin() (*InputFile, error) {
 
-// GatherInputFiles handles the case where the path is a directory
-// (altho it can also handle a simple file argument).
-// It always excludes dotfiles (filename begins with ".") and emacs
-// backups (filename ends with "~").
-// It includes only files that end with any extension in the slice
-// "okayExts" (the check is case-insensitive). Each extension in the
-// slice argument should include the period; the function will get
-// additional functionality if & when the periods are not included.
-// If "okayExts" is nil, *all* file extensions are included.
-func GatherInputFiles(path AbsFilePath, okayExts []string) (okayFiles []AbsFilePath, err error) {
+	p := new(InputFile)
+	p.RelFilePath = "-"
+	// p.FileFullName is left at "nil"
 
-	theOkayExts = okayExts
-	gotOkayExts = (okayExts != nil && len(okayExts) > 0)
-	// NOTE Must clear theOkayFiles between calls !
-	// "nil" is kosher and releases the contents to garbage collection.
-	theOkayFiles = nil
-
-	// A single file ?
-	if !IsDirectory(path) {
-		sfx := fp.Ext(string(path))
-		if SU.IsInSliceIgnoreCase(sfx, okayExts) || !gotOkayExts {
-			abs, _ := fp.Abs(string(path))
-			theOkayFiles = append(theOkayFiles, AbsFilePath(abs))
-		}
-		return theOkayFiles, nil
-	}
-	// PROCESS THE DIRECTORY
-	err = fp.Walk(string(path), myWalkFunc)
-	if err != nil {
-		return nil, errors.Wrapf(err, "fu.GatherInputFiles.walkTo<%s>", path)
-	}
-	return theOkayFiles, nil
-}
-
-func myWalkFunc(path string, finfo os.FileInfo, inerr error) error {
-	var abspath AbsFilePath
-	var f *os.File
-	var e error
-	// Do we get a REL or ABS ?
-	if !S.HasPrefix(path, PathSep) {
-		panic("myWalkFunc got rel not abs: " + path)
-	}
-	// print("path|" + path + "|finfo|" + finfo.Name() + "|\n")
-	if !S.HasSuffix(path, finfo.Name()) {
-		panic("fu.myWalkFunc<" + path + ">")
-	}
-	if inerr != nil {
-		return errors.Wrapf(inerr, "fu.myWalkFunc<%s>", path)
-	}
-	// Is it hidden, or an emacs backup ? If so, ignore.
-	if S.HasPrefix(path, ".") || S.HasSuffix(path, "~") {
-		if finfo.IsDir() {
-			return fp.SkipDir
-		} else {
-			return nil
-		}
-	}
-	// Is it a (non-hidden) directory ? If so, carry on.
-	if finfo.IsDir() {
-		return nil
-	}
-	if gotOkayExts && !SU.IsInSliceIgnoreCase(fp.Ext(path), theOkayExts) {
-		return nil
-	}
-	apath, e := fp.Abs(path)
-	abspath = AbsFilePath(apath)
+	bb, e := ioutil.ReadAll(os.Stdin)
 	if e != nil {
-		return errors.Wrapf(e, "fu.myWalkFunc<%s>", path)
+		return nil, errors.Wrap(e, "Can't read standard input")
 	}
-	f, e = TryOpenRO(abspath)
-	defer f.Close()
-	if e != nil {
-		return errors.Wrapf(e, "fu.myWalkFunc.MustOpenRO<%s>", path)
-	}
-	// fmt.Printf("(DD) Infile OK: %+v \n", abspath)
-	theOkayFiles = append(theOkayFiles, abspath)
-	return nil
+	p.FileContent = FileContent(S.TrimSpace(string(bb)))
+	p.MimeType = "text/plain"
+	return p, nil
 }
