@@ -8,6 +8,12 @@ import (
 	"github.com/pkg/errors"
 )
 
+func (in AbsFilePath) Enslice() []AbsFilePath {
+	out := make([]AbsFilePath, 0)
+	out = append(out, in)
+	return out
+}
+
 // MustOpenRW opens (and returns) the filepath as a writable file.
 func MustOpenRW(path AbsFilePath) (*os.File, error) {
 	f, e := os.OpenFile(string(path), os.O_RDWR, 0666)
