@@ -8,7 +8,7 @@ set of associated output files:
 * `InputFile` describes a file: *full path, size, MIME type,
 ?IsXML, MMCtype*, and *contents* (up to 2 megabytes).
 
-*  MMCtype` is meant to function like a MIME type and has three
+* `MMCtype` is meant to function like a MIME type and has three
 fields. It can be set based on file name and contents, and later
 updated if the file is XML and has a DOCTYPE declaration. Refer
 to file `mmctype.go`
