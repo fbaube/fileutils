@@ -10,7 +10,7 @@ set of associated output files:
 
 * `MMCtype` is meant to function like a MIME type and has three
 fields. It can be set based on file name and contents, and later
-updated if the file is XML and has a DOCTYPE declaration. Refer
+updated if the file is XML and has a `DOCTYPE` declaration. Refer
 to file `mmctype.go`
 
 * `OutputFiles` makes it easier to create a group of like-named
