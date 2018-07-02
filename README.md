@@ -6,7 +6,10 @@ Included are types for describing a file and configuring a
 set of associated output files:
 
 * `InputFile` describes a file: *full path, size, MIME type,
-?binary, ?image*, and *contents* (up to 2 megabytes). 
+?IsXML, MMCtype*, and *contents* (up to 2 megabytes). 
+
+* ´MMCtype` is meant to function like a MIME type and has three
+fields. Refer to file `mmctype.go`
 
 * `OutputFiles` makes it easier to create a group of like-named
 files for an `InputFile`, in the same directory or optionally
@@ -14,8 +17,7 @@ in a like-named subdirectory.
 
 ### Known issues
 
-* Setting boolean flags based on MIME type is not complete (e.g. SVG, EPS)
-* Tested only on macos (i.e. sure to fail on Windows) 
+* Tested only on macos (i.e. it's sure to fail on Windows) 
 
 ### Example 
 
