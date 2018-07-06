@@ -11,39 +11,44 @@ import (
 )
 
 // LwdxFormats is a list of the types of text-based markup that
-// package lwdx recognizes, and their corresponding file extensions.
-// FIXME This belongs in another package.
+// are supported by LwDITA, and their corresponding file extensions.
+// NOTE maybe this belongs in another package.
+//
 // Note that the "md" Markdown format for MDITA is a bit of a mishmash,
 // though based mainly on CommonMark, with a few extensions, e.g. from
 // GFM, and YAML for file header metadata extensions.
-// Assume "html" is HTML5 *only*, so expect <!DOCTYPE html>.
+//
+// Assume `html` is HTML5 *only*, so expect `<!DOCTYPE html>`.
 var LwdxFormats = []string{
 	"md", "xml", "xhtml", "html", "dita", "map", "ditamap", "bookmap"}
 
-// ParserNames is an XML parser we are using,
-// and also a file name modifier for writing
-// out parser-related temp & debug files.
+// ParserNames is a list of XML parsers we can use, and also file
+// name modifiers for writing out parser-related temp & debug files.
 var ParserNames = []string{"", "gohtml", "xmlx", "etree", "x2j", "mxj"}
 
 // OutputFileExt is used for file input/output operations, when we
 // understand that the file path and base name are stored elsewhere
-// (viz. an InputFIle), and that this struct specifies one file in a set.
+// (i.e. in an InputFile), and that this struct specifies one file
+// in a set.
 type OutputFileExt struct {
 	// Includes the period "."
 	FileExt string
 	io.WriteCloser
 }
 
+// String implements Markupper.
 func (of OutputFiles) String() string {
 	return "[OutputFiles]"
 }
+
+// DString implements Markupper.
 func (of OutputFiles) DString() string {
 	return "[dbg.OutputFiles]"
 }
 
-// OutputFiles is a list of all output files associated with the InputFile.
-// They are assume to all got to the same directory, but it does not have
-// to be the same directory as the InputFile.
+// OutputFiles is a list of all output files associated with the `InputFile`.
+// Assume they all go to the same directory, but it does not have to be
+// the same directory as the `InputFile`.
 type OutputFiles struct {
 	pInputFile *InputFile
 	// OutDirPath is the full absolute directory path (but without file base
@@ -54,12 +59,14 @@ type OutputFiles struct {
 	pOutputFileExts []*OutputFileExt
 }
 
-// NewOutputFiles creates the directory specified by adding subdirSuffix
-// to the InputFile's name.
+// NewOutputFiles creates the directory specified by adding `subdirSuffix`
+// to the `InputFile`'s path + base name.
+//
 // It does not examine the file content, so it cannot decide not to create
 // the directory for inappropriate file types, such as binary images.
-// For convenience, if subdirSuffix is "", output files are placed in the
-// same directory as the InputFile.
+//
+// For convenience, if `subdirSuffix` is "", output files are placed in the
+// same directory as the `InputFile`.
 func (pIF *InputFile) NewOutputFiles(subdirSuffix string) (*OutputFiles, error) {
 
 	p := new(OutputFiles)
@@ -89,8 +96,9 @@ func (pIF *InputFile) NewOutputFiles(subdirSuffix string) (*OutputFiles, error) 
 }
 
 // NewOutputExt opens a new empty file for writing.
-// The io.Writer is at pOFE.Writer .
-// Argument "filext": leading period "." is optional.
+// The `io.Writer` gets stored away at `pOFE.Writer`.
+//
+// Argument `filext`: aleading period `.` is optional.
 func (pOF *OutputFiles) NewOutputExt(filext string) (*OutputFileExt, error) {
 	var newpath string
 	var f *os.File

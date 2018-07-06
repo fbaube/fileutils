@@ -10,7 +10,8 @@ import "github.com/pkg/errors"
 // "hosom" is the easiest to use because it takes care of its own cleanup.
 import hosom "github.com/hosom/gomagic"
 
-// MimeFlag is a friendlier version of the constants in the C library.
+// MimeFlag is a user-friendlier version
+// of the constants in the C library.
 type MimeFlag int
 
 // These constants determine the form of the output:

@@ -12,6 +12,7 @@ import (
 	"path/filepath"
 )
 
+// Tempdir checks and returns the value of the envar `TMPDIR`.
 func TempDir(dest string) string {
 	tempdir := os.Getenv("TMPDIR")
 	if tempdir == "" {
@@ -23,6 +24,7 @@ func TempDir(dest string) string {
 	return tempdir
 }
 
+// WriteAtomic is TBS.
 func WriteAtomic(dest string, write func(w io.Writer) error) (err error) {
 	f, err := ioutil.TempFile(TempDir(dest), "atomic-")
 	if err != nil {

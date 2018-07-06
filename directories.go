@@ -7,13 +7,15 @@ import (
 	"github.com/pkg/errors"
 )
 
-// IsDirectory returns true IFF the directory exists and is in fact a directory.
+// IsDirectory returns true *iff* the directory
+// exists and is in fact a directory.
 func IsDirectory(path AbsFilePath) bool {
 	fi, err := os.Lstat(string(path))
 	return (err == nil && fi.IsDir())
 }
 
-// MustOpenExistingDir returns the directory IFF it exists and can be opened.
+// MustOpenExistingDir returns the directory
+// *iff* it exists and can be opened.
 func MustOpenExistingDir(path AbsFilePath) (*os.File, error) {
 	f, e := os.Open(string(path))
 	if e != nil {
@@ -49,12 +51,12 @@ func MustOpenOrCreateDir(path AbsFilePath) (*os.File, error) {
 	return nil, e
 }
 
-// DirectoryContents returns the results of (os.*File)Readdir(..).
-// File.Name() might be a relative filepath but if it was Open()ed
+// DirectoryContents returns the results of `(*os.File)Readdir(..)`.
+// `File.Name()` might be a relative filepath but if it was opened
 // okay then it at least functions as an absolute filepath.
-// Readdir reads the contents of the directory associated with file
-// and returns a slice of FileInfo values, as would be returned by
-// Lstat(..), in directory order.
+// `Readdir(..)` reads the contents of the directory associated
+// with the `File` argument and returns a slice of `FileInfo`
+// values, as would be returned by `Lstat(..)`, in directory order.
 func DirectoryContents(f *os.File) ([]os.FileInfo, error) {
 	f, e := MustOpenExistingDir(AbsFilePath(f.Name()))
 	if e != nil {
@@ -70,9 +72,9 @@ func DirectoryContents(f *os.File) ([]os.FileInfo, error) {
 	return fis, nil
 }
 
-// DirectoryFiles is like DirectoryContents except that results that are
-// directories (not files) are nil'ed out. if there were entries but none
-// were files, the first return value is set to zero and the slice to nil.
+// DirectoryFiles is like `DirectoryContents(..)` except that results
+// that are directories (not files) are nil'ed out. If there were
+// entries but none were files, it return (`0,nil`).
 func DirectoryFiles(f *os.File) (int, []os.FileInfo, error) {
 	fis, e := DirectoryContents(f)
 	if e != nil {

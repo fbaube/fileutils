@@ -6,6 +6,9 @@ import (
 	SU "github.com/fbaube/stringutils"
 )
 
+// MMCstring extracts (as user-readable text) the MMC type set for the file.
+// Note that the MMC type can be set by analyzing the file extension and
+// contents, and then later revised if there is an XML `DOCTYPE` declaration.
 func (p InputFile) MMCstring() string {
 	if p.MMCtype == nil {
 		return "-/-/-"
@@ -14,20 +17,24 @@ func (p InputFile) MMCstring() string {
 }
 
 // SetMMCtype works as follows:
-// - inputs:
-// - - file extension
-// - - file mimetype (as already analyzed by a simple third party library)
-// - - file content
-// - - NOT an input: the DOCTYPE (it is looked at later)
-// - outputs:
-// - - MMCtype (a [3]string that works like a Mime-Type)
-// - - IsXML // , DeclaresDoctype, GuessedDoctype (three booleans, for XML only)
-// - - // DeclaresDoctype and GuessedDoctype are mutually exclusive
-// Reference material re. MDITA:
+//
+// Inputs:
+// - file extension
+// - file mimetype (as already analyzed by a simple third party library)
+// - file content
+// - NOT an input: the `DOCTYPE` (it is looked at later)
+//
+// Outputs:
+// - `MMCtype` (a `[3]string` slice that works like a MIME type)
+// - `IsXML` // , DeclaresDoctype, GuessedDoctype (three booleans, for XML only)
+// - // DeclaresDoctype and GuessedDoctype are mutually exclusive
+//
+// Reference material re. MDITA: <br/>
 // https://github.com/jelovirt/dita-ot-markdown/wiki/Syntax-reference
-// The format of local link targets is detected based on file extension.
-// The following extensions are treated as DITA files:
-// .dita =>	dita ; .xml => dita ; .md => markdown ; .markdown => markdown
+// <br/> The format of local link targets is detected based on file
+// extension. <br/>
+// The following extensions are treated as DITA files: <br/>
+// `.dita` =>	dita ; `.xml` => dita ; `.md` => markdown ; `.markdown` => markdown
 func (p *InputFile) SetMMCtype() {
 
 	var theMimeType = p.MimeType

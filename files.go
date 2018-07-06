@@ -8,6 +8,7 @@ import (
 	"github.com/pkg/errors"
 )
 
+// Enslice turns an absolute filepath into the first element of a slice of them.
 func (in AbsFilePath) Enslice() []AbsFilePath {
 	out := make([]AbsFilePath, 0)
 	out = append(out, in)

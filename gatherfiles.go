@@ -16,15 +16,17 @@ var gotOkayName bool
 var theOkayName string
 var theOkayFiles []AbsFilePath
 
-// GatherInputFiles handles the case where "path" is a directory
-// (altho it can also handle "path" being a simple file argument).
-// It always excludes dotfiles (filename begins with ".") and emacs
-// backups (filename ends with "~").
+// GatherInputFiles handles the case where `path` is a directory
+// (but it can also handle `path` being a simple file argument).
+// It always excludes dotfiles (filenames that begin with "."
+// and are not the current "." or parent ".." directory) and
+// emacs backups (filenames that end with "~").
+//
 // It includes only files that end with any extension in the slice
-// "okayExts" (the check is case-insensitive). Each extension in the
+// `okayExts` (the check is case-insensitive). Each extension in the
 // slice argument should include the period; the function will get
 // additional functionality if & when the periods are not included.
-// If "okayExts" is nil, *all* file extensions are included.
+// If `okayExts` is nil, *all* file extensions are permitted.
 func GatherInputFiles(path AbsFilePath, okayExts []string) (okayFiles []AbsFilePath, err error) {
 	if path == "" {
 		return nil, nil
@@ -53,8 +55,9 @@ func GatherInputFiles(path AbsFilePath, okayExts []string) (okayFiles []AbsFileP
 	return theOkayFiles, nil
 }
 
-// GatherNamedFiles handles the case where "path" is a file name.
-// Whether "path" includes a dot and/or a file extension makes no difference.
+// GatherNamedFiles handles the case where `path` is a file name.
+// Whether `path` includes a dot and/or a file extension makes no
+// difference.
 func GatherNamedFiles(path AbsFilePath, name string) (okayFiles []AbsFilePath, err error) {
 	if path == "" || name == "" {
 		return nil, nil

@@ -9,24 +9,24 @@ import (
 	S "strings"
 
 	"github.com/pkg/errors"
-	// TODO/FIXME
 	// "github.com/dimchansky/utfbom"
 )
 
-// FileFullName holds the complete, fully-qualified
-// absolute path and name of a file or directory.
-// If DirPath is "", the FileFullName is empty/invalid.
+// FileFullName holds the complete, fully-qualified absolute
+// path and base name and file extension of a file or directory.
+// If `DirPath` is "", the entire `FileFullName` is empty/invalid.
 //
-// DirPath must end with a slash "/", or else we cannot
+// Notes on usage:
+// - `DirPath` must end with a slash `/`, or else we cannot
 // distinguish empty/invalid from the filesystem root.
-// Suffix must start with a dot ".", or else we cannot
+// - `Suffix` must start with a dot `.`, or else we cannot
 // distinguish when a name ends with a dot.
-// If FileFullName is a directory, the entire path is in
-// DirPath (ending with "/"), and BaseName & Suffix are "".
+// - If `FileFullName` is a directory, the entire path is in
+// `DirPath` (ending with "/"), and `BaseName` and `Suffix` are "".
 //
-// Its String() yields the full absolute path and name,
-// so it is OK for production use, and it dusnt need
-// to actually store the string-as-a-whole anywhere.
+// Its Echo() method yields the full absolute path and name,
+// so it is OK for production use, and it dusnt need to
+// store the string-as-a-whole as another separate field.
 type FileFullName struct {
 	// DirPath holds the absolute path (from "filepath.Ext(path)"),
 	// up to (and including) the last "/" directory separator.
@@ -56,6 +56,7 @@ func (p FileFullName) String() string {
 	return dp + p.BaseName + fx
 }
 
+// DString implements Markupper.
 func (p FileFullName) DString() string {
 	s := p.String()
 	username, e := user.Current()
@@ -72,17 +73,20 @@ func (p FileFullName) DString() string {
 }
 
 // InputFile describes in detail a file we have redd or will read.
-// It does not deeply examine XML-specific stuff; it is mostly generic.
-// In normal usage, when the InputFile is created, the file is opened
-// and its contents are redd into "Contents", and then we are mostly
-// decoupled from the file system.
-// Because our goal is to process LwDITA, we examine a text file (and
-// its DTDs, if present) and set a type of XDITA, HDITA, MDITA, or DITA.
-// This amounts to making an assertion, and can be rolled back (i.e. the
-// bool can be set to false) if further processing of the file shows that
-// it does not in fact even try to conform to the asserted file type.
-// NOTE An SVG or EPS file (for example) can be IsImage but !IsBinary.
-// FIXME It is not currently implemented.
+// It does not deeply examine XML-specific stuff; it is mostly
+// generic. In normal usage, when the `InputFile` is created,
+// the file is opened and its contents are redd into `Contents`,
+// and then we are decoupled from the file system.
+//
+// Because our goal is to process LwDITA, we examine a text file
+// (and its DTDs, if present) and set a type of XDITA, HDITA,
+// MDITA, or DITA. This amounts to making an assertion, and can
+// be rolled back (i.e. the bool can be set back to `false`) if
+// further processing of the file shows that the file does not
+// in fact even try to conform to the asserted file type.
+//
+// NOTE A text-based image file (i.e. SVG or EPS) can be
+// `IsImage` but `!IsBinary`.
 type InputFile struct {
 	// Path is the "short" argument passed in at creation time
 	RelFilePath
@@ -112,12 +116,12 @@ func (p InputFile) String() string {
 		p.RelFilePath, p.FileFullName.DString(), s)
 }
 
-// NewFileFullName accepts a relative filepath and uses fp.Abs(path) to
-// initialize the structure, but it does not check existence or file mode.
-// fp.Abs(path) has the nice side effect that if "path" is a directory,
-// then the directory path that is returned by fp.Split(abspath) is
-// guaranteed to end with a path separator slash "/". Also, for
-// convenience, the file extension is forced to all lower-case.
+// NewFileFullName accepts a relative filepath and uses `filepath.Abs(path)`
+// to initialize the structure, but it does not check existence or file mode.
+// `filepath.Abs(path)`` has the nice side effect that if `path` is a directory,
+// then the directory path that is returned by `filepath.Split(abspath)` is
+// guaranteed to end with a path separator slash `/`. <br/>
+// Also, for consistency, the file extension is forced to all lower-case.
 func NewFileFullName(path RelFilePath) *FileFullName {
 	if path == "" {
 		return nil // BAD ARGUMENT !
@@ -181,8 +185,8 @@ func NewInputFile(path RelFilePath) (*InputFile, error) {
 	return p, nil
 }
 
-// NewInputFileFromStdin currently takes a buffer but
-// TODO could actually do the reading from Stdin.
+// NewInputFileFromStdin reads `os.Stdin` completely and returns a new
+// `InputFile`.
 func NewInputFileFromStdin() (*InputFile, error) {
 
 	p := new(InputFile)
