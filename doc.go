@@ -1,6 +1,9 @@
-// Package fileutils does handy stuff, like resolve a relative path into
-// a absolute path, and snarf up an entire file and figure out its content
-// type, and search a directory tree for certain file types.
+// Package fileutils does handy stuff, like for example:
+// - resolve a relative path into an absolute path
+// - snarf up an entire file and figure out its content type
+// - search a directory tree for certain file types
+//
+// Files in this directory use Markdown, so use `godoc2md` on 'em.
 //
 // Because this package supports the processing of mixed content in
 // the three markup formats supported by LwDITA (Lightweight DITA),
