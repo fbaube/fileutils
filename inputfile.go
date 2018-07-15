@@ -39,9 +39,9 @@ type FileFullName struct {
 	FileExt string
 }
 
-// String yields the full absolute path and name, so it is OK for
+// Echo yields the full absolute path and name, so it is OK for
 // production use. If "DirPath" is "", the FileFullName is empty/invalid.
-func (p FileFullName) String() string {
+func (p FileFullName) Echo() string {
 	dp := string(p.DirPath)
 	fx := p.FileExt
 	if dp == "" {
@@ -56,8 +56,13 @@ func (p FileFullName) String() string {
 	return dp + p.BaseName + fx
 }
 
-// DString implements Markupper.
-func (p FileFullName) DString() string {
+// EchoCommented implements Markupper.
+func (p FileFullName) EchoCommented() string {
+	return p.Echo()
+}
+
+// String implements Markupper.
+func (p FileFullName) String() string {
 	s := p.String()
 	username, e := user.Current()
 	if e != nil {
@@ -103,7 +108,12 @@ type InputFile struct {
 
 // Echo implements Markupper.
 func (p InputFile) Echo() string {
-	return p.FileFullName.String()
+	return p.FileFullName.Echo()
+}
+
+// Echo implements Markupper.
+func (p InputFile) EchoCommented() string {
+	return p.FileFullName.EchoCommented()
 }
 
 // String implements Markupper.
@@ -113,7 +123,7 @@ func (p InputFile) String() string {
 		s = fmt.Sprintf("Len<%d>Mime<%s>", p.FileInfo.Size(), p.MimeType)
 	}
 	return fmt.Sprintf("InputFile<%s=%s>:%s",
-		p.RelFilePath, p.FileFullName.DString(), s)
+		p.RelFilePath, p.FileFullName.String(), s)
 }
 
 // NewFileFullName accepts a relative filepath and uses `filepath.Abs(path)`

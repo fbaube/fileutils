@@ -36,13 +36,18 @@ type OutputFileExt struct {
 	io.WriteCloser
 }
 
-// String implements Markupper.
-func (of OutputFiles) String() string {
-	return "[OutputFiles]"
+// Echo implements Markupper.
+func (of OutputFiles) Echo() string {
+	return of.EchoCommented()
 }
 
-// DString implements Markupper.
-func (of OutputFiles) DString() string {
+// EchoCommented implements Markupper.
+func (of OutputFiles) EchoCommented() string {
+	return "<!--[OutputFiles]-->"
+}
+
+// String implements Markupper.
+func (of OutputFiles) String() string {
 	return "[dbg.OutputFiles]"
 }
 
