@@ -13,7 +13,13 @@ func (p InputFile) MMCstring() string {
 	if p.MMCtype == nil {
 		return "-/-/-"
 	}
-	return p.MMCtype[0] + "/" + p.MMCtype[1] + "/" + p.MMCtype[2]
+	var ss = []string{p.MMCtype[0], p.MMCtype[1], p.MMCtype[2]}
+	for i, s := range p.MMCtype {
+		if s == "" {
+			ss[i] = "-"
+		}
+	}
+	return ss[0] + "/" + ss[1] + "/" + ss[2]
 }
 
 // SetMMCtype works as follows:

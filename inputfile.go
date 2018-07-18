@@ -63,7 +63,8 @@ func (p FileFullName) EchoCommented() string {
 
 // String implements Markupper.
 func (p FileFullName) String() string {
-	s := p.String()
+	// s := p.String()
+	s := p.DirPath.S() + p.BaseName + p.FileExt
 	username, e := user.Current()
 	if e != nil {
 		return s
