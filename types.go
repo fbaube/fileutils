@@ -83,6 +83,7 @@ func (afp AbsFilePath) MakeRelativeWRT(wrt AbsFilePath) RelFilePath {
 
 // ElideUserHome replaces the user's home dir with tilde `~` if possible.
 func (afp AbsFilePath) ElideUserHome() RelFilePath {
+	// IFF barfs :: return RelFilePath(afp)
 	return afp.MakeRelativeWRT(homedir)
 }
 
