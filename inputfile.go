@@ -163,6 +163,7 @@ func NewInputFile(path RelFilePath) (*InputFile, error) {
 	var bb []byte
 	var fullpath string
 	var e error
+
 	// Check that the file exists and is readable
 	f, e = os.Open(string(path))
 	defer f.Close()
@@ -172,7 +173,7 @@ func NewInputFile(path RelFilePath) (*InputFile, error) {
 	// We're good to go
 	p := new(InputFile)
 	p.FileFullName = *NewFileFullName(path)
-	fullpath = p.FileFullName.String()
+	fullpath = p.FileFullName.Echo()
 	p.FileInfo, e = os.Stat(fullpath)
 	if e != nil {
 		return nil, errors.Wrapf(e, "fu.NewInputFile.osStat<%s>", fullpath)
