@@ -38,12 +38,12 @@ type OutputFileExt struct {
 
 // Echo implements Markupper.
 func (of OutputFiles) Echo() string {
-	return "<!-- Output files -->"
+	return "[OutputFiles]"
 }
 
 // String implements Markupper.
 func (of OutputFiles) String() string {
-	return "[dbg.OutputFiles]"
+	return "[OutputFiles]"
 }
 
 // OutputFiles is a list of all output files associated with the `InputFile`.
