@@ -38,12 +38,7 @@ type OutputFileExt struct {
 
 // Echo implements Markupper.
 func (of OutputFiles) Echo() string {
-	return of.EchoCommented()
-}
-
-// EchoCommented implements Markupper.
-func (of OutputFiles) EchoCommented() string {
-	return "<!--[OutputFiles]-->"
+	return "<!-- Output files -->"
 }
 
 // String implements Markupper.

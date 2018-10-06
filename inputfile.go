@@ -56,11 +56,6 @@ func (p FileFullName) Echo() string {
 	return dp + p.BaseName + fx
 }
 
-// EchoCommented implements Markupper.
-func (p FileFullName) EchoCommented() string {
-	return p.Echo()
-}
-
 // String implements Markupper.
 func (p FileFullName) String() string {
 	// s := p.String()
@@ -110,11 +105,6 @@ type InputFile struct {
 // Echo implements Markupper.
 func (p InputFile) Echo() string {
 	return p.FileFullName.Echo()
-}
-
-// Echo implements Markupper.
-func (p InputFile) EchoCommented() string {
-	return p.FileFullName.EchoCommented()
 }
 
 // String implements Markupper.
