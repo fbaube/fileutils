@@ -6,15 +6,15 @@ import (
 	SU "github.com/fbaube/stringutils"
 )
 
-// MMCstring extracts (as user-readable text) the MMC type set for the file.
-// Note that the MMC type can be set by analyzing the file extension and
+// Mstring extracts (as user-readable text) the M-type set for the file.
+// Note that the M-type can be set by analyzing the file extension and
 // contents, and then later revised if there is an XML `DOCTYPE` declaration.
-func (p InputFile) MMCstring() string {
-	if p.MMCtype == nil {
+func (p InputFile) Mstring() string {
+	if p.Mtype == nil {
 		return "-/-/-"
 	}
-	var ss = []string{p.MMCtype[0], p.MMCtype[1], p.MMCtype[2]}
-	for i, s := range p.MMCtype {
+	var ss = []string{p.Mtype[0], p.Mtype[1], p.Mtype[2]}
+	for i, s := range p.Mtype {
 		if s == "" {
 			ss[i] = "-"
 		}
@@ -22,7 +22,7 @@ func (p InputFile) MMCstring() string {
 	return ss[0] + "/" + ss[1] + "/" + ss[2]
 }
 
-// SetMMCtype works as follows:
+// SetMtype works as follows:
 //
 // Inputs:
 // - file extension
@@ -31,7 +31,13 @@ func (p InputFile) MMCstring() string {
 // - NOT an input: the `DOCTYPE` (it is looked at later)
 //
 // Outputs:
-// - `MMCtype` (a `[3]string` slice that works like a MIME type)
+// - `Mtype` (a `[3]string` slice that works like a MIME type)
+// -and NOTE that it actually uses lower case
+// [0] XML, BIN, TXT, MD
+// [1] IMG, CNT, TOC, SCH(ema); maybe others TBD
+// [2] fmt/filext: XML Pub-ID, BIN, MD flavor, SCH (DTD/MOD/XSL)
+// [3] IFF XML, TBS: Full Public ID string
+//
 // - `IsXML` // , DeclaresDoctype, GuessedDoctype (three booleans, for XML only)
 // - // DeclaresDoctype and GuessedDoctype are mutually exclusive
 //
@@ -41,34 +47,38 @@ func (p InputFile) MMCstring() string {
 // extension. <br/>
 // The following extensions are treated as DITA files: <br/>
 // `.dita` =>	dita ; `.xml` => dita ; `.md` => markdown ; `.markdown` => markdown
-func (p *InputFile) SetMMCtype() *InputFile {
+//
+func (p *InputFile) SetMtype() *InputFile {
 
-	// MimeType can be set by `InputFile.OpenAndLoadContent()`
-	var theMimeType = p.MimeType
 	// theFileExt includes a leading "."
 	var theFileExt = p.FileFullName.FileExt
 
-	if p.MMCtype == nil {
-		p.MMCtype = []string{"-", "-", "-"}
-		// p.MMCtype = make([]string, 0, 3)
+	if p.Mtype == nil {
+		p.Mtype = []string{"-", "-", "-"}
+		// p.Mtype = make([]string, 0, 3)
 	}
 	// Quick exit: IMAGES
-	if S.HasPrefix(theMimeType, "image/") {
-		p.MMCtype[0] = "image"
-		p.IsXML = S.Contains(theMimeType, "xml") ||
-			S.Contains(theMimeType, "svg")
-		isText :=
-			S.Contains(theMimeType, "xml") ||
-				S.Contains(theMimeType, "svg") ||
-				S.Contains(theMimeType, "eps") ||
-				S.Contains(theMimeType, "text")
-		if isText {
-			p.MMCtype[1] = "text"
+	if S.HasPrefix(p.MimeType, "image/") {
+		p.Mtype[1] = "img"
+		p.IsXML = S.Contains(p.MimeType, "xml") ||
+			S.Contains(p.MimeType, "svg")
+		isXML :=
+			S.Contains(p.MimeType, "xml") ||
+				S.Contains(p.MimeType, "svg")
+		isTXT :=
+			S.Contains(p.MimeType, "eps") ||
+				S.Contains(p.MimeType, "text")
+		if isXML {
+			p.Mtype[0] = "xml"
+			println("Q: What is Mtype(2) for xml/img:", p.MimeType)
+		} else if isTXT {
+			p.Mtype[0] = "txt"
 			// TODO
-			println("Q: What is MMCtype(2) for image/text:", theMimeType)
+			println("Q: What is Mtype(2) for txt/img:", p.MimeType)
 		} else {
-			p.MMCtype[1] = "bin"
-			p.MMCtype[2] = S.TrimPrefix(theMimeType, "image/")
+			p.Mtype[0] = "bin"
+			p.Mtype[2] = S.TrimPrefix(p.MimeType, "image/")
+			println("Mtype(2)", p.Mtype[2], "for txt/img:", p.MimeType)
 		}
 		return p
 	}
@@ -79,9 +89,9 @@ func (p *InputFile) SetMMCtype() *InputFile {
 	if S.HasPrefix(theContent, "<!") &&
 		SU.IsInSliceIgnoreCase(theFileExt, DTDtypeFileExtensions) {
 		p.MimeType = "application/xml-dtd"
-		p.MMCtype[0] = "schema"
-		p.MMCtype[1] = "dtd"
-		p.MMCtype[2] = theFileExt[1:4]
+		p.Mtype[1] = "sch"
+		p.Mtype[0] = "xml"
+		p.Mtype[2] = theFileExt[1:4]
 		p.IsXML = true
 		return p
 	}
@@ -91,37 +101,37 @@ func (p *InputFile) SetMMCtype() *InputFile {
 	// and at this point here we don't want to scan ALL the file content,
 	// at least not more than the first few characters.
 	// So, the best we can do is check for a known file extension.
-	if S.HasPrefix(theMimeType, "text/") &&
+	if S.HasPrefix(p.MimeType, "text/") &&
 		SU.IsInSliceIgnoreCase(theFileExt, MarkdownFileExtensions) {
 		p.MimeType = "text/markdown"
-		p.MMCtype[0] = "lwdita"
-		p.MMCtype[1] = "mdita"
-		p.MMCtype[2] = "[TBS]"
+		p.Mtype[0] = "mdita"
+		p.Mtype[1] = "md"
+		p.Mtype[2] = "[TBS]"
 		return p
 	}
-	if theMimeType == "text/html" {
+	if p.MimeType == "text/html" {
 		// Can this be HDITA ?
-		p.MMCtype[0] = "html"
-		p.MMCtype[1] = "[TBS]"
-		p.MMCtype[2] = "(nil)"
+		p.Mtype[0] = "hdita"
+		p.Mtype[1] = "xml"
+		p.Mtype[2] = "(nil)"
 		p.IsXML = true
 		return p
 	}
-	if S.HasPrefix(theMimeType, "text/") &&
+	if S.HasPrefix(p.MimeType, "text/") &&
 		theFileExt == ".dita" { // S.HasPrefix(theFileExt, ".dita") {
 		p.MimeType = "application/dita+xml"
-		p.MMCtype[0] = "dita"
-		p.MMCtype[1] = "[TBS]"
-		p.MMCtype[2] = "topic"
+		p.Mtype[0] = "dita"
+		p.Mtype[1] = "xml"
+		p.Mtype[2] = "topic"
 		p.IsXML = true
 		return p
 	}
-	if S.HasPrefix(theMimeType, "text/") &&
+	if S.HasPrefix(p.MimeType, "text/") &&
 		theFileExt == ".ditamap" {
 		p.MimeType = "application/dita+xml"
-		p.MMCtype[0] = "lwdita"
-		p.MMCtype[1] = "(or_dita)"
-		p.MMCtype[2] = "map"
+		p.Mtype[0] = "toc"
+		p.Mtype[1] = "xml"
+		p.Mtype[2] = "map"
 		p.IsXML = true
 		return p
 	}
@@ -130,7 +140,8 @@ func (p *InputFile) SetMMCtype() *InputFile {
 
 	var detectedXML bool
 	// XML preamble ? Note that whitespace has been trim'd from theContent.
-	if theMimeType == "text/xml" || S.HasSuffix(theMimeType, "xml") {
+	// if theMimeType == "text/xml" || S.HasSuffix(theMimeType, "xml") {
+	if S.Contains(p.MimeType, "xml") {
 		detectedXML = true
 	}
 	if S.HasPrefix(theContent, "<?xml ") {
@@ -145,13 +156,14 @@ func (p *InputFile) SetMMCtype() *InputFile {
 	}
 	if detectedXML {
 		p.IsXML = true
-		if "" != p.MMCtype[0] {
-			panic("SetMMCtype")
+		if "" != p.Mtype[0] {
+			println("SetMtype: IsXML but empty mime[0]")
 		}
-		p.MMCtype[0] = "xml"
-		p.MMCtype[1] = "xml"
+		p.Mtype[0] = "xml"
+		p.Mtype[1] = "TBD"
+		p.Mtype[2] = "TBD"
 	}
-	// fmt.Printf("(DD) (%s:%s) MMCtype(%s) \n",
+	// fmt.Printf("(DD) (%s:%s) Mtype(%s) \n",
 	// 	theFileExt, theMimeType, p.MMCstring())
 	return p
 }

@@ -8,9 +8,46 @@ import (
 	fp "path/filepath"
 	S "strings"
 
+	ft "github.com/h2non/filetype"
 	"github.com/pkg/errors"
 	// "github.com/dimchansky/utfbom"
 )
+
+// InputFile describes in detail a file we have redd or will read.
+// (If field `FileFullName` is nil, it has been created on-the-fly.)
+// In normal usage, the file is opened and its contents are redd
+// into `Contents`, and then it is decoupled from the file system.
+//
+// Because our goal is to process LwDITA, we examine a text file
+// (and its DTDs, if present) and set a type of XDITA, HDITA,
+// MDITA, or DITA. This amounts to making an assertion, and can
+// be rolled back (i.e. the bool can be set back to `false`) if
+// further processing of the file shows that the file does not
+// in fact even try to conform to the previously+incorrectly
+// asserted file type.
+//
+// NOTE A text-based image file (i.e. SVG or EPS) can be
+// `IsImage` but `!IsBinary`.
+//
+type InputFile struct {
+	// RelFilePath is a "short" argument that can be passed in at
+	// creation time. It may of course store an absolute (full) file
+	// path instead. If this is "" then probably the next field is nil.
+	RelFilePath
+	// FileFullName can be nil, e.g. if the
+	// content is created on-the-fly.
+	*FileFullName
+	// FileInfo dusnt really have to be kept around. FIXME.
+	os.FileInfo
+	// MimeType is the type returned by a third-party Mime-type library,
+	// with some possible modifications (e.g. recognising DTDs). Deeper
+	// analysis of the file's contents occurs elsewhere.
+	FileContent
+	MimeType string
+	IsXML    bool
+	MMCtype  []string
+	Mtype    []string
+}
 
 // FileFullName holds the complete, fully-qualified absolute
 // path and base name and file extension of a file or directory.
@@ -73,35 +110,6 @@ func (p FileFullName) String() string {
 	return s
 }
 
-// InputFile describes in detail a file we have redd or will read.
-// It does not deeply examine XML-specific stuff; it is mostly
-// generic. In normal usage, when the `InputFile` is created,
-// the file is opened and its contents are redd into `Contents`,
-// and then we are decoupled from the file system.
-//
-// Because our goal is to process LwDITA, we examine a text file
-// (and its DTDs, if present) and set a type of XDITA, HDITA,
-// MDITA, or DITA. This amounts to making an assertion, and can
-// be rolled back (i.e. the bool can be set back to `false`) if
-// further processing of the file shows that the file does not
-// in fact even try to conform to the asserted file type.
-//
-// NOTE A text-based image file (i.e. SVG or EPS) can be
-// `IsImage` but `!IsBinary`.
-type InputFile struct {
-	// Path is the "short" argument passed in at creation time
-	RelFilePath
-	FileFullName
-	os.FileInfo
-	// MimeType is the type returned by a third-party Mime-type library,
-	// with some possible modifications (e.g. recognising DTDs). Deeper
-	// analysis of the file's contents occurs elsewhere.
-	MimeType string
-	FileContent
-	IsXML   bool
-	MMCtype []string
-}
-
 // Echo implements Markupper.
 func (p InputFile) Echo() string {
 	return p.FileFullName.Echo()
@@ -162,7 +170,7 @@ func NewInputFile(path RelFilePath) (*InputFile, error) {
 	}
 	// We're good to go
 	p := new(InputFile)
-	p.FileFullName = *NewFileFullName(path)
+	p.FileFullName = NewFileFullName(path)
 	fullpath = p.FileFullName.Echo()
 	p.FileInfo, e = os.Stat(fullpath)
 	if e != nil {
@@ -179,7 +187,85 @@ func NewInputFile(path RelFilePath) (*InputFile, error) {
 	if e != nil {
 		return nil, errors.Wrapf(e, "fu.NewInputFile.ioutilReadFile<%s>", fullpath)
 	}
-	p.MimeType, _ = MimeBuffer(bb, int(MimeType))
+
+	// OBSOLETE!
+	// p.MimeType, _ = MimeBuffer(bb, int(HgMimeType))
+	tt, e := ft.Match(bb)
+	// type Type struct {
+	//      MIME      MIME
+	//      Extension string
+	println("EXT", tt.Extension, "MIME", tt.MIME.Type, tt.MIME.Subtype, tt.MIME.Value)
+	p.MimeType = tt.MIME.Type + "/" + tt.MIME.Subtype + "/" + tt.MIME.Value
+
+	// Trim away whitespace! We do this so that other code can
+	// check for known patterns at the "start" of the file.
+	p.FileContent = FileContent(S.TrimSpace(string(bb)))
+	// println("(DD:fu.InF) MIME as analyzed:", p.FileFullName.FileExt, p.MimeType)
+	return p, nil
+}
+
+// ================================================================
+
+// CreateFromFilePath promotes the filepath string to an InputFile.
+func (p *InputFile) CreateFromFilePath(inputFile string) *InputFile {
+	p.RelFilePath = RelFilePath(inputFile)
+	return p
+}
+
+func (p *InputFile) ParseFileName() *InputFile {
+	if p.RelFilePath == "" {
+		return p // BAD ARGUMENT! But not fatal.
+	}
+	var abspath, filext, dirpath string
+	p.FileFullName = new(FileFullName)
+	abspath, _ = fp.Abs(string(p.RelFilePath))
+	dirpath, p.BaseName = fp.Split(abspath)
+	// FIXME Use os.PathSeparator
+	if !S.HasSuffix(dirpath, "/") {
+		panic("fu.ParseFileName.DirPath.missingEndSlash<" + dirpath + ">")
+	}
+	p.DirPath = AbsFilePath(dirpath)
+	if p.BaseName == "" {
+		return p // DIRECTORY! BaseName and FileExt are left to be "".
+	}
+	filext = fp.Ext(p.BaseName)
+	if filext != "" {
+		p.BaseName = S.TrimSuffix(p.BaseName, filext)
+		p.FileExt = S.ToLower(filext)
+	}
+	return p
+}
+
+// OpenAndLoadContent does just that. It also sets
+// MimeType, using some really simple code.
+func (p *InputFile) OpenAndLoadContent() (*InputFile, error) {
+	var e error
+	fullpath := p.FileFullName.Echo()
+	p.FileInfo, e = os.Stat(fullpath)
+	if e != nil {
+		return nil, errors.Wrapf(e, "fu.OpenAndLoadContent.osStat<%s>", fullpath)
+	}
+	// If it's too big, BARF!
+	if p.Size() > 2000000 {
+		return p, errors.New(fmt.Sprintf(
+			"fu.OpenAndLoadContent<%s>: file too large: %d",
+			fullpath, p.Size()))
+	}
+	// Open it (and then immediately close it), just to check.
+	var pF *os.File
+	pF, e = os.Open(fullpath)
+	pF.Close()
+	if e != nil {
+		return nil, errors.Wrapf(e, "fu.OpenAndLoadContent.osOpen<%s>", fullpath)
+	}
+	// Read it in !
+	// TODO/FIXME Use github.com/dimchansky/utfbom Skip()
+	var bb []byte
+	bb, e = ioutil.ReadFile(fullpath)
+	if e != nil {
+		return nil, errors.Wrapf(e, "fu.OpenAndLoadContent.ioutilReadFile<%s>", fullpath)
+	}
+	p.MimeType, _ = MimeBuffer(bb, int(HgMimeType))
 	// Trim away whitespace! We do this so that other code can
 	// check for known patterns at the "start" of the file.
 	p.FileContent = FileContent(S.TrimSpace(string(bb)))

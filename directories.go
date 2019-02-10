@@ -7,9 +7,9 @@ import (
 	"github.com/pkg/errors"
 )
 
-// IsDirectory returns true *iff* the directory
+// DirExists returns true *iff* the directory
 // exists and is in fact a directory.
-func IsDirectory(path AbsFilePath) bool {
+func DirExists(path AbsFilePath) bool {
 	fi, err := os.Lstat(string(path))
 	return (err == nil && fi.IsDir())
 }

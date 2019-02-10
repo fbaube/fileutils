@@ -16,6 +16,100 @@ var gotOkayName bool
 var theOkayName string
 var theOkayFiles []AbsFilePath
 
+// FileWalkInfo records the arguments passed to every call
+// to a `filepath.WalkFunc` that refers to a valid file.
+//
+// NOTE that if an error is passed in, something is pretty
+// messed up. In principle we could still record the call,
+// but the logic is complex, so instead we just print an
+// error message to the console, return, and carry on with
+// other calls.
+//
+// NOTE that thruout this package, the following
+// are *invalid files* that are *not* recorded:
+// * directories
+// * files that fail `FileInfo.Mode().IsRegular()`
+// * emacs backup files (suffixed "~")
+// * dotfiles (prefixed ".")
+// * the contents (recursively downward) of dot folders (prefixed ".")
+//
+type FileWalkInfo struct {
+	Path AbsFilePath
+	Info os.FileInfo
+	Errg error
+}
+
+// ListFilesUnder normally handles the case where `path` is a
+// directory (but `path` may also be a simple file argument).
+// It `error` is not nil, a message is printed to the user
+// and the file in question is not added to the `FileSet`.
+//
+func ListFilesUnder(path string, useSymLinks bool) (FS *FileSet, err error) {
+	if path == "" {
+		return nil, nil
+	}
+	FS = new(FileSet)
+	FS.RelFilePath = RelFilePath(path)
+	FS.AbsFilePath = FS.RelFilePath.AbsFP()
+	FS.FilePaths = make([]string, 0, 10)
+	// A single file ? If so, don't even bother to check it :)
+	if !DirExists(FS.AbsFilePath) {
+		pF, e := os.Open(string(FS.AbsFilePath))
+		defer pF.Close()
+		if e != nil {
+			return nil, e
+		}
+		FS.FilePaths = append(FS.FilePaths, path)
+		return FS, nil
+	}
+	// PROCESS THE DIRECTORY
+	err = fp.Walk(path, func(P string, I os.FileInfo, E error) error {
+		// println("WALKER:", P)
+		// Don't let an error stop processing,
+		// but OTOH let's notify the user.
+		if E != nil {
+			println(fmt.Sprintf("%s: %s", P, E.Error()))
+			return nil
+		}
+		// Ignore odd stuff, except if we are following symlinks.
+		if !I.Mode().IsRegular() {
+			m := I.Mode()
+			var isSymLink bool
+			isSymLink = 0 != (m & os.ModeSymlink)
+			if isSymLink {
+				println("found symlink:", P)
+			}
+			if isSymLink && useSymLinks {
+				// FIXME
+				// println("... following it")
+			} else {
+				return nil
+			}
+		}
+		// Ignore dot files, and completely skip dot folders.
+		filnam := fp.Base(P)
+		if S.HasPrefix(filnam, ".") {
+			if DirExists(AbsFilePath(P)) {
+				return fp.SkipDir
+			}
+			return nil
+		}
+		// Ignore emacs backup files
+		if S.HasSuffix(filnam, "~") {
+			if DirExists(AbsFilePath(P)) {
+				return fp.SkipDir
+			}
+			return nil
+		}
+		FS.FilePaths = append(FS.FilePaths, P)
+		return nil
+	})
+	if err != nil {
+		return nil, errors.Wrapf(err, "fu.ListFilesUnder<%s>", path)
+	}
+	return FS, nil
+}
+
 // GatherInputFiles handles the case where `path` is a directory
 // (but it can also handle `path` being a simple file argument).
 // It always excludes dotfiles (filenames that begin with "."
@@ -39,7 +133,7 @@ func GatherInputFiles(path AbsFilePath, okayExts []string) (okayFiles []AbsFileP
 	theOkayFiles = nil
 
 	// A single file ? If so, just check the fie extension.
-	if !IsDirectory(path) {
+	if !DirExists(path) {
 		sfx := fp.Ext(string(path))
 		if SU.IsInSliceIgnoreCase(sfx, okayExts) || !gotOkayExts {
 			abs, _ := fp.Abs(string(path))
@@ -70,7 +164,7 @@ func GatherNamedFiles(path AbsFilePath, name string) (okayFiles []AbsFilePath, e
 	theOkayFiles = nil
 
 	// A directory ?
-	if !IsDirectory(path) {
+	if !DirExists(path) {
 		panic(fmt.Sprintf("fu.GatherNamedFiles.walkTo<%s:%s>", path, name))
 	}
 	// PROCESS THE DIRECTORY

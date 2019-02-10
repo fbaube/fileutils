@@ -4,35 +4,42 @@ import (
 	"bufio"
 	"bytes"
 	"os"
+	fp "path/filepath"
+	S "strings"
 
+	"github.com/mgutz/str"
 	"github.com/pkg/errors"
 )
 
-// Enslice turns an absolute filepath into the first element of a slice of them.
-func (in AbsFilePath) Enslice() []AbsFilePath {
-	out := make([]AbsFilePath, 0)
-	out = append(out, in)
-	return out
+// AbsWRT is like filepath.Abs(..): it can convert a possibly-relative
+// filepath to an absolute filepath. The difference is that a relative
+// filepath argument is not resolved w.r.t. the current working directory;
+// it is instead done w.r.t. the supplied directory argument.
+func AbsWRT(maybeRelFP string, wrtDir string) string {
+	if fp.IsAbs(maybeRelFP) {
+		return maybeRelFP
+	}
+	return fp.Join(wrtDir, maybeRelFP)
 }
 
 // MustOpenRW opens (and returns) the filepath as a writable file.
-func MustOpenRW(path AbsFilePath) (*os.File, error) {
-	f, e := os.OpenFile(string(path), os.O_RDWR, 0666)
+func MustOpenRW(path string) (*os.File, error) {
+	f, e := os.OpenFile(path, os.O_RDWR, 0666)
 	if e != nil {
 		return nil, errors.Wrapf(e, "fu.MustOpenRW.OpenFile<%s>", path)
 	}
-	fi, e := os.Lstat(string(path))
+	fi, e := os.Lstat(path)
 	if e != nil || !fi.Mode().IsRegular() {
 		return nil, errors.Wrapf(e, "fu.MustOpenRW.notaFile<%s>", path)
 	}
 	return f, nil
 }
 
-// MustOpenRO opens (ansd returns) the filepath as a readable file.
+// TryOpenRO opens (and returns) the filepath as a readable file.
 func TryOpenRO(path AbsFilePath) (*os.File, error) {
 	f, e := os.Open(string(path))
 	if e != nil {
-		return nil, errors.Wrapf(e, "fu.TryOpenRO.OpenFile<%s>", path)
+		return nil, errors.Wrapf(e, "fu.TryOpenRO.os.Open<%s>", path)
 	}
 	fi, e := os.Lstat(string(path))
 	if e != nil || fi.IsDir() {
@@ -41,7 +48,8 @@ func TryOpenRO(path AbsFilePath) (*os.File, error) {
 	return f, nil
 }
 
-// MustCreateEmpty opens the filepath as a writable empty file.
+// MustCreateEmpty opens the filepath as a writable empty file,
+// truncating it if it exists and is non-empty.
 func MustCreateEmpty(path AbsFilePath) (*os.File, error) {
 	// Create creates the named file with mode 0666 (before umask),
 	// truncating it if it already exists. If successful, methods
@@ -70,4 +78,60 @@ func SameContents(f1, f2 *os.File) bool {
 		}
 	}
 	return true
+}
+
+// Exists returns true *iff* the file
+// exists and is in fact a file.
+func Exists(path string) bool {
+	fi, err := os.Lstat(path)
+	return (err == nil && fi.Mode().IsRegular())
+}
+
+// Exists returns true *iff* the file
+// exists and is in fact a file.
+func (afp AbsFilePath) Exists() bool {
+	fi, err := os.Lstat(afp.S())
+	return (err == nil && fi.Mode().IsRegular())
+}
+
+// IsNonEmpty returns true *iff* the file exists
+// *and* contains at least one byte of data.
+func IsNonEmpty(path string) bool {
+	fi, err := os.Lstat(path)
+	return (err == nil && fi.Mode().IsRegular() && fi.Size() > 0)
+}
+
+// IsXML returns true *iff* the file exists *and*
+// appears to be XML. The check is simple though.
+func IsXML(path string) bool {
+	if !IsNonEmpty(path) {
+		return false
+	}
+	file, e := os.Open(path)
+	if e != nil {
+		panic("fu.IsXML.os.Open<" + path + ">")
+	}
+	var bb []byte
+	bb = make([]byte, 256)
+	nRedd, e := file.Read(bb)
+	if e != nil {
+		panic("fu.IsXML")
+	}
+	// the minimum valid XML file is " <x/> "
+	if nRedd < 4 {
+		return false
+	}
+	var s string
+	s = S.TrimSpace(string(bb))
+	if !S.HasPrefix(s, "<") {
+		return false
+	}
+	OKprefixes := []string{"<?", "<!", "<--"} // and tags!
+	for _, ss := range OKprefixes {
+		if S.HasPrefix(s, ss) {
+			return true
+		}
+	}
+	// We require valid XML tags to begin with A-Za-z
+	return str.IsAlpha(str.CharAt(s, 1))
 }

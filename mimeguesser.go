@@ -1,6 +1,8 @@
 package fileutils
 
-import "github.com/pkg/errors"
+import (
+	"github.com/pkg/errors"
+)
 
 // NOTE The hosom/gomagic library is licensed BSD-3,
 // and this file (mimeguesser.go) borrows heavily from it.
@@ -22,13 +24,13 @@ type MimeFlag int
 // FULL: image/jpeg; charset=binary
 const (
 	// MimeTextual returns a textual description
-	MimeTextual MimeFlag = MimeFlag(0)
+	HgMimeTextual MimeFlag = MimeFlag(0)
 	// MimeType returns a MIME type string
-	MimeType MimeFlag = MimeFlag(int(hosom.MAGIC_MIME_TYPE))
+	HgMimeType MimeFlag = MimeFlag(int(hosom.MAGIC_MIME_TYPE))
 	// MimeEnc returns a MIME encoding
-	MimeEncoding MimeFlag = MimeFlag(int(hosom.MAGIC_MIME_ENCODING))
+	HgMimeEncoding MimeFlag = MimeFlag(int(hosom.MAGIC_MIME_ENCODING))
 	// MimeFull returns MIME-type-string ";" MIME-encoding
-	MimeFull MimeFlag = MimeFlag(int(hosom.MAGIC_MIME))
+	HgMimeFull MimeFlag = MimeFlag(int(hosom.MAGIC_MIME))
 )
 
 // MimeFile returns MIME info about the file name.
@@ -49,6 +51,9 @@ func MimeFile(filename string, mode MimeFlag) (string, error) {
 // MimeBuffer returns MIME info.
 // "mode" is one of the values Mime*
 func MimeBuffer(buf []byte, mode int) (string, error) {
+	if len(buf) == 0 {
+		return "", nil
+	}
 	m, e := hosom.Open(hosom.Flag(mode))
 	defer m.Close()
 	if e != nil {
