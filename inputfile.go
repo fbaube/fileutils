@@ -8,7 +8,6 @@ import (
 	fp "path/filepath"
 	S "strings"
 
-	ft "github.com/h2non/filetype"
 	"github.com/pkg/errors"
 	// "github.com/dimchansky/utfbom"
 )
@@ -43,10 +42,15 @@ type InputFile struct {
 	// with some possible modifications (e.g. recognising DTDs). Deeper
 	// analysis of the file's contents occurs elsewhere.
 	FileContent
-	MimeType string
-	IsXML    bool
-	MMCtype  []string
-	Mtype    []string
+	// IsXML is set using various heuristics of our own devising.
+	IsXML bool
+	// MagicMimeType is set using a bridge to libmagic.
+	MagicMimeType string
+	// SniffedMimeType is set using the Golang stdlib.
+	SniftMimeType string
+	// These two fields are set by our own code, based on
+	// the results set in the preceding four string fields.
+	MMCtype, Mtype []string
 }
 
 // FileFullName holds the complete, fully-qualified absolute
@@ -119,7 +123,7 @@ func (p InputFile) Echo() string {
 func (p InputFile) String() string {
 	var s = "Dir"
 	if !p.FileInfo.IsDir() {
-		s = fmt.Sprintf("Len<%d>Mime<%s>", p.FileInfo.Size(), p.MimeType)
+		s = fmt.Sprintf("Len<%d>Mime<%s>", p.FileInfo.Size(), p.MagicMimeType)
 	}
 	return fmt.Sprintf("InputFile<%s=%s>:%s",
 		p.RelFilePath, p.FileFullName.String(), s)
@@ -187,20 +191,14 @@ func NewInputFile(path RelFilePath) (*InputFile, error) {
 	if e != nil {
 		return nil, errors.Wrapf(e, "fu.NewInputFile.ioutilReadFile<%s>", fullpath)
 	}
-
-	// OBSOLETE!
-	// p.MimeType, _ = MimeBuffer(bb, int(HgMimeType))
-	tt, e := ft.Match(bb)
-	// type Type struct {
-	//      MIME      MIME
-	//      Extension string
-	println("EXT", tt.Extension, "MIME", tt.MIME.Type, tt.MIME.Subtype, tt.MIME.Value)
-	p.MimeType = tt.MIME.Type + "/" + tt.MIME.Subtype + "/" + tt.MIME.Value
-
 	// Trim away whitespace! We do this so that other code can
 	// check for known patterns at the "start" of the file.
 	p.FileContent = FileContent(S.TrimSpace(string(bb)))
-	// println("(DD:fu.InF) MIME as analyzed:", p.FileFullName.FileExt, p.MimeType)
+
+	p.SetContype()
+	println("\t", "magic:", p.MagicMimeType)
+	println("\t", "snift:", p.SniftMimeType)
+
 	return p, nil
 }
 
@@ -265,11 +263,11 @@ func (p *InputFile) OpenAndLoadContent() (*InputFile, error) {
 	if e != nil {
 		return nil, errors.Wrapf(e, "fu.OpenAndLoadContent.ioutilReadFile<%s>", fullpath)
 	}
-	p.MimeType, _ = MimeBuffer(bb, int(HgMimeType))
-	// Trim away whitespace! We do this so that other code can
-	// check for known patterns at the "start" of the file.
-	p.FileContent = FileContent(S.TrimSpace(string(bb)))
-	// println("(DD:fu.InF) MIME as analyzed:", p.FileFullName.FileExt, p.MimeType)
+	p.FileContent = FileContent(string(bb))
+	p.SetContype()
+	println("\t", "magicMT:", p.MagicMimeType)
+	println("\t", "sniftMT:", p.SniftMimeType)
+
 	return p, nil
 }
 
@@ -286,6 +284,6 @@ func NewInputFileFromStdin() (*InputFile, error) {
 		return nil, errors.Wrap(e, "Can't read standard input")
 	}
 	p.FileContent = FileContent(S.TrimSpace(string(bb)))
-	p.MimeType = "text/plain"
+	p.MagicMimeType = "text/plain"
 	return p, nil
 }

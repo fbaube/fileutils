@@ -41,10 +41,11 @@ func (p InputFile) MMCstring() string {
 // extension. <br/>
 // The following extensions are treated as DITA files: <br/>
 // `.dita` =>	dita ; `.xml` => dita ; `.md` => markdown ; `.markdown` => markdown
+//
 func (p *InputFile) SetMMCtype() *InputFile {
 
 	// MimeType can be set by `InputFile.OpenAndLoadContent()`
-	var theMimeType = p.MimeType
+	var theMimeType = p.MagicMimeType
 	// theFileExt includes a leading "."
 	var theFileExt = p.FileFullName.FileExt
 
@@ -78,7 +79,7 @@ func (p *InputFile) SetMMCtype() *InputFile {
 	// Quick exit: DTDs ( .dtd .mod .ent )
 	if S.HasPrefix(theContent, "<!") &&
 		SU.IsInSliceIgnoreCase(theFileExt, DTDtypeFileExtensions) {
-		p.MimeType = "application/xml-dtd"
+		p.MagicMimeType = "application/xml-dtd"
 		p.MMCtype[0] = "schema"
 		p.MMCtype[1] = "dtd"
 		p.MMCtype[2] = theFileExt[1:4]
@@ -93,7 +94,7 @@ func (p *InputFile) SetMMCtype() *InputFile {
 	// So, the best we can do is check for a known file extension.
 	if S.HasPrefix(theMimeType, "text/") &&
 		SU.IsInSliceIgnoreCase(theFileExt, MarkdownFileExtensions) {
-		p.MimeType = "text/markdown"
+		p.MagicMimeType = "text/markdown"
 		p.MMCtype[0] = "lwdita"
 		p.MMCtype[1] = "mdita"
 		p.MMCtype[2] = "[TBS]"
@@ -109,7 +110,7 @@ func (p *InputFile) SetMMCtype() *InputFile {
 	}
 	if S.HasPrefix(theMimeType, "text/") &&
 		theFileExt == ".dita" { // S.HasPrefix(theFileExt, ".dita") {
-		p.MimeType = "application/dita+xml"
+		p.MagicMimeType = "application/dita+xml"
 		p.MMCtype[0] = "dita"
 		p.MMCtype[1] = "[TBS]"
 		p.MMCtype[2] = "topic"
@@ -118,7 +119,7 @@ func (p *InputFile) SetMMCtype() *InputFile {
 	}
 	if S.HasPrefix(theMimeType, "text/") &&
 		theFileExt == ".ditamap" {
-		p.MimeType = "application/dita+xml"
+		p.MagicMimeType = "application/dita+xml"
 		p.MMCtype[0] = "lwdita"
 		p.MMCtype[1] = "(or_dita)"
 		p.MMCtype[2] = "map"
@@ -146,7 +147,7 @@ func (p *InputFile) SetMMCtype() *InputFile {
 	if detectedXML {
 		p.IsXML = true
 		if "" != p.MMCtype[0] {
-			panic("SetMMCtype")
+			println("SetMMCtype: misjudged XML ?")
 		}
 		p.MMCtype[0] = "xml"
 		p.MMCtype[1] = "xml"
