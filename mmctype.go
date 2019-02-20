@@ -45,7 +45,7 @@ func (p InputFile) MMCstring() string {
 func (p *InputFile) SetMMCtype() *InputFile {
 
 	// MimeType can be set by `InputFile.OpenAndLoadContent()`
-	var theMimeType = p.MagicMimeType
+	var theMimeType = p.SniftMimeType
 	// theFileExt includes a leading "."
 	var theFileExt = p.FileFullName.FileExt
 

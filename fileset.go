@@ -31,3 +31,15 @@ func (p *FileSet) Size() int {
 	}
 	return len(p.FilePaths)
 }
+
+func NewOneFileSet(s string) *FileSet {
+	if s == "" || !Exists(s) {
+		return nil
+	}
+	p := new(FileSet)
+	p.RelFilePath = RelFilePath(s)
+	p.AbsFilePath = p.RelFilePath.AbsFP()
+	p.FilePaths = make([]string, 0, 1)
+	p.FilePaths = append(p.FilePaths, string(p.AbsFilePath))
+	return p
+}
