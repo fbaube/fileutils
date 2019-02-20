@@ -25,21 +25,20 @@ func (p InputFile) Mstring() string {
 // SetMtype works as follows:
 //
 // Inputs:
-// - file extension
+// - file extension (not really helpful OR reliable)
 // - file mimetype (as already analyzed by a simple third party library)
 // - file content
 // - NOT an input: the `DOCTYPE` (it is looked at later)
 //
 // Outputs:
 // - `Mtype` (a `[3]string` slice that works like a MIME type)
-// -and NOTE that it actually uses lower case
-// [0] XML, BIN, TXT, MD
-// [1] IMG, CNT, TOC, SCH(ema); maybe others TBD
-// [2] fmt/filext: XML Pub-ID, BIN, MD flavor, SCH (DTD/MOD/XSL)
+// [0] xml, md, txt, bin
+// [1] img, cnt, map, sch(ema); maybe others TBD
+// [2] fmt/filext: XML Pub-ID/filext, MD flavor(?), SCH DTD/MOD/XSL, BIN filext
 // [3] IFF XML, TBS: Full Public ID string
 //
-// - `IsXML` // , DeclaresDoctype, GuessedDoctype (three booleans, for XML only)
-// - // DeclaresDoctype and GuessedDoctype are mutually exclusive
+// - `IsXML` // , DeclaredDoctype, GuessedDoctype (three bool's, for XML only)
+// - // DeclaredDoctype and GuessedDoctype are mutually exclusive
 //
 // Reference material re. MDITA: <br/>
 // https://github.com/jelovirt/dita-ot-markdown/wiki/Syntax-reference
@@ -55,30 +54,31 @@ func (p *InputFile) SetMtype() *InputFile {
 
 	if p.Mtype == nil {
 		p.Mtype = []string{"-", "-", "-"}
-		// p.Mtype = make([]string, 0, 3)
 	}
-	// Quick exit: IMAGES
-	if S.HasPrefix(p.MagicMimeType, "image/") {
+	// For easier checks, incl. "contains"
+	theMT := p.SniftMimeType
+	mgcMT := S.ToLower(p.MagicMimeType)
+	// For later use
+	hasXML := S.Contains(theMT, "xml") || S.Contains(mgcMT, "xml")
+	hasSVG := S.Contains(theMT, "svg") || S.Contains(mgcMT, "svg")
+
+	// Quick exit: IMAGES (including SVG!)
+	if S.HasPrefix(theMT, "image/") {
 		p.Mtype[1] = "img"
-		p.IsXML = S.Contains(p.MagicMimeType, "xml") ||
-			S.Contains(p.MagicMimeType, "svg")
-		isXML :=
-			S.Contains(p.MagicMimeType, "xml") ||
-				S.Contains(p.MagicMimeType, "svg")
-		isTXT :=
-			S.Contains(p.MagicMimeType, "eps") ||
-				S.Contains(p.MagicMimeType, "text")
-		if isXML {
+		hasEPS := S.Contains(theMT, "eps") || S.Contains(mgcMT, "eps")
+		hasTXT := S.Contains(theMT, "eps") || S.Contains(theMT, "text")
+		p.IsXML = hasXML || hasSVG
+		if hasXML {
 			p.Mtype[0] = "xml"
-			println("Q: What is Mtype(2) for xml/img:", p.MagicMimeType)
-		} else if isTXT {
+			println("Q: What is Mtype(2) for image/:xml", theMT, mgcMT)
+		} else if hasTXT || hasEPS {
 			p.Mtype[0] = "txt"
 			// TODO
-			println("Q: What is Mtype(2) for txt/img:", p.MagicMimeType)
+			println("Q: What is Mtype(2) for image/:text", theMT, mgcMT)
 		} else {
 			p.Mtype[0] = "bin"
 			p.Mtype[2] = S.TrimPrefix(p.MagicMimeType, "image/")
-			println("Mtype(2)", p.Mtype[2], "for txt/img:", p.MagicMimeType)
+			println("Mtype(2)", p.Mtype[2], "for img/bin:", p.MagicMimeType)
 		}
 		return p
 	}
@@ -88,10 +88,10 @@ func (p *InputFile) SetMtype() *InputFile {
 	// Quick exit: DTDs ( .dtd .mod .ent )
 	if S.HasPrefix(theContent, "<!") &&
 		SU.IsInSliceIgnoreCase(theFileExt, DTDtypeFileExtensions) {
-		p.MagicMimeType = "application/xml-dtd"
+		p.SniftMimeType = "application/xml-dtd"
 		p.Mtype[1] = "sch"
 		p.Mtype[0] = "xml"
-		p.Mtype[2] = theFileExt[1:4]
+		p.Mtype[2] = theFileExt[1:]
 		p.IsXML = true
 		return p
 	}
@@ -101,27 +101,27 @@ func (p *InputFile) SetMtype() *InputFile {
 	// and at this point here we don't want to scan ALL the file content,
 	// at least not more than the first few characters.
 	// So, the best we can do is check for a known file extension.
-	if S.HasPrefix(p.MagicMimeType, "text/") &&
+	if S.HasPrefix(p.SniftMimeType, "text/") &&
 		SU.IsInSliceIgnoreCase(theFileExt, MarkdownFileExtensions) {
-		p.MagicMimeType = "text/markdown"
-		p.Mtype[0] = "mdita"
-		p.Mtype[1] = "md"
-		p.Mtype[2] = "[TBS]"
+		p.SniftMimeType = "text/markdown"
+		p.Mtype[0] = "md"
+		p.Mtype[1] = "cnt" // or might be "map" ?
+		p.Mtype[2] = "[flavr:TBS]"
 		return p
 	}
-	if p.MagicMimeType == "text/html" {
+	if p.SniftMimeType == "text/html" {
 		// Can this be HDITA ?
-		p.Mtype[0] = "hdita"
-		p.Mtype[1] = "xml"
-		p.Mtype[2] = "(nil)"
+		p.Mtype[0] = "xml"
+		p.Mtype[1] = "html" // "hdita"
+		p.Mtype[2] = "(nil?!)"
 		p.IsXML = true
 		return p
 	}
-	if S.HasPrefix(p.MagicMimeType, "text/") &&
+	if S.HasPrefix(p.SniftMimeType, "text/") &&
 		theFileExt == ".dita" { // S.HasPrefix(theFileExt, ".dita") {
-		p.MagicMimeType = "application/dita+xml"
-		p.Mtype[0] = "dita"
-		p.Mtype[1] = "xml"
+		p.SniftMimeType = "application/dita+xml"
+		p.Mtype[0] = "xml"
+		p.Mtype[1] = "dita"
 		p.Mtype[2] = "topic"
 		p.IsXML = true
 		return p
@@ -129,8 +129,8 @@ func (p *InputFile) SetMtype() *InputFile {
 	if S.HasPrefix(p.MagicMimeType, "text/") &&
 		theFileExt == ".ditamap" {
 		p.MagicMimeType = "application/dita+xml"
-		p.Mtype[0] = "toc"
-		p.Mtype[1] = "xml"
+		p.Mtype[0] = "xml"
+		p.Mtype[1] = "dita"
 		p.Mtype[2] = "map"
 		p.IsXML = true
 		return p
@@ -141,7 +141,7 @@ func (p *InputFile) SetMtype() *InputFile {
 	var detectedXML bool
 	// XML preamble ? Note that whitespace has been trim'd from theContent.
 	// if theMimeType == "text/xml" || S.HasSuffix(theMimeType, "xml") {
-	if S.Contains(p.MagicMimeType, "xml") {
+	if S.Contains(theMT, "xml") {
 		detectedXML = true
 	}
 	if S.HasPrefix(theContent, "<?xml ") {
@@ -152,11 +152,12 @@ func (p *InputFile) SetMtype() *InputFile {
 	}
 	// If XML not detected yet, maybe try to detect a tag in the first line
 	if !detectedXML {
+		println("TODO: Look for an XML tag (fu.mtype.Set.L155)")
 		// if S.HasPrefix(string(pIF.Contents), "<") && S.
 	}
 	if detectedXML {
 		p.IsXML = true
-		if "" != p.Mtype[0] {
+		if "-" != p.Mtype[0] {
 			println("SetMtype: IsXML but empty mime[0]")
 		}
 		p.Mtype[0] = "xml"

@@ -236,16 +236,16 @@ func (p *InputFile) ParseFileName() *InputFile {
 
 // OpenAndLoadContent does just that. It also sets
 // MimeType, using some really simple code.
-func (p *InputFile) OpenAndLoadContent() (*InputFile, error) {
+func (p *InputFile) OpenAndLoadContent() error {
 	var e error
 	fullpath := p.FileFullName.Echo()
 	p.FileInfo, e = os.Stat(fullpath)
 	if e != nil {
-		return nil, errors.Wrapf(e, "fu.OpenAndLoadContent.osStat<%s>", fullpath)
+		return errors.Wrapf(e, "fu.OpenAndLoadContent.osStat<%s>", fullpath)
 	}
 	// If it's too big, BARF!
 	if p.Size() > 2000000 {
-		return p, errors.New(fmt.Sprintf(
+		return errors.New(fmt.Sprintf(
 			"fu.OpenAndLoadContent<%s>: file too large: %d",
 			fullpath, p.Size()))
 	}
@@ -254,21 +254,21 @@ func (p *InputFile) OpenAndLoadContent() (*InputFile, error) {
 	pF, e = os.Open(fullpath)
 	pF.Close()
 	if e != nil {
-		return nil, errors.Wrapf(e, "fu.OpenAndLoadContent.osOpen<%s>", fullpath)
+		return errors.Wrapf(e, "fu.OpenAndLoadContent.osOpen<%s>", fullpath)
 	}
 	// Read it in !
 	// TODO/FIXME Use github.com/dimchansky/utfbom Skip()
 	var bb []byte
 	bb, e = ioutil.ReadFile(fullpath)
 	if e != nil {
-		return nil, errors.Wrapf(e, "fu.OpenAndLoadContent.ioutilReadFile<%s>", fullpath)
+		return errors.Wrapf(e, "fu.OpenAndLoadContent.ioutilReadFile<%s>", fullpath)
 	}
 	p.FileContent = FileContent(string(bb))
 	p.SetContype()
 	println("\t", "magicMT:", p.MagicMimeType)
 	println("\t", "sniftMT:", p.SniftMimeType)
 
-	return p, nil
+	return nil
 }
 
 // NewInputFileFromStdin reads `os.Stdin` completely and returns a new

@@ -34,15 +34,11 @@ mean that the document is XML.
 //
 // The fields of interest in `struct fileutiles.InputFile`:
 //
-// Set using various heuristics of our own devising.
-// IsXML bool
-// Set using Golang stdlib.
-// FilextMimeType, SniffedMimeType string
-// Set using third-party ibraries.
-// H2nonMimeType, HgMimeType string
-// Set by our own code, based on the results
-// set in the preceding four string fields.
-// MMCtype, Mtype []string
+// - Set using various heuristics of our own devising: IsXML bool
+// - Set using Golang stdlib: SniftMimeType string
+// - Set using 3rd-party lib: MagicMimeType string
+// - Set by our own code, based on the results set
+// in the preceding string fields: Mtype []string
 //
 func (pIF *InputFile) SetContype() {
 	// We're gonna need the file extension and the content itself.
@@ -54,9 +50,6 @@ func (pIF *InputFile) SetContype() {
 		filext = "." + filext
 	}
 	pIF.MagicMimeType = GoMagic(content)
-	ctyp := http.DetectContentType([]byte(content))
-	pIF.SniftMimeType = S.TrimSuffix(ctyp, "; charset=utf-8")
-	// pIF.MMCtype =
-	// pIF.Mtype =
-
+	contyp := http.DetectContentType([]byte(content))
+	pIF.SniftMimeType = S.TrimSuffix(contyp, "; charset=utf-8")
 }
