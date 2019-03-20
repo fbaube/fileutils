@@ -33,13 +33,13 @@ func (p *FileSet) Size() int {
 }
 
 func NewOneFileSet(s string) *FileSet {
-	if s == "" || !Exists(s) {
-		return nil
-	}
 	p := new(FileSet)
+	p.FilePaths = make([]string, 0, 1)
+	if s == "" || !Exists(s) {
+		return p
+	}
 	p.RelFilePath = RelFilePath(s)
 	p.AbsFilePath = p.RelFilePath.AbsFP()
-	p.FilePaths = make([]string, 0, 1)
 	p.FilePaths = append(p.FilePaths, string(p.AbsFilePath))
 	return p
 }

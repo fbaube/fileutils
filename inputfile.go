@@ -48,9 +48,9 @@ type InputFile struct {
 	MagicMimeType string
 	// SniffedMimeType is set using the Golang stdlib.
 	SniftMimeType string
-	// These two fields are set by our own code, based on
-	// the results set in the preceding four string fields.
-	MMCtype, Mtype []string
+	// This field is set by our own code, based on the
+	// results set in the preceding four string fields.
+	Mtype []string
 }
 
 // FileFullName holds the complete, fully-qualified absolute
@@ -265,9 +265,7 @@ func (p *InputFile) OpenAndLoadContent() error {
 	}
 	p.FileContent = FileContent(string(bb))
 	p.SetContype()
-	println("\t", "magicMT:", p.MagicMimeType)
-	println("\t", "sniftMT:", p.SniftMimeType)
-
+	// fmt.Printf("    MIME: (%s) %s \n", p.SniftMimeType, p.MagicMimeType)
 	return nil
 }
 

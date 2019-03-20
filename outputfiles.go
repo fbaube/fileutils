@@ -86,11 +86,11 @@ func (pIF *InputFile) NewOutputFiles(subdirSuffix string) (*OutputFiles, error) 
 	}
 	dn = AbsFilePath(sdn)
 	// Create (or open) the directory
-	f, e := MustOpenOrCreateDir(dn)
-	defer f.Close()
-	if e != nil {
-		return p, errors.Wrapf(e, "fu.NewOutputFiles.MustOpenOrCreateDir<%s>", dn)
-	}
+	f := Must(OpenOrCreateDir(dn))
+	defer f.Close() /*
+		if e != nil {
+			return p, errors.Wrapf(e, "fu.NewOutputFiles.MustOpenOrCreateDir<%s>", dn)
+		} */
 	p.OutputDirPath = dn
 	return p, nil
 }

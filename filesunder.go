@@ -216,11 +216,11 @@ func myWalkFunc(path string, finfo os.FileInfo, inerr error) error {
 	if e != nil {
 		return errors.Wrapf(e, "fu.myWalkFunc<%s>", path)
 	}
-	f, e = TryOpenRO(abspath)
-	defer f.Close()
-	if e != nil {
-		return errors.Wrapf(e, "fu.myWalkFunc.MustOpenRO<%s>", path)
-	}
+	f = Must(OpenRO(abspath))
+	defer f.Close() /*
+		if e != nil {
+			return errors.Wrapf(e, "fu.myWalkFunc.MustOpenRO<%s>", path)
+		} */
 	// fmt.Printf("(DD) Infile OK: %+v \n", abspath)
 	theOkayFiles = append(theOkayFiles, abspath)
 	return nil
