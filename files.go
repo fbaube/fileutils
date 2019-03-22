@@ -3,8 +3,6 @@ package fileutils
 import (
 	"bufio"
 	"bytes"
-	"fmt"
-	"io"
 	"os"
 	fp "path/filepath"
 	S "strings"
@@ -138,40 +136,4 @@ func IsXML(path string) bool {
 	}
 	// We require valid XML tags to begin with A-Za-z
 	return str.IsAlpha(str.CharAt(s, 1))
-}
-
-func CopyFileFromTo(src, dst string) error {
-	if dst == "" {
-		return nil
-	}
-	if src == "" {
-		return fmt.Errorf("No source for copy to: " + src)
-	}
-	sourceFileStat, err := os.Stat(src)
-	if err != nil {
-		return err
-	}
-	if !sourceFileStat.Mode().IsRegular() {
-		return fmt.Errorf("Not a regular file: " + src)
-	}
-	source, err := os.Open(src)
-	if err != nil {
-		return err
-	}
-	defer source.Close()
-
-	destin, err := os.Create(dst)
-	if err != nil {
-		return err
-	}
-	defer destin.Close()
-	nBytes, err := io.Copy(destin, source)
-	if err != nil {
-		return err
-	}
-	if nBytes != sourceFileStat.Size() {
-		return fmt.Errorf("File copy error: had %d bytes, copied %d bytes",
-			sourceFileStat.Size(), nBytes)
-	}
-	return nil
 }
