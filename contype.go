@@ -25,7 +25,7 @@ Any xmlns, xmlns:*, or xml:* attributes, such as xml:lang or xml:base,
 mean that the document is XML.
 */
 
-// SetContype calls code in the `contype` sub-package and comprises four steps:
+// SetContype comprises four steps:
 //
 // * use stdlib and third-party libraries to make initial guesses
 // * dump those guesses for the purpose of evaluating those libraries
@@ -50,6 +50,7 @@ func (pIF *InputFile) SetContype() {
 		filext = "." + filext
 	}
 	pIF.MagicMimeType = GoMagic(content)
+	// This next call assigns "text/html" to DITA maps :-/
 	contyp := http.DetectContentType([]byte(content))
 	pIF.SniftMimeType = S.TrimSuffix(contyp, "; charset=utf-8")
 }
