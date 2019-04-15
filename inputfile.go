@@ -44,7 +44,7 @@ type InputFile struct {
 	FileContent
 	// IsXML is set using various heuristics of our own devising.
 	IsXML bool
-	// MagicMimeType is set using a bridge to libmagic.
+	// MagicMimeType is set using a 3rd party binding to libmagic.
 	MagicMimeType string
 	// SniffedMimeType is set using the Golang stdlib.
 	SniftMimeType string

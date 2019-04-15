@@ -50,6 +50,12 @@ func (pIF *InputFile) SetContype() {
 		filext = "." + filext
 	}
 	pIF.MagicMimeType = GoMagic(content)
+	// Trim long JPEG descriptions
+	if s := pIF.MagicMimeType; S.HasPrefix(s, "JPEG") {
+		if i := S.Index(s, "xres"); i > 0 {
+			pIF.MagicMimeType = "JPEG, " + s[i:]
+		}
+	}
 	// This next call assigns "text/html" to DITA maps :-/
 	contyp := http.DetectContentType([]byte(content))
 	pIF.SniftMimeType = S.TrimSuffix(contyp, "; charset=utf-8")

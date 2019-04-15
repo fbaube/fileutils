@@ -33,7 +33,7 @@ type FileContent string
 const PathSep = string(os.PathSeparator)
 
 // NOTE See init(), at bottom
-var homedir AbsFilePath
+var homedir, currentworkingdir string
 
 // GetHomeDir is a convenience function, and
 // refers to the invoking user's home directory.
@@ -73,20 +73,36 @@ func (afp AbsFilePath) RelFP() RelFilePath {
 	return RelFilePath(afp)
 }
 
-/*
-// ResolveToAbsolute relies on `filepath.Abs(path)`.
-func (rpf RelFilePath) ResolveToAbsolute() AbsFilePath {
-	if S.HasPrefix(string(rpf), PathSep) {
-		return AbsFilePath(rpf)
+// NiceFP shortens a filepath by substituting "." or "~".
+func NiceFP(s string) string {
+	// if it's missing, and has an assumed/default...
+	if s == "" {
+		return "."
 	}
-	abspath, e := fp.Abs(string(rpf))
-	if e != nil {
-		panic("ResolveRelToAbs: " + rpf)
+	// If it can't be normalised...
+	if s == "." || s == "~" || s == PathSep {
+		return s
 	}
-	return AbsFilePath(abspath)
+	// If it can't be further normalised...
+	if S.HasPrefix(s, "."+PathSep) || S.HasPrefix(s, "~"+PathSep) {
+		return s
+	}
+	// At this point, if it's not an absolute FP, it's a problem.
+	if !S.HasPrefix(s, PathSep) {
+		panic("NiceFP barfs on: " + s)
+	}
+	if S.HasPrefix(s, currentworkingdir) {
+		bytesToTrim := len(currentworkingdir) + 1
+		return "." + PathSep + s[bytesToTrim:]
+	}
+	if S.HasPrefix(s, homedir) {
+		bytesToTrim := len(homedir) + 1
+		return "." + PathSep + s[bytesToTrim:]
+	}
+	return s
 }
-*/
 
+/*
 // ElideUserHome converts an abs path under homedir to a path
 // that uses "~" (but is still an abs file path!)."
 func (afp AbsFilePath) ElideUserHome() AbsFilePath {
@@ -94,12 +110,27 @@ func (afp AbsFilePath) ElideUserHome() AbsFilePath {
 	if !fp.IsAbs(s) {
 		panic("fu.elideUserHome: not absolute FP: " + afp)
 	}
-	if !afp.StartsWith(homedir) {
+	if !afp.StartsWith(AbsFilePath(homedir)) {
 		return afp
 	}
 	bytesToTrim := len(homedir) + 1
 	return AbsFilePath("~" + PathSep + s[bytesToTrim:])
 }
+
+// ElideUserHome converts an abs path under homedir to a path
+// that uses "~" (but is still an abs file path!)."
+func (afp AbsFilePath) ElideCWD() AbsFilePath {
+	s := afp.S()
+	if !fp.IsAbs(s) {
+		panic("fu.elideCWD: not absolute FP: " + afp)
+	}
+	if !afp.StartsWith(AbsFilePath(currentworkingdir)) {
+		return afp
+	}
+	bytesToTrim := len(currentworkingdir) + 1
+	return AbsFilePath("." + PathSep + s[bytesToTrim:])
+}
+*/
 
 // AbsFilePath is a convenience function to keep code cleaner.
 func (afp AbsFilePath) Append(rfp RelFilePath) AbsFilePath {
@@ -114,8 +145,16 @@ func (afp AbsFilePath) StartsWith(beg AbsFilePath) bool {
 func init() {
 	username, e := user.Current()
 	if e != nil {
-		println("==> ERROR: Could not determine current user")
+		println("==> ERROR: Cannot determine current user")
 		return
 	}
-	homedir = AbsFilePath(username.HomeDir)
+	homedir = username.HomeDir
+	println("HOME:", homedir)
+
+	currentworkingdir, e = os.Getwd()
+	if e != nil {
+		println("==> ERROR: Cannot determine current working directory")
+		return
+	}
+	println(" CWD:", currentworkingdir)
 }
