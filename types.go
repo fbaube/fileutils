@@ -3,7 +3,7 @@ package fileutils
 import (
 	"os"
 	"os/user"
-	fp "path/filepath"
+	FP "path/filepath"
 	S "strings"
 )
 
@@ -44,7 +44,7 @@ func GetHomeDir() string {
 // S is a utility method to keep code cleaner.
 func (afp AbsFilePath) S() string {
 	s := string(afp)
-	if !fp.IsAbs(s) {
+	if !FP.IsAbs(s) {
 		panic("FU.types: AbsFP is Rel: " + s)
 	}
 	return s
@@ -58,10 +58,13 @@ func (rfp RelFilePath) S() string {
 // AbsFP is like filepath.Abs(..) except using our own types.
 func (rfp RelFilePath) AbsFP() AbsFilePath {
 	s := rfp.S()
-	if fp.IsAbs(s) {
+	if FP.IsAbs(s) {
 		return AbsFilePath(s)
 	}
-	afp, e := fp.Abs(s)
+	afp, e := FP.Abs(s)
+	// println("AbsFP IN::", s)
+	// println("AbsFP IN::", rfp)
+	// println("AbsFP OUT:", afp)
 	if e != nil {
 		panic("fu.AbsFP<" + s + ">: " + e.Error())
 	}
@@ -91,13 +94,18 @@ func NiceFP(s string) string {
 	if !S.HasPrefix(s, PathSep) {
 		panic("NiceFP barfs on: " + s)
 	}
+	// println("arg:", s)
+	// println("cwd:", currentworkingdir)
+	if s == currentworkingdir {
+		return "."
+	}
 	if S.HasPrefix(s, currentworkingdir) {
 		bytesToTrim := len(currentworkingdir) + 1
 		return "." + PathSep + s[bytesToTrim:]
 	}
 	if S.HasPrefix(s, homedir) {
 		bytesToTrim := len(homedir) + 1
-		return "." + PathSep + s[bytesToTrim:]
+		return "~" + PathSep + s[bytesToTrim:]
 	}
 	return s
 }
@@ -149,12 +157,12 @@ func init() {
 		return
 	}
 	homedir = username.HomeDir
-	println("HOME:", homedir)
+	// println("HOME:", homedir)
 
 	currentworkingdir, e = os.Getwd()
 	if e != nil {
 		println("==> ERROR: Cannot determine current working directory")
 		return
 	}
-	println(" CWD:", currentworkingdir)
+	// println(" CWD:", currentworkingdir)
 }

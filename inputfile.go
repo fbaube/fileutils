@@ -63,7 +63,7 @@ type InputFile struct {
 // - `Suffix` must start with a dot `.`, or else we cannot
 // distinguish when a name ends with a dot.
 // - If `FileFullName` is a directory, the entire path is in
-// `DirPath` (ending with "/"), and `BaseName` and `Suffix` are "".
+// `DirPath` (ending with "/"), and both `BaseName` and `Suffix` are "".
 //
 // Its Echo() method yields the full absolute path and name,
 // so it is OK for production use, and it dusnt need to
@@ -72,7 +72,8 @@ type FileFullName struct {
 	// DirPath holds the absolute path (from "filepath.Ext(path)"),
 	// up to (and including) the last "/" directory separator.
 	DirPath AbsFilePath
-	// BaseName has no path (absolute OR relative), no "/"
+	// BaseName is the basic file name sans extension.
+	// It has no path (absolute OR relative), no "/"
 	// directory separator, no final "." dot, no suffix.
 	BaseName string
 	// FileExt holds the file extension, and includes the
