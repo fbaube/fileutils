@@ -9,7 +9,7 @@ import (
 // Mstring extracts (as user-readable text) the M-type set for the file.
 // Note that the M-type can be set by analyzing the file extension and
 // contents, and then later revised if there is an XML `DOCTYPE` declaration.
-func (p InputFile) Mstring() string {
+func (p CheckedPath) Mstring() string {
 	if p.Mtype == nil {
 		return "-/-/-"
 	}
@@ -22,7 +22,7 @@ func (p InputFile) Mstring() string {
 	return ss[0] + "/" + ss[1] + "/" + ss[2]
 }
 
-// SetMtype works as follows:
+// SetFileMtype works as follows:
 //
 // Inputs:
 // - file extension (not really helpful OR reliable)
@@ -47,10 +47,12 @@ func (p InputFile) Mstring() string {
 // The following extensions are treated as DITA files: <br/>
 // `.dita` =>	dita ; `.xml` => dita ; `.md` => markdown ; `.markdown` => markdown
 //
-func (p *InputFile) SetMtype() *InputFile {
-
+func (p *CheckedPath) SetFileMtype() *CheckedPath {
+	if p.error != nil || p.Type() != "FILE" {
+		return p
+	}
 	// theFileExt includes a leading "."
-	var theFileExt = p.FileFullName.FileExt
+	var theFileExt = p.AbsFilePathParts.FileExt
 
 	if p.Mtype == nil {
 		p.Mtype = []string{"-", "-", "-"}
@@ -83,7 +85,10 @@ func (p *InputFile) SetMtype() *InputFile {
 		return p
 	}
 
-	var theContent = S.TrimSpace(string(p.FileContent))
+	var theContent = S.TrimSpace(p.Raw)
+	if len(theContent) == 0 {
+		println("zero content:", p.Raw)
+	}
 
 	// Quick exit: DTDs ( .dtd .mod .ent )
 	if S.HasPrefix(theContent, "<!") &&

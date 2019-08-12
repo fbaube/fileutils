@@ -10,14 +10,14 @@ import (
 // DirExists returns true *iff* the directory
 // exists and is in fact a directory.
 func DirExists(path AbsFilePath) bool {
-	fi, err := os.Lstat(string(path))
+	fi, err := os.Lstat(path.S())
 	return (err == nil && fi.IsDir())
 }
 
 // FileSize returns the size *iff* the
 // filepath exists and is in fact a file.
 func FileSize(path AbsFilePath) int {
-	fi, err := os.Lstat(string(path))
+	fi, err := os.Lstat(path.S())
 	if err == nil && !fi.IsDir() {
 		return int(fi.Size())
 	}
@@ -27,11 +27,11 @@ func FileSize(path AbsFilePath) int {
 // OpenExistingDir returns the directory
 // *iff* it exists and can be opened.
 func OpenExistingDir(path AbsFilePath) (*os.File, error) {
-	f, e := os.Open(string(path))
+	f, e := os.Open(path.S())
 	if e != nil {
 		return nil, errors.Wrapf(e, "fu.OpenExistingDir.Open<%s>", path)
 	}
-	fi, e := os.Lstat(string(path))
+	fi, e := os.Lstat(path.S())
 	if e != nil || !fi.IsDir() {
 		return nil, errors.New(fmt.Sprintf("fu.MustOpenExistingDir.notaDir<%s>", path))
 	}
@@ -48,7 +48,7 @@ func OpenOrCreateDir(path AbsFilePath) (f *os.File, e error) {
 			return f, nil
 		} */
 	// Try to create it
-	e = os.Mkdir(string(path), 0777)
+	e = os.Mkdir(path.S(), 0777)
 	if e == nil {
 		// Now we *have* to open it
 		f = Must(OpenExistingDir(path)) /*

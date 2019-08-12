@@ -3,7 +3,7 @@ package fileutils
 import (
 	"fmt"
 	"os"
-	fp "path/filepath"
+	FP "path/filepath"
 	S "strings"
 
 	SU "github.com/fbaube/stringutils"
@@ -49,21 +49,23 @@ func ListFilesUnder(path string, useSymLinks bool) (FS *FileSet, err error) {
 		return nil, nil
 	}
 	FS = new(FileSet)
-	FS.RelFilePath = RelFilePath(path)
-	FS.AbsFilePath = FS.RelFilePath.AbsFP()
+	FS.DirSpec = *NewCheckedPath(path)
 	FS.FilePaths = make([]string, 0, 10)
+	FS.CheckedFiles = make([]CheckedPath, 0, 10)
 	// A single file ? If so, don't even bother to check it :)
-	if !DirExists(FS.AbsFilePath) {
-		pF, e := os.Open(string(FS.AbsFilePath))
+	if FS.DirSpec.Type() != "DIR" { // !DirExists(FS.AbsFilePath) {
+		println("==> Warning: not a directory:", path)
+		pF, e := os.Open(FS.DirSpec.AbsFilePath.S())
 		defer pF.Close()
 		if e != nil {
 			return nil, e
 		}
 		FS.FilePaths = append(FS.FilePaths, path)
+		FS.CheckedFiles = append(FS.CheckedFiles, *NewCheckedPath(path))
 		return FS, nil
 	}
 	// PROCESS THE DIRECTORY
-	err = fp.Walk(path, func(P string, I os.FileInfo, E error) error {
+	err = FP.Walk(path, func(P string, I os.FileInfo, E error) error {
 		// println("WALKER:", P)
 		// Don't let an error stop processing,
 		// but OTOH let's notify the user.
@@ -87,17 +89,17 @@ func ListFilesUnder(path string, useSymLinks bool) (FS *FileSet, err error) {
 			}
 		}
 		// Ignore dot files, and completely skip dot folders.
-		filnam := fp.Base(P)
+		filnam := FP.Base(P)
 		if S.HasPrefix(filnam, ".") {
 			if DirExists(AbsFilePath(P)) {
-				return fp.SkipDir
+				return FP.SkipDir
 			}
 			return nil
 		}
 		// Ignore emacs backup files
 		if S.HasSuffix(filnam, "~") {
 			if DirExists(AbsFilePath(P)) {
-				return fp.SkipDir
+				return FP.SkipDir
 			}
 			return nil
 		}
@@ -133,16 +135,17 @@ func GatherInputFiles(path AbsFilePath, okayExts []string) (okayFiles []AbsFileP
 	theOkayFiles = nil
 
 	// A single file ? If so, just check the fie extension.
+	spath := path.S()
 	if !DirExists(path) {
-		sfx := fp.Ext(string(path))
+		sfx := FP.Ext(spath)
 		if SU.IsInSliceIgnoreCase(sfx, okayExts) || !gotOkayExts {
-			abs, _ := fp.Abs(string(path))
+			abs, _ := FP.Abs(spath)
 			theOkayFiles = append(theOkayFiles, AbsFilePath(abs))
 		}
 		return theOkayFiles, nil
 	}
 	// PROCESS THE DIRECTORY
-	err = fp.Walk(string(path), myWalkFunc)
+	err = FP.Walk(spath, myWalkFunc)
 	if err != nil {
 		return nil, errors.Wrapf(err, "fu.GatherInputFiles.walkTo<%s>", path)
 	}
@@ -168,7 +171,7 @@ func GatherNamedFiles(path AbsFilePath, name string) (okayFiles []AbsFilePath, e
 		panic(fmt.Sprintf("fu.GatherNamedFiles.walkTo<%s:%s>", path, name))
 	}
 	// PROCESS THE DIRECTORY
-	err = fp.Walk(string(path), myWalkFunc)
+	err = FP.Walk(path.S(), myWalkFunc)
 	if err != nil {
 		return nil, errors.Wrapf(err, "fu.GatherNamedFiles.walkTo<%s>", path)
 	}
@@ -194,7 +197,7 @@ func myWalkFunc(path string, finfo os.FileInfo, inerr error) error {
 	// Is it hidden, or an emacs backup ? If so, ignore.
 	if S.HasPrefix(path, ".") || S.HasSuffix(path, "~") {
 		if finfo.IsDir() {
-			return fp.SkipDir
+			return FP.SkipDir
 		} else {
 			return nil
 		}
@@ -208,10 +211,10 @@ func myWalkFunc(path string, finfo os.FileInfo, inerr error) error {
 		if !S.HasSuffix(path, PathSep+theOkayName) {
 			return nil
 		}
-	} else if gotOkayExts && !SU.IsInSliceIgnoreCase(fp.Ext(path), theOkayExts) {
+	} else if gotOkayExts && !SU.IsInSliceIgnoreCase(FP.Ext(path), theOkayExts) {
 		return nil
 	}
-	apath, e := fp.Abs(path)
+	apath, e := FP.Abs(path)
 	abspath = AbsFilePath(apath)
 	if e != nil {
 		return errors.Wrapf(e, "fu.myWalkFunc<%s>", path)

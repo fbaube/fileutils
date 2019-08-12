@@ -1,7 +1,7 @@
 package fileutils
 
 import (
-	fp "path/filepath"
+	FP "path/filepath"
 
 	SU "github.com/fbaube/stringutils"
 )
@@ -17,7 +17,7 @@ func (p *FileSet) FilterInBySuffix(okayExts []string) (someOut bool) {
 	}
 	outs := make([]string, 0, p.Size())
 	for _, instring := range p.FilePaths {
-		sfx := fp.Ext(instring)
+		sfx := FP.Ext(instring)
 		// println("sfx:", sfx)
 		if !SU.IsInSliceIgnoreCase(sfx, okayExts) {
 			someOut = true

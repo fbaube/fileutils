@@ -4,7 +4,7 @@ import (
 	"bufio"
 	"bytes"
 	"os"
-	fp "path/filepath"
+	FP "path/filepath"
 	S "strings"
 
 	"github.com/mgutz/str"
@@ -16,10 +16,10 @@ import (
 // filepath argument is not resolved w.r.t. the current working directory;
 // it is instead done w.r.t. the supplied directory argument.
 func AbsWRT(maybeRelFP string, wrtDir string) string {
-	if fp.IsAbs(maybeRelFP) {
+	if FP.IsAbs(maybeRelFP) {
 		return maybeRelFP
 	}
-	return fp.Join(wrtDir, maybeRelFP)
+	return FP.Join(wrtDir, maybeRelFP)
 }
 
 /*
@@ -39,13 +39,14 @@ func MustOpenRW(path string) (*os.File, error) {
 
 // OpenRO opens (and returns) the filepath as a readable file.
 func OpenRO(path AbsFilePath) (*os.File, error) {
-	f, e := os.Open(string(path))
+	spath := path.S()
+	f, e := os.Open(spath)
 	if e != nil {
-		return nil, errors.Wrapf(e, "fu.TryOpenRO.os.Open<%s>", path)
+		return nil, errors.Wrapf(e, "fu.TryOpenRO.os.Open<%s>", spath)
 	}
-	fi, e := os.Lstat(string(path))
+	fi, e := os.Lstat(spath)
 	if e != nil || fi.IsDir() {
-		return nil, errors.Wrapf(e, "fu.TryOpenRO.notaFile<%s>", path)
+		return nil, errors.Wrapf(e, "fu.TryOpenRO.notaFile<%s>", spath)
 	}
 	return f, nil
 }
@@ -58,13 +59,14 @@ func CreateEmpty(path AbsFilePath) (*os.File, error) {
 	// on the returned File can be used for I/O; the associated
 	// file descriptor has mode O_RDWR. If there is an error,
 	// it will be of type *PathError.
-	f, e := os.Create(string(path))
+	spath := path.S()
+	f, e := os.Create(spath)
 	if e != nil {
-		return nil, errors.Wrapf(e, "fu.CreateEmpty.Create<%s>", path)
+		return nil, errors.Wrapf(e, "fu.CreateEmpty.Create<%s>", spath)
 	}
-	fi, e := os.Stat(string(path))
+	fi, e := os.Stat(spath)
 	if e != nil || !fi.Mode().IsRegular() {
-		return nil, errors.Wrapf(e, "fu.CreateEmpty.notaFile<%s>", path)
+		return nil, errors.Wrapf(e, "fu.CreateEmpty.notaFile<%s>", spath)
 	}
 	return f, nil
 }
@@ -123,8 +125,7 @@ func IsXML(path string) bool {
 	if nRedd < 4 {
 		return false
 	}
-	var s string
-	s = S.TrimSpace(string(bb))
+	s := S.TrimSpace(string(bb))
 	if !S.HasPrefix(s, "<") {
 		return false
 	}

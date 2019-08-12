@@ -1,10 +1,10 @@
 package fileutils
 
-// FileSet groups a set of files that can and shuld be considered
-// as a unit. For example, when processing a multi-file document
-// (LwDITA), or a multi-file DTD. It is assumed that thet are
+// FileSet groups a set of files that can and should be considered
+// as a group. For example, when processing a multi-file document
+// (LwDITA), or a multi-file DTD. It is assumed that they are
 // related via a top-level directory, and it is the top-level
-// directory that is contained in the initial fields.
+// directory that is contained in the field `DirSpec`.
 //
 // In the pathological case that this was called on a file not
 // a directory, all data refer to the file path, rather than
@@ -15,13 +15,16 @@ type FileSet struct {
 	// command line; its absolute resolution is in the next field.
 	// It may of course store an absolute (full) file path instead.
 	// If this is "", it is not an error.
-	RelFilePath
+	// // RelFilePath string
 	// AbsFilePath is the fully resolved counterpart to `RelFilePath`.
-	AbsFilePath
+	// // AbsFilePath
+	DirSpec CheckedPath
 	// `filepath.WalkFunc` can provide relative filepaths, so we can't
 	// say for sure whether this list will contain relative or absolute
 	// paths. Therefore for convenience we use a bunch of strings.
 	FilePaths []string
+	// Then we process them.
+	CheckedFiles []CheckedPath
 }
 
 // Size returns the number of files.
@@ -34,12 +37,16 @@ func (p *FileSet) Size() int {
 
 func NewOneFileSet(s string) *FileSet {
 	p := new(FileSet)
-	p.FilePaths = make([]string, 0, 1)
-	if s == "" || !Exists(s) {
+	if s == "" {
 		return p
 	}
-	p.RelFilePath = RelFilePath(s)
-	p.AbsFilePath = p.RelFilePath.AbsFP()
-	p.FilePaths = append(p.FilePaths, string(p.AbsFilePath))
+	p.DirSpec = *NewCheckedPath(s)
+	if p.DirSpec.Type() != "FILE" {
+		panic("fu.FileSet.NewOneFS: not a file: " + s)
+	}
+	p.FilePaths = make([]string, 0, 1)
+	p.FilePaths = append(p.FilePaths, string(p.DirSpec.AbsFilePath))
+	p.CheckedFiles = make([]CheckedPath, 0, 1)
+	p.CheckedFiles = append(p.CheckedFiles, p.DirSpec)
 	return p
 }

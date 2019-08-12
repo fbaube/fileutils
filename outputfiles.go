@@ -3,7 +3,7 @@ package fileutils
 import (
 	"io"
 	"os"
-	fp "path/filepath"
+	FP "path/filepath"
 	S "strings"
 
 	SU "github.com/fbaube/stringutils"
@@ -50,7 +50,7 @@ func (of OutputFiles) String() string {
 // Assume they all go to the same directory, but it does not have to be
 // the same directory as the `InputFile`.
 type OutputFiles struct {
-	pInputFile *InputFile
+	pInputFile *CheckedPath
 	// OutDirPath is the full absolute directory path (but without file base
 	// name or file extension). Normally it is the same as the input file's,
 	// but it can also be a subdirectory whose name is based on the input file.
@@ -67,7 +67,7 @@ type OutputFiles struct {
 //
 // For convenience, if `subdirSuffix` is "", output files are placed in the
 // same directory as the `InputFile`.
-func (pIF *InputFile) NewOutputFiles(subdirSuffix string) (*OutputFiles, error) {
+func (pIF *CheckedPath) NewOutputFiles(subdirSuffix string) (*OutputFiles, error) {
 
 	p := new(OutputFiles)
 	p.pInputFile = pIF
@@ -110,7 +110,7 @@ func (pOF *OutputFiles) NewOutputExt(filext string) (*OutputFileExt, error) {
 	if !S.HasPrefix(filext, ".") {
 		filext = "." + filext
 	}
-	newpath = fp.Join(string(pOF.OutputDirPath), pOF.pInputFile.BaseName+filext)
+	newpath = FP.Join(pOF.OutputDirPath.S(), pOF.pInputFile.BaseName+filext)
 	f, e = os.OpenFile(newpath, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0666)
 	// Alternatively: f,e = MustCreate(newpath)
 	if e != nil {
