@@ -13,15 +13,13 @@ import (
 // It might also be a directory or symlink, either of which requires
 // further processing elsewhere.
 // In normal usage, if it is a file, it will be opened and loaded into
-// `Raw` (by `func FileLoad()`), and at that point it will be fully
-// decoupled from the file system.
-// Mime type guessing is done using standard libraries (both Go's
-// and a 3rd party's), so this code is still very low-level.
+// `Raw` (by `func FileLoad()`), and at that point the content will be
+// fully decoupled from the file system.
+// Mime type guessing is done using standard libraries (both Go's and
+// a 3rd party's), so this code can still be considered very low-level.
 type CheckedPath struct {
-	// error if non-nil can abort execution.
+	// error if non-nil makes methods in a chain skip their own processing.
 	error
-	// ArgFilePath should not be necessary.
-	// // ArgFilePath string
 	// RelFilePath is a "short" argument passed in at creation time, e.g.
 	// a filename specified on the command line, and relative to the CWD.
 	RelFilePath string
@@ -33,39 +31,26 @@ type CheckedPath struct {
 	IsFile bool
 	IsSymL bool
 	// FileCt is >1 IFF this struct refers to a directory, and multifile
-	// processing is needed. In the future it might also handle wildcards.
+	// processing is needed. In the future we might also handle wildcards.
 	FileCt int
-	// Raw and Size apply to files only, not directories or symlinks.
+	// Raw and Size apply to files only, not to directories or symlinks.
 	Raw  string
 	Size int
 	// MagicMimeType is set using a 3rd party binding to libmagic.
 	MagicMimeType string
 	// SniftMimeType is set using the Golang stdlib.
 	SniftMimeType string
-	// Mtype is set by our own code, based on MagicMimeType, SniftMimeType,
-	// and shallow analysis of the file contents.
+	// Mtype is set by our own code, based on MagicMimeType,
+	// SniftMimeType, and shallow analysis of the file contents.
 	MType []string
-	// IsXML is set by our own code, using various heuristics of our own devising.
+	// IsXML is set by our own code, using various heuristics of
+	// our own fiendish device.
 	IsXML bool
 }
 
-/*
-func (p *CheckedPath) IsXML() bool {
-	return p.isXML
-}
-
-func (p *CheckedPath) SetIsXML(b bool) {
-	p.isXML = b
-}
-
-func (p *CheckedPath) MType() []string {
-	return p.Mtype
-}
-
-func (p *CheckedPath) SetMType(ss []string) {
-	p.Mtype = ss
-}
-*/
+// GetError is necessary cos `Error()`` dusnt tell you whether `error` is `nil`,
+// which is the indication of no error. Therefore we need this function, which
+// can actually return the telltale `nil`.`
 func (p *CheckedPath) GetError() error {
 	if p.error == nil {
 		return nil
@@ -73,6 +58,8 @@ func (p *CheckedPath) GetError() error {
 	return p.error
 }
 
+// Error satisfied interface `error`, but the
+// weird thing is thst `error` can be nil.
 func (p *CheckedPath) Error() string {
 	if p.error == nil {
 		return ""
@@ -86,7 +73,7 @@ func (p *CheckedPath) SetError(e error) {
 
 func (p *CheckedPath) PathType() string {
 	if p.AbsFilePath == "" {
-		panic("fu.CheckedPath.Type: AFP not initialized")
+		panic("fu.CheckedPath.PathType: AFP not initialized")
 	}
 	if p.error != nil || !p.Exists {
 		return "NIL"
@@ -97,11 +84,11 @@ func (p *CheckedPath) PathType() string {
 	if p.IsFile && !p.IsDir {
 		return "FILE"
 	}
-	panic("fu.CheckedPath.Type: bad state")
+	panic("fu.CheckedPath.PathType: bad state")
 }
 
 // NewCheckedPath requires a non-nil `RelFilePath` and analyzes it.
-// It returns a pointer that can be used in a method chain.
+// It returns a pointer that can be used to start a method chain.
 func NewCheckedPath(rfp string) *CheckedPath {
 	rp := &CheckedPath{RelFilePath: rfp}
 	rp.AbsFilePath = AbsFP(rfp)
@@ -140,17 +127,10 @@ func (p *CheckedPath) check() *CheckedPath {
 // and does a quick check for the MIME type.
 // If it does not exist, be nice: do nothing and return no error.
 // If it is not a file, be nice: do nothing and return no error.
-// If `Raw` is not "", be nice: the file is an on-the-fly temp
-// file, so skip the load and just do the quick MIME analysis.
+// If `Raw` is not "", be nice: the file is already loaded and
+// is quite possibly an on-the-fly temp file, so skip the load
+// and just do the quick MIME analysis.
 func (p *CheckedPath) LoadFile() *CheckedPath {
-	/*
-		if p.error != nil {
-			return p // nil
-		}
-		if p.AbsFilePath == "" {
-			p.error = errors.New("fu.GGFile.FileLoad: Nil filepath")
-			return p // nil
-		} */
 	if p.PathType() != "FILE" {
 		return p
 	}
@@ -200,6 +180,7 @@ func (p *CheckedPath) LoadFile() *CheckedPath {
 	return p
 }
 
+// FileType returns `XML`, `MKDN`, or future stuff TBD.
 func (p *CheckedPath) FileType() string {
 	return S.ToUpper(p.MType[0])
 }
@@ -238,19 +219,6 @@ func (p *CheckedPath) InspectFile() *CheckedPath {
 	return p
 }
 
-// SegmentedFile describes in detail a file we have redd or will read.
-// (If field `FileFullName` is nil, it has been created on-the-fly.)
-// In normal usage, the file is opened and its contents are redd
-// into `Contents`, and then it is decoupled from the file system.
-//
-// Because our goal is to process LwDITA, we examine a text file
-// (and its DTDs, if present) and set a type of XDITA, HDITA,
-// MDITA, or DITA. This amounts to making an assertion, and can
-// be rolled back (i.e. the bool can be set back to `false`) if
-// further processing of the file shows that the file does not
-// in fact even try to conform to the previously+incorrectly
-// asserted file type.
-//
 // NOTE A text-based image file (i.e. SVG or EPS) can be
 // `IsImage` but `!IsBinary`.
 //
