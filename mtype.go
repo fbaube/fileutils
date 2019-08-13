@@ -7,8 +7,9 @@ import (
 )
 
 // Mstring extracts (as user-readable text) the M-type set for the file.
-// Note that the M-type can be set by analyzing the file extension and
-// contents, and then later revised if there is an XML `DOCTYPE` declaration.
+// Note that the M-type is initially set by analyzing the file extension
+// and contents, but can then later revised if there is an XML `DOCTYPE`
+// declaration.
 func (p CheckedPath) Mstring() string {
 	if p.MType == nil {
 		return "-/-/-"
@@ -105,7 +106,7 @@ func (p *CheckedPath) SetFileMtype() *CheckedPath {
 	// and there might not be YAML metadata at the start of the file,
 	// and at this point here we don't want to scan ALL the file content,
 	// at least not more than the first few characters.
-	// So, the best we can do is check for a known file extension.
+	// So, about the best we can do is check for a known file extensions.
 	if S.HasPrefix(sniftMT, "text/") &&
 		SU.IsInSliceIgnoreCase(theFileExt, MarkdownFileExtensions) {
 		p.SniftMimeType = "text/markdown"
@@ -141,7 +142,7 @@ func (p *CheckedPath) SetFileMtype() *CheckedPath {
 		return p
 	}
 
-	// Now we really have to make some guesses.
+	// Now we REALLY have to do some guesswork.
 
 	var detectedXML bool
 	// XML preamble ? Note that whitespace has been trim'd from theContent.
