@@ -162,9 +162,9 @@ func (p CheckedPath) String() string {
 // then the directory path that is returned by `filepath.Split(abspath)` is
 // guaranteed to end with a path separator slash `/`. <br/>
 // Also, for consistency, the file extension is forced to all lower-case.
-func (afp AbsFilePath) GetAbsPathParts() AbsFilePathParts {
+func (afp AbsFilePath) NewAbsPathParts() *AbsFilePathParts {
 	var filext, sdp string
-	r := *new(AbsFilePathParts)
+	r := new(AbsFilePathParts)
 	if !FP.IsAbs(afp.S()) {
 		return r
 	}

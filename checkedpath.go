@@ -27,7 +27,7 @@ type CheckedPath struct {
 	RelFilePath string
 	AbsFilePath
 	// We require that AbsFilePathParts.Echo() == AbsFilePath
-	AbsFilePathParts
+	*AbsFilePathParts
 	Exists bool
 	IsDir  bool
 	IsFile bool
@@ -44,9 +44,33 @@ type CheckedPath struct {
 	SniftMimeType string
 	// Mtype is set by our own code, based on MagicMimeType, SniftMimeType,
 	// and shallow analysis of the file contents.
-	Mtype []string
+	MType []string
 	// IsXML is set by our own code, using various heuristics of our own devising.
 	IsXML bool
+}
+
+/*
+func (p *CheckedPath) IsXML() bool {
+	return p.isXML
+}
+
+func (p *CheckedPath) SetIsXML(b bool) {
+	p.isXML = b
+}
+
+func (p *CheckedPath) MType() []string {
+	return p.Mtype
+}
+
+func (p *CheckedPath) SetMType(ss []string) {
+	p.Mtype = ss
+}
+*/
+func (p *CheckedPath) GetError() error {
+	if p.error == nil {
+		return nil
+	}
+	return p.error
 }
 
 func (p *CheckedPath) Error() string {
@@ -56,7 +80,11 @@ func (p *CheckedPath) Error() string {
 	return p.error.Error()
 }
 
-func (p *CheckedPath) Type() string {
+func (p *CheckedPath) SetError(e error) {
+	p.error = e
+}
+
+func (p *CheckedPath) PathType() string {
 	if p.AbsFilePath == "" {
 		panic("fu.CheckedPath.Type: AFP not initialized")
 	}
@@ -77,7 +105,7 @@ func (p *CheckedPath) Type() string {
 func NewCheckedPath(rfp string) *CheckedPath {
 	rp := &CheckedPath{RelFilePath: rfp}
 	rp.AbsFilePath = AbsFP(rfp)
-	rp.AbsFilePathParts = rp.AbsFilePath.GetAbsPathParts()
+	rp.AbsFilePathParts = rp.AbsFilePath.NewAbsPathParts()
 	return rp.check()
 }
 
@@ -123,7 +151,7 @@ func (p *CheckedPath) LoadFile() *CheckedPath {
 			p.error = errors.New("fu.GGFile.FileLoad: Nil filepath")
 			return p // nil
 		} */
-	if p.Type() != "FILE" {
+	if p.PathType() != "FILE" {
 		return p
 	}
 	if p.Raw != "" {
@@ -172,6 +200,10 @@ func (p *CheckedPath) LoadFile() *CheckedPath {
 	return p
 }
 
+func (p *CheckedPath) FileType() string {
+	return S.ToUpper(p.MType[0])
+}
+
 // InspectFile comprises four steps:
 //
 // * use stdlib and third-party libraries to make initial guesses
@@ -188,7 +220,7 @@ func (p *CheckedPath) LoadFile() *CheckedPath {
 // in the preceding string fields: Mtype []string
 //
 func (p *CheckedPath) InspectFile() *CheckedPath {
-	if p.error != nil || p.Type() != "FILE" {
+	if p.error != nil || p.PathType() != "FILE" {
 		return p
 	}
 	p.MagicMimeType = GoMagic(p.Raw)
