@@ -24,6 +24,8 @@ type CheckedPath struct {
 	// a filename specified on the command line, and relative to the CWD.
 	RelFilePath string
 	AbsFilePath
+	// AbsFilePathParts stores the pieces of the absolute filepath.
+	// It can be nil, e.g. if the content was created on-the-fly.
 	// We require that AbsFilePathParts.Echo() == AbsFilePath
 	*AbsFilePathParts
 	Exists bool
@@ -40,12 +42,33 @@ type CheckedPath struct {
 	MagicMimeType string
 	// SniftMimeType is set using the Golang stdlib.
 	SniftMimeType string
-	// Mtype is set by our own code, based on MagicMimeType,
-	// SniftMimeType, and shallow analysis of the file contents.
-	MType []string
 	// IsXML is set by our own code, using various heuristics of
 	// our own fiendish device.
 	IsXML bool
+	// MType is set by our own code, based on `MagicMimeType`,
+	// `SniftMimeType`, and shallow analysis of the file contents.
+	// Markdown is presumed to be MDITA, because in any case, any
+	// Markdown is sposta be compatible with MDITA.
+	//
+	// [0] XML, BIN, TXT, MD
+	// [1] IMG, CNT (Content), TOC (Map), SCH(ema)
+	// [2] XML: per-DTD; BIN: fmt/filext; MD: flavor; SCH: fmt/filext
+	//
+	// Common values:
+	// * Textual  image files:  image /  text / (svg|eps)
+	// * Binary   image files:  image /  bin  / (fmt)
+	// * DITA13 content files:   dita / (tech|..) / (task|..)
+	// * LwDITA content files: lwdita / (xdita|hdita|mdita[xp]) / (map|topic|..)
+	// *   HTML content files:   html / (5|4) [/TBD]
+	// * Parsed  schema files: schema / dtd / (root elm)
+	// * Indeterminate XML that hopefully will get
+	//     DOCTYPE processing:    xml / xml [/TBD]
+	// [0] = doc family = image/dita/lwdita/html/schema/xml
+	// [1] = doc format = format/dtd
+	// [2] = specifics
+	// NOTE how a text-based image file (i.e. SVG or EPS)
+	// can be `image` but not `binary`.
+	MType []string
 }
 
 // GetError is necessary cos `Error()`` dusnt tell you whether `error` is `nil`,
