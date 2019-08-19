@@ -79,12 +79,21 @@ func (p CheckedPath) Echo() string {
 
 // String implements Markupper.
 func (p CheckedPath) String() string {
-	var s = "Dir"
-	if !p.IsDir { // FileInfo.IsDir() {
-		s = fmt.Sprintf("Len<%d>Mime<%s>", p.Size /*FileInfo.Size()*/, p.MagicMimeType)
+	if p.IsDir {
+		return fmt.Sprintf("ChP: DIR[%d]: %s | %s",
+			p.Size, p.RelFilePath, p.AbsFilePathParts.Echo())
 	}
-	return fmt.Sprintf("CheckedPath<%s=%s>:%s",
-		p.RelFilePath, p.AbsFilePathParts.String(), s)
+	var isXML string
+	if p.IsXML {
+		isXML = "[XML] "
+	}
+	s := fmt.Sprintf("ChP: %sLen<%d>Mtype<%s>",
+		isXML, p.Size, p.Mstring())
+	s += fmt.Sprintf("\n\t %s | %s",
+		p.RelFilePath, NiceFP(p.AbsFilePathParts.Echo()))
+	s += fmt.Sprintf("\n\t (snift) %s | (magic) %s",
+		p.SniftMimeType, p.MagicMimeType)
+	return s
 }
 
 // GetAbsPathParts takes an absolute filepath and uses `filepath.Abs(path)`

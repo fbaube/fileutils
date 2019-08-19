@@ -45,10 +45,10 @@ type CheckedPath struct {
 	// IsXML is set by our own code, using various heuristics of
 	// our own fiendish device.
 	IsXML bool
-	// MType is set by our own code, based on `MagicMimeType`,
-	// `SniftMimeType`, and shallow analysis of the file contents.
-	// Markdown is presumed to be MDITA, because in any case, any
-	// Markdown is sposta be compatible with MDITA.
+	// MType is modeled after Mime-type. It is set by our own code, based on
+	// `MagicMimeType`, `SniftMimeType`, and shallow analysis of file contents.
+	// Markdown is presumed to be MDITA, because in any case, any Markdown is
+	// sposta be compatible with MDITA.
 	//
 	// [0] XML, BIN, TXT, MD
 	// [1] IMG, CNT (Content), TOC (Map), SCH(ema)
@@ -64,7 +64,7 @@ type CheckedPath struct {
 	// * Indeterminate XML that hopefully will get
 	//     DOCTYPE processing:    xml / xml [/TBD]
 	// [0] = doc family = image/dita/lwdita/html/schema/xml
-	// [1] = doc format = format/dtd
+	// [1] = doc format = its format/dtd
 	// [2] = specifics
 	// NOTE how a text-based image file (i.e. SVG or EPS)
 	// can be `image` but not `binary`.
@@ -116,6 +116,7 @@ func NewCheckedPath(rfp string) *CheckedPath {
 	rp := &CheckedPath{RelFilePath: rfp}
 	rp.AbsFilePath = AbsFP(rfp)
 	rp.AbsFilePathParts = rp.AbsFilePath.NewAbsPathParts()
+	println("==>", rp.String())
 	return rp.check()
 }
 
