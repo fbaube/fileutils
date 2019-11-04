@@ -116,7 +116,6 @@ func NewCheckedPath(rfp string) *CheckedPath {
 	rp := &CheckedPath{RelFilePath: rfp}
 	rp.AbsFilePath = AbsFP(rfp)
 	rp.AbsFilePathParts = rp.AbsFilePath.NewAbsPathParts()
-	println("==>", rp.String())
 	return rp.check()
 }
 
@@ -200,6 +199,9 @@ func (p *CheckedPath) LoadFile() *CheckedPath {
 	if !S.HasPrefix(p.AbsFilePathParts.FileExt, ".") {
 		println("==> (oops had to add a dot to filext")
 		p.AbsFilePathParts.FileExt = "." + p.AbsFilePathParts.FileExt
+	}
+	if S.Contains(p.Raw, "<!DOCTYPE HTML ") {
+		println("FOUND HTML")
 	}
 	return p
 }

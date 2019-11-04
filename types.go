@@ -1,6 +1,7 @@
 package fileutils
 
 import (
+	"fmt"
 	"os"
 	"os/user"
 	FP "path/filepath"
@@ -29,12 +30,13 @@ type AbsFilePath string
 const PathSep = string(os.PathSeparator)
 
 // NOTE See init(), at bottom
-var homedir, currentworkingdir string
+var currentWorkingDir, currentUserHomeDir string
+var currentUser *user.User
 
 // GetHomeDir is a convenience function, and
 // refers to the invoking user's home directory.
 func GetHomeDir() string {
-	return string(homedir)
+	return currentUserHomeDir
 }
 
 // S is a utility method to keep code cleaner.
@@ -73,20 +75,21 @@ func NiceFP(s string) string {
 		return s
 	}
 	// At this point, if it's not an absolute FP, it's a problem.
-	if !S.HasPrefix(s, PathSep) {
+	// if !S.HasPrefix(s, PathSep) {
+	if !FP.IsAbs(s) {
 		panic("NiceFP barfs on: " + s)
 	}
 	// println("arg:", s)
 	// println("cwd:", currentworkingdir)
-	if s == currentworkingdir {
+	if s == currentWorkingDir {
 		return "."
 	}
-	if S.HasPrefix(s, currentworkingdir) {
-		bytesToTrim := len(currentworkingdir) + 1
+	if S.HasPrefix(s, currentWorkingDir) {
+		bytesToTrim := len(currentWorkingDir) + 1
 		return "." + PathSep + s[bytesToTrim:]
 	}
-	if S.HasPrefix(s, homedir) {
-		bytesToTrim := len(homedir) + 1
+	if S.HasPrefix(s, currentUserHomeDir) {
+		bytesToTrim := len(currentUserHomeDir) + 1
 		return "~" + PathSep + s[bytesToTrim:]
 	}
 	return s
@@ -104,18 +107,42 @@ func (afp AbsFilePath) StartsWith(beg AbsFilePath) bool {
 }
 
 func init() {
-	username, e := user.Current()
+	var e error
+	currentUser, e = user.Current()
 	if e != nil {
 		println("==> ERROR: Cannot determine current user")
 		return
 	}
-	homedir = username.HomeDir
-	// println("HOME:", homedir)
-
-	currentworkingdir, e = os.Getwd()
+	currentUserHomeDir, e = os.UserHomeDir()
+	if e != nil {
+		println("==> ERROR: Cannot determine current user's home directory")
+		return
+	}
+	homedir := currentUser.HomeDir
+	if currentUserHomeDir != homedir {
+		println("==> ERROR: Inconsistent values for current user's home directory")
+		return
+	}
+	currentWorkingDir, e = os.Getwd()
 	if e != nil {
 		println("==> ERROR: Cannot determine current working directory")
 		return
 	}
-	// println(" CWD:", currentworkingdir)
+	fmt.Fprintf(os.Stderr,
+		"Hello, %s (%s) (uid:%s,gid:%s) working in \n       %s \n",
+		currentUser.Username, currentUser.Name,
+		currentUser.Uid, currentUser.Gid, Tilded(currentWorkingDir))
+
+	if S.HasSuffix(currentUserHomeDir, "/") {
+		println("--> Trimming trailing slash from UserHomeDir:", currentUserHomeDir)
+		currentUserHomeDir = S.TrimSuffix(currentUserHomeDir, "/")
+		println("--> UserHomeDir:", currentUserHomeDir)
+	}
+}
+
+func Tilded(s string) string {
+	if S.HasPrefix(s, currentUserHomeDir) {
+		return ("~" + S.TrimPrefix(s, currentUserHomeDir))
+	}
+	return s
 }

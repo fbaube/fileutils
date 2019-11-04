@@ -92,7 +92,7 @@ func (p *CheckedPath) SetFileMtype() *CheckedPath {
 	}
 
 	// Quick exit: DTDs ( .dtd .mod .ent )
-	if S.HasPrefix(theContent, "<!") &&
+	if // S.HasPrefix(theContent, "<!") &&
 		SU.IsInSliceIgnoreCase(theFileExt, DTDtypeFileExtensions) {
 		p.SniftMimeType = "application/xml-dtd"
 		p.MType[1] = "sch"
@@ -116,6 +116,9 @@ func (p *CheckedPath) SetFileMtype() *CheckedPath {
 		return p
 	}
 	if sniftMT == "text/html" {
+		if !S.Contains(p.Raw, "<!DOCTYPE HTML ") {
+			println("--> text/html has no DOCTYPE HTML")
+		}
 		// Can this be HDITA ?
 		p.MType[0] = "xml"
 		p.MType[1] = "html" // "hdita"
@@ -158,7 +161,7 @@ func (p *CheckedPath) SetFileMtype() *CheckedPath {
 	}
 	// If XML not detected yet, maybe try to detect a tag in the first line
 	if !detectedXML {
-		println("TODO: Look for an XML tag (fu.mtype.set.L155)")
+		println("TODO: Look for an XML tag (fu.mtype.set.L164)")
 		// if S.HasPrefix(string(pIF.Contents), "<") && S.
 	}
 	if detectedXML {
@@ -169,6 +172,11 @@ func (p *CheckedPath) SetFileMtype() *CheckedPath {
 		p.MType[0] = "xml"
 		p.MType[1] = "TBD"
 		p.MType[2] = "TBD"
+		// Check for "<!DOCTYPE HTML "
+		if S.Contains(p.Raw, "<!DOCTYPE HTML ") {
+			p.MType[1] = "html" // "hdita"
+			p.MType[2] = "(nil?!)"
+		}
 	}
 	// fmt.Printf("(DD) (%s:%s) Mtype(%s) \n",
 	// 	theFileExt, theMimeType, p.MMCstring())
