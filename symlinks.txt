@@ -1,0 +1,27 @@
+https://golang.org/pkg/path/filepath/
+
+func EvalSymlinks(path string) (string, error)
+
+EvalSymlinks returns the path name after the evaluation of any symbolic
+links. If path is relative the result will be relative to the current
+directory, unless one of the components is an absolute symbolic link.
+EvalSymlinks calls Clean on the result.
+
+https://stackoverflow.com/questions/18062026/resolve-symlinks-in-go
+
+func Lstat(name string) (fi FileInfo, err error)
+
+Lstat returns a FileInfo describing the named file. If the file is
+a symbolic link, the returned FileInfo describes the symbolic link.
+Lstat makes no attempt to follow the link.
+
+Then returned os.FileInfo will only allow you to check if 'name' is
+a link or not (fi.Mode() & os.ModeSymlink != 0). If it is, then use
+os.Readlink to get the pointee:
+
+https://godoc.org/os#Readlink
+
+func Readlink(name string) (string, error)
+
+Readlink returns the destination of the named symbolic link. 
+

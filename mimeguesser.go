@@ -25,8 +25,8 @@ func init() {
 }
 
 // GoMagic is based on <br/>
-// https://godoc.org/github.com/hosom/gomagic#Magic.Buffer <br/>
-// func (m *Magic) Buffer(binary []byte) (string, error)
+// `https://godoc.org/github.com/hosom/gomagic#Magic.Buffer <br/>
+// func (m *Magic) Buffer(binary []byte) (string, error)``
 func GoMagic(s string) string {
 	m, e := mmagic.Buffer([]byte(s))
 	if e != nil {

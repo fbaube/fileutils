@@ -219,7 +219,7 @@ func myWalkFunc(path string, finfo os.FileInfo, inerr error) error {
 	if e != nil {
 		return errors.Wrapf(e, "fu.myWalkFunc<%s>", path)
 	}
-	f = Must(OpenRO(abspath))
+	f = Must(OpenRO(abspath.S()))
 	defer f.Close() /*
 		if e != nil {
 			return errors.Wrapf(e, "fu.myWalkFunc.MustOpenRO<%s>", path)

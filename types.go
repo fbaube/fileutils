@@ -8,20 +8,17 @@ import (
 	S "strings"
 )
 
-// We define ´AbsFilePath`, a new type based on `string`.
-// A FilePath type serves three purposes:
-// - to clarify and bring correctness to the processing of path arguments
-// - permit the use of   clearly named struct field that is a paths
-// - permit the definition of methods on a type
-// The uses is as follows:
-// - `AbsFilePath` is for when we have resolved a filepath
+// AbsFilePath is a new type, based on `string`. It serves three purposes:
+// - clarify and bring correctness to the processing of absolute path arguments
+// - permit the use of a clearly named struct field
+// - permit the definition of methods on the type
 //
-// Note that when working with an os.File, `Name()` returns the name
-// of the file as it was presented to `Open(..)`, so it might be a
-// relative filepath.
+// Note that when working with an `os.File`, `Name()` returns the name of the
+// file as was passed to `Open(..)`, so it might be a relative filepath.
 //
 type AbsFilePath string
 
+// Some prior overenthusiasm.
 // type RelFilePath string
 // type ArgFilePath string
 // type FileContent string
@@ -43,7 +40,7 @@ func GetHomeDir() string {
 func (afp AbsFilePath) S() string {
 	s := string(afp)
 	if !FP.IsAbs(s) {
-		panic("FU.types: AbsFP is Rel: " + s)
+		panic("FU.types: AbsFP is not abs: " + s)
 	}
 	return s
 }
@@ -97,12 +94,11 @@ func NiceFP(s string) string {
 
 // Append is a convenience function to keep code cleaner.
 func (afp AbsFilePath) Append(rfp string) AbsFilePath {
-	// return AbsFilePath(afp.S() + rfp)
 	return AbsFilePath(FP.Join(afp.S(), rfp))
 }
 
 // StartsWith is like strings.HasPrefix(..) but uses our types.
-func (afp AbsFilePath) StartsWith(beg AbsFilePath) bool {
+func (afp AbsFilePath) HasPrefix(beg AbsFilePath) bool {
 	return S.HasPrefix(afp.S(), beg.S())
 }
 

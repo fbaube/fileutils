@@ -3,8 +3,6 @@ package fileutils
 import (
 	"fmt"
 	"os"
-
-	"github.com/pkg/errors"
 )
 
 // DirExists returns true *iff* the directory
@@ -24,16 +22,23 @@ func FileSize(path AbsFilePath) int {
 	return 0
 }
 
-// OpenExistingDir returns the directory
-// *iff* it exists and can be opened.
-func OpenExistingDir(path AbsFilePath) (*os.File, error) {
-	f, e := os.Open(path.S())
+// OpenExistingDir returns the directory *iff* it exists and can be opened
+// for reading. Note that the `os.File` can be nil without error. Thus we
+// cannot (or: *do not*) distinguish btwn non-existence and an actual error.
+// OTOH if it exists but is not a directory, return an error.
+func OpenExistingDir(path AbsFilePath) (f *os.File, e error) {
+	// "Open(s) opens the file for reading. If successful, methods on the returned
+	// file can be used for reading; the associated FD has mode O_RDONLY."
+	f, e = os.Open(path.S())
 	if e != nil {
-		return nil, errors.Wrapf(e, "fu.OpenExistingDir.Open<%s>", path)
+		return nil, nil // fmt.Errorf("fu.OpenExistingDir.Open<%s>: %w", path, e)
+	}
+	if f == nil {
+		panic("fu.OpenExistingDir.Open: " + path + ": no error but nil file ?!")
 	}
 	fi, e := os.Lstat(path.S())
 	if e != nil || !fi.IsDir() {
-		return nil, errors.New(fmt.Sprintf("fu.MustOpenExistingDir.notaDir<%s>", path))
+		return nil, fmt.Errorf("fu.mustOpenExistingDir.notaDir<%s>: %w", path, e)
 	}
 	return f, nil
 }
@@ -41,55 +46,46 @@ func OpenExistingDir(path AbsFilePath) (*os.File, error) {
 // OpenOrCreateDir returns true if (a) the directory exists and can be
 // opened, or (b) it does not exist, and/but it can be created anew.
 func OpenOrCreateDir(path AbsFilePath) (f *os.File, e error) {
-
 	// Does it already exist ?
-	f = Must(OpenExistingDir(path)) /*
-		if e == nil {
-			return f, nil
-		} */
-	// Try to create it
-	e = os.Mkdir(path.S(), 0777)
+	f, e = OpenExistingDir(path)
 	if e == nil {
-		// Now we *have* to open it
-		f = Must(OpenExistingDir(path)) /*
-			if e != nil {
-				return nil, errors.New(fmt.Sprintf("fu.MustOpenDir<%s>", path))
-			} */
-		// Succeeded
 		return f, nil
 	}
-	// err != nil
-	return nil, e
+	// If error, maybe it just dusnt exist, so try to create it
+	e = os.Mkdir(path.S(), 0777)
+	// If error, give up.
+	if e != nil {
+		return nil, fmt.Errorf("fu.OpenOrCreateDir<%s>: can't do either: %w", path, e)
+	}
+	// Now we *have* to open it
+	return Must(OpenExistingDir(path)), nil
 }
 
 // DirectoryContents returns the results of `(*os.File)Readdir(..)`.
 // `File.Name()` might be a relative filepath but if it was opened
 // okay then it at least functions as an absolute filepath.
+// If the path is not a directory then it panics. <br/>
 // `Readdir(..)` reads the contents of the directory associated
 // with the `File` argument and returns a slice of `FileInfo`
 // values, as would be returned by `Lstat(..)`, in directory order.
 func DirectoryContents(f *os.File) ([]os.FileInfo, error) {
-	f = Must(OpenExistingDir(AbsFilePath(f.Name()))) /*
-		if e != nil {
-			return nil, errors.Wrapf(e,
-				"fu.DirectoryContents.MustOpenExistingDir<%s>", f.Name())
-		} */
+	f = Must(OpenExistingDir(AbsFilePath(f.Name())))
 	defer f.Close()
 	// 0 means No limit, read'em all
 	fis, e := f.Readdir(0)
 	if e != nil {
-		return nil, errors.Wrapf(e, "fu.DirectoryContents.Readdir<%s>", f.Name())
+		return nil, fmt.Errorf("fu.DirectoryContents.Readdir<%s>: %w", f.Name(), e)
 	}
 	return fis, nil
 }
 
-// DirectoryFiles is like `DirectoryContents(..)` except that results
-// that are directories (not files) are nil'ed out. If there were
-// entries but none were files, it return (`0,nil`).
+// DirectoryFiles is like `DirectoryContents(..)` except that
+// results that are directories (not files) are nil'ed out. If
+// there were entries but none were files, it return (`0,nil,nil`).
 func DirectoryFiles(f *os.File) (int, []os.FileInfo, error) {
 	fis, e := DirectoryContents(f)
 	if e != nil {
-		return 0, nil, errors.Wrapf(e, "fu.DirectoryFiles<%s>", f.Name())
+		return 0, nil, fmt.Errorf("fu.DirectoryFiles<%s>: %w", f.Name(), e)
 	}
 	nFiles := 0
 	for i := range fis {

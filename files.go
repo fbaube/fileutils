@@ -3,6 +3,7 @@ package fileutils
 import (
 	"bufio"
 	"bytes"
+	"fmt"
 	"os"
 	FP "path/filepath"
 	S "strings"
@@ -22,31 +23,28 @@ func AbsWRT(maybeRelFP string, wrtDir string) string {
 	return FP.Join(wrtDir, maybeRelFP)
 }
 
-/*
-// MustOpenRW opens (and returns) the filepath as a writable file.
-func MustOpenRW(path string) (*os.File, error) {
-	f, e := os.OpenFile(path, os.O_RDWR, 0666)
+// OpenRW opens (and returns) the filepath as a writable file.
+func OpenRW(path string) (f *os.File, e error) {
+	f, e = os.OpenFile(path, os.O_RDWR, 0666)
 	if e != nil {
-		return nil, errors.Wrapf(e, "fu.MustOpenRW.OpenFile<%s>", path)
+		return nil, fmt.Errorf("fu.OpenRW.OpenFile<%s>: %w", path, e)
 	}
 	fi, e := os.Lstat(path)
 	if e != nil || !fi.Mode().IsRegular() {
-		return nil, errors.Wrapf(e, "fu.MustOpenRW.notaFile<%s>", path)
+		return nil, fmt.Errorf("fu.OpenRW.notaFile<%s>: %w", path, e)
 	}
 	return f, nil
 }
-*/
 
 // OpenRO opens (and returns) the filepath as a readable file.
-func OpenRO(path AbsFilePath) (*os.File, error) {
-	spath := path.S()
-	f, e := os.Open(spath)
+func OpenRO(path string) (f *os.File, e error) {
+	f, e = os.Open(path)
 	if e != nil {
-		return nil, errors.Wrapf(e, "fu.TryOpenRO.os.Open<%s>", spath)
+		return nil, fmt.Errorf("fu.OpenRO.os.Open<%s>: %w", path, e)
 	}
-	fi, e := os.Lstat(spath)
+	fi, e := os.Lstat(path)
 	if e != nil || fi.IsDir() {
-		return nil, errors.Wrapf(e, "fu.TryOpenRO.notaFile<%s>", spath)
+		return nil, fmt.Errorf("fu.OpenRO.notaFile<%s>: %w", path, e)
 	}
 	return f, nil
 }

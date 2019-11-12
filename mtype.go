@@ -2,14 +2,12 @@ package fileutils
 
 import (
 	S "strings"
-
 	SU "github.com/fbaube/stringutils"
 )
 
-// Mstring extracts (as user-readable text) the M-type set for the file.
-// Note that the M-type is initially set by analyzing the file extension
-// and contents, but can then later revised if there is an XML `DOCTYPE`
-// declaration.
+// Mstring extracts (as user-readable text) the file's MType. Note that the
+// MType is initially set by analyzing the file extension and contents, but
+// can then later revised if there is an XML `DOCTYPE` declaration.
 func (p CheckedPath) Mstring() string {
 	if p.MType == nil {
 		return "-/-/-"
@@ -26,7 +24,7 @@ func (p CheckedPath) Mstring() string {
 // SetFileMtype works as follows:
 //
 // Inputs:
-// - file extension (not really helpful OR reliable)
+// - file extension (not necessarily helpful OR reliable)
 // - file mimetype (as already analyzed by a simple third party library)
 // - file content
 // - NOT an input: the `DOCTYPE` (it is looked at later)
@@ -34,7 +32,7 @@ func (p CheckedPath) Mstring() string {
 // Outputs:
 // - `Mtype` (a `[3]string` slice that works like a MIME type)
 // [0] xml, md, txt, bin
-// [1] img, cnt, map, sch(ema); maybe others TBD
+// [1] img, c(onte)nt, map, sch(ema); maybe others TBD
 // [2] fmt/filext: XML Pub-ID/filext, MD flavor(?), SCH DTD/MOD/XSL, BIN filext
 // [3] IFF XML, TBS: Full Public ID string
 //
