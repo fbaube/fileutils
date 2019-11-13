@@ -3,6 +3,7 @@ package fileutils
 import (
 	"fmt"
 	"os"
+	FP "path/filepath"
 )
 
 // DirExists returns true *iff* the directory
@@ -99,4 +100,35 @@ func DirectoryFiles(f *os.File) (int, []os.FileInfo, error) {
 		fis = nil
 	}
 	return nFiles, fis, nil
+}
+
+func MakeDirectoryExist(path string) error {
+	if _, err := os.Stat(path); err != nil {
+		if os.IsNotExist(err) {
+			if err = os.Mkdir(path, os.ModePerm); err != nil {
+				return fmt.Errorf("Can't create directory <%s>: %w", path, err)
+			}
+		} else {
+			return fmt.Errorf("Can't access directory <%s>: %w", path, err)
+		}
+	}
+	return nil
+}
+
+func ClearOutDirectory(path string) error {
+  dir, err := os.Open(path)
+  if err != nil {
+    return fmt.Errorf("Can't access directory <%s>: %w", path, err)
+	}
+  defer dir.Close()
+	names, err := dir.Readdirnames(-1)
+  if err != nil {
+    return fmt.Errorf("Can't read directory <%s>: %w", path, err)
+	}
+	for _, name := range names {
+		if err = os.RemoveAll(FP.Join(path, name)); err != nil {
+			return fmt.Errorf("error clearing file %s: %v", name, err)
+		}
+	}
+	return nil
 }
