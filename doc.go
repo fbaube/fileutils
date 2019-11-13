@@ -53,19 +53,19 @@
 // If the file is a symlink, it changes the size of the link's target.
 //
 // `os.File` c-tors:
-// - func Create(name string) (*File, error) // creates/truncates named file.
-// If already exists, is truncated. If not exist, is created with mode 0666
-// (before umask). If success, File's methods are OK for RW (mode O_RDWR).
-// - func Open(name string) (*File, error) // opens named file RO (mode O_RDONLY).
-// - func OpenFile(name string, flag int, perm FileMode) (*File, error) // is
-// generalized open call (Open and Create are tipicl). Named file is opened
-// with specified flag (O_RDONLY etc.). If file not exist, and O_CREATE flag
-// is passed, file is created with mode perm (before umask).
+// - func Create(name string) (*File, error) is TruncreateRW(). <br/>
+// If exists, truncate. If not, create mode 0666. If OK, is RW (O_RDWR).
+// - func Open(name string) (*File, error) is OpenExistingRO(). <br/>
+// Opens named file RO (O_RDONLY).
+// - func OpenFile(name string, flag int, perm FileMode) (*File, error) <br/>
+// is generalized open call (Open and Create are usual). If exist, named file
+// is opened with specified flag (O_RDONLY etc.). If not exist, and O_CREATE
+// flag is passed, file is created with mode perm (before umask).
 //
 // `os.File` methods:
 // - func (f *File) Readdir(n int) ([]FileInfo, error) // reads the dir's
 // contents and returns up to n []FileInfo, as if returned by Lstat, in
-// directory order. Subsequent calls on same file yield further FileInfos. <br/>
+// directory order. More calls on same file yield further FileInfo's. <br/>
 // If n > 0, Readdir returns max n []FileInfo. In this case, if Readdir
 // returns an empty slice, it will return a non-nil error explaining why.
 // At the end of a directory, the error is io.EOF. <br/>
@@ -95,5 +95,5 @@
 // - func Lstat(name string) (FileInfo, error) // returns a FileInfo describing
 // the named file. If the file is a symlink, the returned FileInfo describes
 // the symlink. Lstat makes no attempt to follow the link.
-// 
+//
 package fileutils
