@@ -3,6 +3,8 @@ package fileutils
 import (
 	"fmt"
 	"os"
+	"io/ioutil"
+	"path"
 	FP "path/filepath"
 )
 
@@ -128,6 +130,41 @@ func ClearOutDirectory(path string) error {
 	for _, name := range names {
 		if err = os.RemoveAll(FP.Join(path, name)); err != nil {
 			return fmt.Errorf("error clearing file %s: %v", name, err)
+		}
+	}
+	return nil
+}
+
+// CopyDirRecursively copies a whole directory recursively.
+// Both argument should be directories !!
+func CopyDir/*Recursively*/(src string, dst string) error {
+	var err error
+	var fds []os.FileInfo
+	var srcinfo os.FileInfo
+
+	if srcinfo, err = os.Stat(src); err != nil {
+		return err
+	}
+
+	if err = os.MkdirAll(dst, srcinfo.Mode()); err != nil {
+		return err
+	}
+
+	if fds, err = ioutil.ReadDir(src); err != nil {
+		return err
+	}
+	for _, fd := range fds {
+		srcfp := path.Join(src, fd.Name())
+		dstfp := path.Join(dst, fd.Name())
+
+		if fd.IsDir() {
+			if err = CopyDir/*Recursively*/(srcfp, dstfp); err != nil {
+				fmt.Println(err)
+			}
+		} else {
+			if err = CopyFile(srcfp, dstfp); err != nil {
+				fmt.Println(err)
+			}
 		}
 	}
 	return nil
