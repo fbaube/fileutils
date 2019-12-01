@@ -14,7 +14,7 @@ import (
 //
 // Notes on usage:
 // - `DirPath` must end with a slash `/`, or else we cannot
-// distinguish empty/invalid from the filesystem root.
+// distinguish an empty/invalid path from the filesystem root.
 // - `Suffix` must start with a dot `.`, or else we cannot
 // distinguish the edge case where a name ends with a dot.
 // - If `AbsFilePathParts` describes a directory, the entire

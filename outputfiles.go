@@ -3,11 +3,10 @@ package fileutils
 import (
 	"io"
 	"os"
+	"fmt"
 	FP "path/filepath"
 	S "strings"
-
 	SU "github.com/fbaube/stringutils"
-	"github.com/pkg/errors"
 )
 
 // LwdxFormats is a list of the types of text-based markup that
@@ -105,7 +104,7 @@ func (pOF *OutputFiles) NewOutputExt(filext string) (*OutputFileExt, error) {
 	var pOFE *OutputFileExt
 	var e error
 	if filext == "" {
-		return nil, errors.New("fu.NewOutputExt.emptyArg")
+		return nil, fmt.Errorf("fu.NewOutputExt.emptyArg")
 	}
 	if !S.HasPrefix(filext, ".") {
 		filext = "." + filext
@@ -114,7 +113,7 @@ func (pOF *OutputFiles) NewOutputExt(filext string) (*OutputFileExt, error) {
 	f, e = os.OpenFile(newpath, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0666)
 	// Alternatively: f,e = MustCreate(newpath)
 	if e != nil {
-		return nil, errors.Wrapf(e, "fu.NewOutputExt<%s>", filext)
+		return nil, fmt.Errorf("fu.NewOutputExt<%s>: %w", filext, e)
 	}
 	pOFE = new(OutputFileExt)
 	pOFE.FileExt = filext

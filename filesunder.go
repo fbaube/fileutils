@@ -5,9 +5,7 @@ import (
 	"os"
 	FP "path/filepath"
 	S "strings"
-
 	SU "github.com/fbaube/stringutils"
-	"github.com/pkg/errors"
 )
 
 var gotOkayExts bool
@@ -107,7 +105,7 @@ func ListFilesUnder(path string, useSymLinks bool) (FS *FileSet, err error) {
 		return nil
 	})
 	if err != nil {
-		return nil, errors.Wrapf(err, "fu.ListFilesUnder<%s>", path)
+		return nil, fmt.Errorf("fu.ListFilesUnder<%s>: %w", path, err)
 	}
 	return FS, nil
 }
@@ -147,7 +145,7 @@ func GatherInputFiles(path AbsFilePath, okayExts []string) (okayFiles []AbsFileP
 	// PROCESS THE DIRECTORY
 	err = FP.Walk(spath, myWalkFunc)
 	if err != nil {
-		return nil, errors.Wrapf(err, "fu.GatherInputFiles.walkTo<%s>", path)
+		return nil, fmt.Errorf("fu.GatherInputFiles.walkTo<%s>: %w", path, err)
 	}
 	return theOkayFiles, nil
 }
@@ -173,7 +171,7 @@ func GatherNamedFiles(path AbsFilePath, name string) (okayFiles []AbsFilePath, e
 	// PROCESS THE DIRECTORY
 	err = FP.Walk(path.S(), myWalkFunc)
 	if err != nil {
-		return nil, errors.Wrapf(err, "fu.GatherNamedFiles.walkTo<%s>", path)
+		return nil, fmt.Errorf("fu.GatherNamedFiles.walkTo<%s>: %w", path, err)
 	}
 	return theOkayFiles, nil
 }
@@ -192,7 +190,7 @@ func myWalkFunc(path string, finfo os.FileInfo, inerr error) error {
 		panic("fu.myWalkFunc<" + path + ":" + finfo.Name() + ">")
 	}
 	if inerr != nil {
-		return errors.Wrapf(inerr, "fu.myWalkFunc<%s>", path)
+		return fmt.Errorf("fu.myWalkFunc<%s>: %w", path, inerr)
 	}
 	// Is it hidden, or an emacs backup ? If so, ignore.
 	if S.HasPrefix(path, ".") || S.HasSuffix(path, "~") {
@@ -217,7 +215,7 @@ func myWalkFunc(path string, finfo os.FileInfo, inerr error) error {
 	apath, e := FP.Abs(path)
 	abspath = AbsFilePath(apath)
 	if e != nil {
-		return errors.Wrapf(e, "fu.myWalkFunc<%s>", path)
+		return fmt.Errorf("fu.myWalkFunc<%s>: %w", path, e)
 	}
 	f = Must(OpenRO(abspath.S()))
 	defer f.Close() /*

@@ -3,6 +3,9 @@ package fileutils
 import (
 	"fmt"
 	"os"
+	"io/ioutil"
+	"path"
+	FP "path/filepath"
 )
 
 // DirExists returns true *iff* the directory
@@ -99,4 +102,70 @@ func DirectoryFiles(f *os.File) (int, []os.FileInfo, error) {
 		fis = nil
 	}
 	return nFiles, fis, nil
+}
+
+func MakeDirectoryExist(path string) error {
+	if _, err := os.Stat(path); err != nil {
+		if os.IsNotExist(err) {
+			if err = os.Mkdir(path, os.ModePerm); err != nil {
+				return fmt.Errorf("Can't create directory <%s>: %w", path, err)
+			}
+		} else {
+			return fmt.Errorf("Can't access directory <%s>: %w", path, err)
+		}
+	}
+	return nil
+}
+
+func ClearOutDirectory(path string) error {
+  dir, err := os.Open(path)
+  if err != nil {
+    return fmt.Errorf("Can't access directory <%s>: %w", path, err)
+	}
+  defer dir.Close()
+	names, err := dir.Readdirnames(-1)
+  if err != nil {
+    return fmt.Errorf("Can't read directory <%s>: %w", path, err)
+	}
+	for _, name := range names {
+		if err = os.RemoveAll(FP.Join(path, name)); err != nil {
+			return fmt.Errorf("error clearing file %s: %v", name, err)
+		}
+	}
+	return nil
+}
+
+// CopyDirRecursively copies a whole directory recursively.
+// Both argument should be directories !!
+func CopyDir/*Recursively*/(src string, dst string) error {
+	var err error
+	var fds []os.FileInfo
+	var srcinfo os.FileInfo
+
+	if srcinfo, err = os.Stat(src); err != nil {
+		return err
+	}
+
+	if err = os.MkdirAll(dst, srcinfo.Mode()); err != nil {
+		return err
+	}
+
+	if fds, err = ioutil.ReadDir(src); err != nil {
+		return err
+	}
+	for _, fd := range fds {
+		srcfp := path.Join(src, fd.Name())
+		dstfp := path.Join(dst, fd.Name())
+
+		if fd.IsDir() {
+			if err = CopyDir/*Recursively*/(srcfp, dstfp); err != nil {
+				fmt.Println(err)
+			}
+		} else {
+			if err = CopyFile(srcfp, dstfp); err != nil {
+				fmt.Println(err)
+			}
+		}
+	}
+	return nil
 }

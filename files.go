@@ -5,11 +5,11 @@ import (
 	"bytes"
 	"fmt"
 	"os"
+	"io"
+	"io/ioutil"
 	FP "path/filepath"
 	S "strings"
-
 	"github.com/mgutz/str"
-	"github.com/pkg/errors"
 )
 
 // AbsWRT is like filepath.Abs(..): it can convert a possibly-relative
@@ -60,11 +60,11 @@ func CreateEmpty(path AbsFilePath) (*os.File, error) {
 	spath := path.S()
 	f, e := os.Create(spath)
 	if e != nil {
-		return nil, errors.Wrapf(e, "fu.CreateEmpty.Create<%s>", spath)
+		return nil, fmt.Errorf("fu.CreateEmpty.Create<%s>: %w", spath, e)
 	}
 	fi, e := os.Stat(spath)
 	if e != nil || !fi.Mode().IsRegular() {
-		return nil, errors.Wrapf(e, "fu.CreateEmpty.notaFile<%s>", spath)
+		return nil, fmt.Errorf("fu.CreateEmpty.notaFile<%s>: %w", spath, e)
 	}
 	return f, nil
 }
@@ -135,4 +135,46 @@ func IsXML(path string) bool {
 	}
 	// We require valid XML tags to begin with A-Za-z
 	return str.IsAlpha(str.CharAt(s, 1))
+}
+
+// CopyFileGreedily reads the entire file into memory,
+// and is therefore memory-constrained !
+func CopyFileGreedily(src string, dst string)  error {
+	var e error
+	var data []byte
+  // Read all content of src to data
+  if data, e = ioutil.ReadFile(src); e != nil {
+		return e
+	}
+  // Write data to dst
+  if e = ioutil.WriteFile(dst, data, 0644); e != nil {
+		return e
+	}
+	return nil
+}
+
+// File copies a single file from src to dst
+func CopyFile(src, dst string) error {
+	var err error
+	var srcfd *os.File
+	var dstfd *os.File
+	var srcinfo os.FileInfo
+
+	if srcfd, err = os.Open(src); err != nil {
+		return err
+	}
+	defer srcfd.Close()
+
+	if dstfd, err = os.Create(dst); err != nil {
+		return err
+	}
+	defer dstfd.Close()
+
+	if _, err = io.Copy(dstfd, srcfd); err != nil {
+		return err
+	}
+	if srcinfo, err = os.Stat(src); err != nil {
+		return err
+	}
+	return os.Chmod(dst, srcinfo.Mode())
 }
