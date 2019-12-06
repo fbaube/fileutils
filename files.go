@@ -153,8 +153,8 @@ func CopyFileGreedily(src string, dst string)  error {
 	return nil
 }
 
-// File copies a single file from src to dst
-func CopyFile(src, dst string) error {
+// CopyFileFromTo copies a single file from src to dst
+func CopyFileFromTo(src, dst string) error {
 	var err error
 	var srcfd *os.File
 	var dstfd *os.File

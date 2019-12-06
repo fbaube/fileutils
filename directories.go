@@ -135,9 +135,9 @@ func ClearOutDirectory(path string) error {
 	return nil
 }
 
-// CopyDirRecursively copies a whole directory recursively.
+// CopyDirRecursivelyFromTo copies a whole directory recursively.
 // Both argument should be directories !!
-func CopyDir/*Recursively*/(src string, dst string) error {
+func CopyDirRecursivelyFromTo(src string, dst string) error {
 	var err error
 	var fds []os.FileInfo
 	var srcinfo os.FileInfo
@@ -158,11 +158,11 @@ func CopyDir/*Recursively*/(src string, dst string) error {
 		dstfp := path.Join(dst, fd.Name())
 
 		if fd.IsDir() {
-			if err = CopyDir/*Recursively*/(srcfp, dstfp); err != nil {
+			if err = CopyDirRecursivelyFromTo(srcfp, dstfp); err != nil {
 				fmt.Println(err)
 			}
 		} else {
-			if err = CopyFile(srcfp, dstfp); err != nil {
+			if err = CopyFileFromTo(srcfp, dstfp); err != nil {
 				fmt.Println(err)
 			}
 		}
