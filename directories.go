@@ -117,7 +117,20 @@ func MakeDirectoryExist(path string) error {
 	return nil
 }
 
-func ClearOutDirectory(path string) error {
+// ClearAndCreateDirectory deletes it before re-creating it.
+// The older version (below it, commented out) tried to keep
+// the directory as-is while emptying it.
+func ClearAndCreateDirectory(path string) error {
+// func clearAndCreateDestination(path string) error {
+	if err := os.RemoveAll(path); err != nil {
+		if !os.IsNotExist(err) {
+			return fmt.Errorf("Can't remove item <%s>: %w", path, err)
+		}
+	}
+	return os.Mkdir(path, os.ModePerm)
+}
+
+func ClearDirectory(path string) error {
   dir, err := os.Open(path)
   if err != nil {
     return fmt.Errorf("Can't access directory <%s>: %w", path, err)
