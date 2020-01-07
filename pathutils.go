@@ -79,7 +79,7 @@ func (p BasicPath) Echo() string {
 
 // String implements Markupper.
 func (p CheckedContent) String() string {
-	if p.IsDir {
+	if p.IsOkayDir() {
 		return fmt.Sprintf("BscPth: DIR[%d]: %s | %s",
 			p.Size, p.RelFilePath, p.AbsFilePathParts.Echo())
 	}

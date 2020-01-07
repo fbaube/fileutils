@@ -47,7 +47,7 @@ func (p CheckedContent) Mstring() string {
 // `.dita` =>	dita ; `.xml` => dita ; `.md` => markdown ; `.markdown` => markdown
 //
 func (p *CheckedContent) SetFileMtype() *CheckedContent {
-	if p.error != nil || p.PathType() != "FILE" {
+	if p.error != nil || !p.IsOkayFile() { //p.PathType() != "FILE" {
 		return p
 	}
 	// theFileExt includes a leading "."

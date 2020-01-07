@@ -70,7 +70,7 @@ func (pBP *BasicPath) ReadContent() *CheckedContent {
 	pCC := new(CheckedContent)
 	pCC.BasicPath = pBP
 	TheAbsFP := NiceFP(pBP.AbsFilePath.S())
-	if pBP.PathType() != "FILE" {
+	if !pBP.IsOkayFile() { // pBP.PathType() != "FILE" {
 		pCC.error = errors.New("fu.ReadContent: not a file: " + TheAbsFP)
 		return pCC
 	}
@@ -88,7 +88,7 @@ func (pBP *BasicPath) ReadContent() *CheckedContent {
 	var pF *os.File
 	var e error
 	pF, e = os.Open(TheAbsFP)
-	pF.Close()
+	defer pF.Close()
 	if e != nil {
 		pBP.error = errors.New(fmt.Sprintf(
 				"fu.ReadContent.osOpen<%s>: %s", TheAbsFP, e.Error()))
@@ -124,6 +124,10 @@ func (pBP *BasicPath) ReadContent() *CheckedContent {
 
 // FileType returns `XML`, `MKDN`, or future stuff TBD.
 func (p *CheckedContent) FileType() string {
+	if p.MType == nil {
+		println("Unallocated MType[]!")
+		return "ERR/OH/CRAP"
+	}
 	return S.ToUpper(p.MType[0])
 }
 
@@ -143,7 +147,7 @@ func (p *CheckedContent) FileType() string {
 // in the preceding string fields: Mtype []string
 //
 func (p *CheckedContent) InspectFile() *CheckedContent {
-	if p.error != nil || p.PathType() != "FILE" {
+	if p.error != nil || !p.IsOkayFile() { // p.PathType() != "FILE" {
 		return p
 	}
 	p.MagicMimeType = GoMagic(p.Raw)
@@ -156,6 +160,9 @@ func (p *CheckedContent) InspectFile() *CheckedContent {
 	// This next call assigns "text/html" to DITA maps :-/
 	contyp := http.DetectContentType([]byte(p.Raw)) // (content))
 	p.SniftMimeType = S.TrimSuffix(contyp, "; charset=utf-8")
+
+	println("cc.InspectFile: Did own; now SetFileMtype")
+	p.SetFileMtype()
 
 	// fmt.Printf("    MIME: (%s) %s \n", p.SniftMimeType, p.MagicMimeType)
 	return p

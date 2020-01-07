@@ -19,9 +19,9 @@ type BasicPath struct {
 	// We require that AbsFilePathParts.Echo() == AbsFilePath
 	*AbsFilePathParts
 	Exists bool
-	IsDir  bool
-	IsFile bool
-	IsSymL bool
+	isDir  bool
+	isFile bool
+	isSymL bool
 	// Size is here and not in `struct CheckedPath` because its
 	// value is already made available to us when `func check()`
 	// calls `os.FileInfo os.Lstat(..)`, below.
@@ -50,6 +50,19 @@ func (p *BasicPath) SetError(e error) {
 
 // TODO: IsOkayFile(), IsOkayDir(), IsOkaySymlink()
 
+func (p *BasicPath) IsOkayFile() bool {
+	return p.error == nil && p.Exists && p.isFile && !p.isDir
+}
+
+func (p *BasicPath) IsOkayDir() bool {
+	return p.error == nil && p.Exists && !p.isFile && p.isDir
+}
+
+func (p *BasicPath) IsOkaySymlink() bool {
+	return p.error == nil && p.Exists && !p.isFile && !p.isDir && p.isSymL
+}
+
+/*
 func (p *BasicPath) PathType() string {
 	if p.AbsFilePath == "" {
 		panic("fu.BasicPath.PathType: AFP not initialized")
@@ -65,6 +78,7 @@ func (p *BasicPath) PathType() string {
 	}
 	panic("fu.BasicPath.PathType: bad state (symlink?)")
 }
+*/
 
 // NewBasicPath requires a non-nil `RelFilePath` and analyzes it.
 // It returns a pointer that can be used in a CheckedPath to
@@ -94,11 +108,11 @@ func (p *BasicPath) check() *BasicPath {
 		// Just return before any flags are set, such as Exists.
 		return p // nil
 	}
-	p.IsDir = FI.IsDir()
-	p.IsFile = FI.Mode().IsRegular()
-	p.IsSymL = (0 != (FI.Mode() & os.ModeSymlink))
-	p.Exists = p.IsDir || p.IsFile || p.IsSymL
-	if p.IsFile {
+	p.isDir = FI.IsDir()
+	p.isFile = FI.Mode().IsRegular()
+	p.isSymL = (0 != (FI.Mode() & os.ModeSymlink))
+	p.Exists = p.isDir || p.isFile || p.isSymL
+	if p.isFile {
 		p.Size = int(FI.Size())
 	}
 	return p

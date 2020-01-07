@@ -51,7 +51,7 @@ func ListFilesUnder(path string, useSymLinks bool) (FS *FileSet, err error) {
 	FS.FilePaths = make([]string, 0, 10)
 	FS.CheckedFiles = make([]BasicPath, 0, 10)
 	// A single file ? If so, don't even bother to check it :)
-	if FS.DirSpec.PathType() != "DIR" { // !DirExists(FS.AbsFilePath) {
+	if !FS.DirSpec.IsOkayDir() { // PathType() != "DIR" { // !DirExists(FS.AbsFilePath) {
 		println("==> Warning: not a directory:", path)
 		pF, e := os.Open(FS.DirSpec.AbsFilePath.S())
 		defer pF.Close()

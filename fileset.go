@@ -41,7 +41,7 @@ func NewOneFileSet(s string) *FileSet {
 		return p
 	}
 	p.DirSpec = *NewBasicPath(s)
-	if p.DirSpec.PathType() != "FILE" {
+	if !p.DirSpec.IsOkayFile() { // PathType() != "FILE" {
 		panic("fu.FileSet.NewOneFS: not a file: " + s)
 	}
 	p.FilePaths = make([]string, 0, 1)
