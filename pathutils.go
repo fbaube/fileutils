@@ -73,14 +73,14 @@ func (p AbsFilePathParts) String() string {
 }
 
 // Echo implements Markupper.
-func (p CheckedPath) Echo() string {
+func (p BasicPath) Echo() string {
 	return p.AbsFilePathParts.Echo()
 }
 
 // String implements Markupper.
-func (p CheckedPath) String() string {
+func (p CheckedContent) String() string {
 	if p.IsDir {
-		return fmt.Sprintf("ChP: DIR[%d]: %s | %s",
+		return fmt.Sprintf("BscPth: DIR[%d]: %s | %s",
 			p.Size, p.RelFilePath, p.AbsFilePathParts.Echo())
 	}
 	var isXML string

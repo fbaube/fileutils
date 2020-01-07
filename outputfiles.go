@@ -49,7 +49,7 @@ func (of OutputFiles) String() string {
 // Assume they all go to the same directory, but it does not have to be
 // the same directory as the `InputFile`.
 type OutputFiles struct {
-	pInputFile *CheckedPath
+	pInputFile *CheckedContent
 	// OutDirPath is the full absolute directory path (but without file base
 	// name or file extension). Normally it is the same as the input file's,
 	// but it can also be a subdirectory whose name is based on the input file.
@@ -66,7 +66,7 @@ type OutputFiles struct {
 //
 // For convenience, if `subdirSuffix` is "", output files are placed in the
 // same directory as the `InputFile`.
-func (pIF *CheckedPath) NewOutputFiles(subdirSuffix string) (*OutputFiles, error) {
+func (pIF *CheckedContent) NewOutputFiles(subdirSuffix string) (*OutputFiles, error) {
 
 	p := new(OutputFiles)
 	p.pInputFile = pIF

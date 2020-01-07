@@ -8,7 +8,7 @@ import (
 // Mstring extracts (as user-readable text) the file's MType. Note that the
 // MType is initially set by analyzing the file extension and contents, but
 // can then later revised if there is an XML `DOCTYPE` declaration.
-func (p CheckedPath) Mstring() string {
+func (p CheckedContent) Mstring() string {
 	if p.MType == nil {
 		return "-/-/-"
 	}
@@ -46,7 +46,7 @@ func (p CheckedPath) Mstring() string {
 // The following extensions are treated as DITA files: <br/>
 // `.dita` =>	dita ; `.xml` => dita ; `.md` => markdown ; `.markdown` => markdown
 //
-func (p *CheckedPath) SetFileMtype() *CheckedPath {
+func (p *CheckedContent) SetFileMtype() *CheckedContent {
 	if p.error != nil || p.PathType() != "FILE" {
 		return p
 	}
