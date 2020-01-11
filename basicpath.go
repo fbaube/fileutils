@@ -1,8 +1,10 @@
 package fileutils
 
 import (
+	"fmt"
 	"errors"
 	"os"
+	FP "path/filepath"
 )
 
 // BasicPath is a filepath we have redd, will read, or will create.
@@ -62,24 +64,6 @@ func (p *BasicPath) IsOkaySymlink() bool {
 	return p.error == nil && p.Exists && !p.isFile && !p.isDir && p.isSymL
 }
 
-/*
-func (p *BasicPath) PathType() string {
-	if p.AbsFilePath == "" {
-		panic("fu.BasicPath.PathType: AFP not initialized")
-	}
-	if p.error != nil || !p.Exists {
-		return "NIL"
-	}
-	if p.IsDir && !p.IsFile {
-		return "DIR"
-	}
-	if p.IsFile && !p.IsDir {
-		return "FILE"
-	}
-	panic("fu.BasicPath.PathType: bad state (symlink?)")
-}
-*/
-
 // NewBasicPath requires a non-nil `RelFilePath` and analyzes it.
 // It returns a pointer that can be used in a CheckedPath to
 // start a method chain.
@@ -88,11 +72,11 @@ func NewBasicPath(rfp string) *BasicPath {
 	rp.RelFilePath = rfp
 	rp.AbsFilePath = AbsFP(rfp)
 	rp.AbsFilePathParts = rp.AbsFilePath.NewAbsPathParts()
-	return rp.check()
+	return rp.setFlags()
 }
 
-// check requires a non-nil `AbsFilePath` and checks for existence and type.
-func (p *BasicPath) check() *BasicPath {
+// setFlags requires a non-nil `AbsFilePath` and checks for existence and type.
+func (p *BasicPath) setFlags() *BasicPath {
 	if p.error != nil {
 		return p // or nil ?
 	}
@@ -116,4 +100,31 @@ func (p *BasicPath) check() *BasicPath {
 		p.Size = int(FI.Size())
 	}
 	return p
+}
+
+func (p *BasicPath) ResolveSymlinks() bool {
+	if p.error != nil {
+		return false
+	}
+	if !p.IsOkaySymlink() {
+		return false
+	}
+	var newPath string
+	var wasResolved = false
+	var e error
+	for p.IsOkaySymlink() {
+		// func os.Readlink(pathname string) (string, error)
+		// func FP.EvalSymlinks(path string) (string, error)
+		newPath, e = FP.EvalSymlinks(p.AbsFilePath.S())
+		if e != nil {
+			p.error = fmt.Errorf("fu.RslvSymLx <%s>: %w", p.AbsFilePath, e)
+			return wasResolved
+		}
+		println("--> Symlink from:", p.AbsFilePath)
+		println("     resolved to:", newPath)
+		p.AbsFilePath = AbsFilePath(newPath)
+		p.setFlags()
+		wasResolved = true 
+	}
+	return wasResolved
 }
