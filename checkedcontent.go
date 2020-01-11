@@ -9,6 +9,9 @@ import (
 	S "strings"
 )
 
+// MAX_FILE_SIZE is set (arbitrarily) to 2 megabytes
+const MAX_FILE_SIZE = 2_000_000
+
 // CheckedContent is a filepath we have redd, will read, or will create.
 // It might also be a directory or symlink, either of which requires
 // further processing elsewhere.
@@ -59,8 +62,8 @@ func (p *CheckedContent) SetError(e error) {
 	p.error = e
 }
 
-// ReadContent reads in the file (IFF it is a file)
-// and does a quick check for the MIME type.
+// ReadContent reads in the file (IFF it is a file) and does a
+// quick check of the MIME type before returning the promoted type.
 // If it does not exist, be nice: do nothing and return no error.
 // If it is not a file, be nice: do nothing and return no error.
 // If `Raw` is not "", be nice: the file is already loaded and
@@ -71,47 +74,17 @@ func (pBP *BasicPath) ReadContent() *CheckedContent {
 	pCC.BasicPath = pBP
 	TheAbsFP := NiceFP(pBP.AbsFilePath.S())
 	if !pBP.IsOkayFile() { // pBP.PathType() != "FILE" {
-		pCC.error = errors.New("fu.ReadContent: not a file: " + TheAbsFP)
+		pCC.error = errors.New("fu.ReadContent: not a readable file: " + TheAbsFP)
 		return pCC
 	}
 	pCC.BasicContent = *new(BasicContent)
-	if pBP.Size == 0 {
-		println("==> zero-length file:", TheAbsFP)
-		return nil
-	}
-	// If it's too big, BARF!
-	if pBP.Size > 2000000 {
-		pBP.error = fmt.Errorf(
-			"fu.ReadContent: file too large (%d): %s", pBP.Size, TheAbsFP)
-	}
-	// Open it (and then immediately close it), just to check.
-	var pF *os.File
-	var e error
-	pF, e = os.Open(TheAbsFP)
-	defer pF.Close()
-	if e != nil {
-		pBP.error = errors.New(fmt.Sprintf(
-				"fu.ReadContent.osOpen<%s>: %s", TheAbsFP, e.Error()))
+	bb := pBP.GetContent()
+	if pBP.error != nil {
+		pCC.error = fmt.Errorf("fu.ReadContent: BP.GetContent<%s> failed: %w",
+			TheAbsFP, pBP.error)
 		return pCC
 	}
-	var bb []byte
-	// Read it in !
-	// NEW CODE
-	// func ReadAll(r io.Reader) ([]byte, error)
-	bb, e = ioutil.ReadAll(pF)
-	/* OLD CODE
-	// TODO/FIXME Use github.com/dimchansky/utfbom Skip()
-	bb, e = ioutil.ReadFile(p.AbsFilePath.S())
-	*/
-	if e != nil {
-		pBP.error = errors.New(fmt.Sprintf(
-				"fu.ReadContent.ioutilReadAll<%s>: %w", TheAbsFP, e))
-	}
-	if len(bb) == 0 {
-		println("==> empty file:", TheAbsFP)
-	}
 	pCC.Raw = S.TrimSpace(string(bb))
-
 	if !S.HasPrefix(pBP.AbsFilePathParts.FileExt, ".") {
 		println("==> (oops had to add a dot to filext")
 		pBP.AbsFilePathParts.FileExt = "." + pBP.AbsFilePathParts.FileExt
@@ -120,6 +93,51 @@ func (pBP *BasicPath) ReadContent() *CheckedContent {
 		println("FOUND HTML")
 	}
 	return pCC
+}
+
+// GetContent reads in the file (IFF it is a file).
+// If an error, it is returned in `BasicPath.error`,
+// and the return value is `nil`. `
+// Open defaults to R/W, altho R/O would probably suffice.
+func (pBP *BasicPath) GetContent() []byte {
+	if pBP.error != nil {
+		return nil
+	}
+	TheAbsFP := NiceFP(pBP.AbsFilePath.S())
+	if !pBP.IsOkayFile() {
+		pBP.error = errors.New("fu.BP.GetContent: not a file: " + TheAbsFP)
+		return nil
+	}
+	if pBP.Size == 0 {
+		println("==> zero-length file:", TheAbsFP)
+		return make([]byte, 0)
+	}
+	// If it's too big, BARF!
+	if pBP.Size > MAX_FILE_SIZE {
+		pBP.error = fmt.Errorf(
+			"fu.BP.GetContent: file too large (%d): %s", pBP.Size, TheAbsFP)
+		return nil
+	}
+	// Open it (and then immediately close it), just to check.
+	var pF *os.File
+	var e error
+	pF, e = os.Open(TheAbsFP)
+	defer pF.Close()
+	if e != nil {
+		pBP.error = errors.New(fmt.Sprintf(
+				"fu.BP.GetContent.osOpen<%s>: %w", TheAbsFP, e))
+		return nil
+	}
+	var bb []byte
+	bb, e = ioutil.ReadAll(pF)
+	if e != nil {
+		pBP.error = errors.New(fmt.Sprintf(
+				"fu.BP.GetContent.ioutilReadAll<%s>: %w", TheAbsFP, e))
+	}
+	if len(bb) == 0 {
+		println("==> empty file?!:", TheAbsFP)
+	}
+	return bb
 }
 
 // FileType returns `XML`, `MKDN`, or future stuff TBD.
