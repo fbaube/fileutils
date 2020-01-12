@@ -125,7 +125,7 @@ func init() {
 		return
 	}
 	fmt.Fprintf(os.Stderr,
-		"Hello, %s (%s) (uid:%s,gid:%s) working in \n       %s \n",
+		"Hello, %s (%s) (uid:%s,gid:%s) \n       working in: %s \n",
 		currentUser.Username, currentUser.Name,
 		currentUser.Uid, currentUser.Gid, Tilded(currentWorkingDir))
 

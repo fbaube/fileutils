@@ -179,7 +179,7 @@ func (p *CheckedContent) InspectFile() *CheckedContent {
 	contyp := http.DetectContentType([]byte(p.Raw)) // (content))
 	p.SniftMimeType = S.TrimSuffix(contyp, "; charset=utf-8")
 
-	println("cc.InspectFile: Did own; now SetFileMtype")
+	// println("cc.InspectFile: Did own; now SetFileMtype")
 	p.SetFileMtype()
 
 	// fmt.Printf("    MIME: (%s) %s \n", p.SniftMimeType, p.MagicMimeType)
