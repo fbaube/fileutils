@@ -10,7 +10,7 @@ import (
 )
 
 // MAX_FILE_SIZE is set (arbitrarily) to 2 megabytes
-const MAX_FILE_SIZE = 2_000_000
+const MAX_FILE_SIZE = 2000000
 
 // CheckedContent is a filepath we have redd, will read, or will create.
 // It might also be a directory or symlink, either of which requires

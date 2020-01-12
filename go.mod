@@ -1,6 +1,6 @@
 module github.com/fbaube/fileutils
 
-go 1.12
+go 1.13
 
 require (
 	github.com/fatih/color v1.7.0 // indirect
@@ -10,5 +10,4 @@ require (
 	github.com/mattn/go-colorable v0.1.4 // indirect
 	github.com/mattn/go-isatty v0.0.10 // indirect
 	github.com/mgutz/str v1.2.0
-	github.com/pkg/errors v0.8.1
 )
