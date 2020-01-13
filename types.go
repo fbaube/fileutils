@@ -124,8 +124,11 @@ func init() {
 		println("==> ERROR: Cannot determine current working directory")
 		return
 	}
+}
+
+func SessionDemo() {
 	fmt.Fprintf(os.Stderr,
-		"Hello, %s (%s) (uid:%s,gid:%s) \n       working in: %s \n",
+		"Hello, %s (%s) (uid:%s,gid:%s) \n   in  %s \n",
 		currentUser.Username, currentUser.Name,
 		currentUser.Uid, currentUser.Gid, Tilded(currentWorkingDir))
 
