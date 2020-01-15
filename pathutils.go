@@ -90,7 +90,7 @@ func (p CheckedContent) String() string {
 	s := fmt.Sprintf("ChP: %sLen<%d>Mtype<%s>",
 		isXML, p.Size, p.Mstring())
 	s += fmt.Sprintf("\n\t %s | %s",
-		p.RelFilePath, NiceFP(p.AbsFilePathParts.Echo()))
+		p.RelFilePath, Tilded(p.AbsFilePathParts.Echo()))
 	s += fmt.Sprintf("\n\t (snift) %s | (magic) %s",
 		p.SniftMimeType, p.MagicMimeType)
 	return s

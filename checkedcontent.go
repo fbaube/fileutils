@@ -72,7 +72,7 @@ func (p *CheckedContent) SetError(e error) {
 func (pBP *BasicPath) ReadContent() *CheckedContent {
 	pCC := new(CheckedContent)
 	pCC.BasicPath = pBP
-	TheAbsFP := NiceFP(pBP.AbsFilePath.S())
+	TheAbsFP := Tilded(pBP.AbsFilePath.S())
 	if !pBP.IsOkayFile() { // pBP.PathType() != "FILE" {
 		pCC.error = errors.New("fu.ReadContent: not a readable file: " + TheAbsFP)
 		return pCC
@@ -103,7 +103,7 @@ func (pBP *BasicPath) GetContent() []byte {
 	if pBP.error != nil {
 		return nil
 	}
-	TheAbsFP := NiceFP(pBP.AbsFilePath.S())
+	TheAbsFP := Tilded(pBP.AbsFilePath.S())
 	if !pBP.IsOkayFile() {
 		pBP.error = errors.New("fu.BP.GetContent: not a file: " + TheAbsFP)
 		return nil

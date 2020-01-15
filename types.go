@@ -26,7 +26,8 @@ type AbsFilePath string
 // A token nod to Windoze compatibility.
 const PathSep = string(os.PathSeparator)
 
-// NOTE See init(), at bottom
+// These should end in the path separator!
+// NOTE See init(), at bottom.
 var currentWorkingDir, currentUserHomeDir string
 var currentUser *user.User
 
@@ -40,7 +41,8 @@ func GetHomeDir() string {
 func (afp AbsFilePath) S() string {
 	s := string(afp)
 	if !FP.IsAbs(s) {
-		panic("FU.types: AbsFP is not abs: " + s)
+		// panic("FU.types: AbsFP is not abs: " + s)
+		println("==> fu.types: AbsFP not abs:" + s)
 	}
 	return s
 }
@@ -58,9 +60,13 @@ func AbsFP(rfp string) AbsFilePath {
 }
 
 // NiceFP shortens a filepath by substituting "." or "~".
-func NiceFP(s string) string {
-	// if it's missing, and has an assumed/default...
+func Tilded(s string) string {
+	// If it's missing, use assumed/default...
 	if s == "" {
+		return "."
+	}
+	// If it's CWD...
+	if s == currentWorkingDir {
 		return "."
 	}
 	// If it can't be normalised...
@@ -71,24 +77,26 @@ func NiceFP(s string) string {
 	if S.HasPrefix(s, "."+PathSep) || S.HasPrefix(s, "~"+PathSep) {
 		return s
 	}
-	// At this point, if it's not an absolute FP, it's a problem.
-	// if !S.HasPrefix(s, PathSep) {
+	// At this point, if it's not an absolute FP, it's a relative FP,
+	// but let it slide and don't prepend "./".
 	if !FP.IsAbs(s) {
-		panic("NiceFP barfs on: " + s)
+		// panic("NiceFP barfs on: " + s)
+		return s
 	}
 	// println("arg:", s)
 	// println("cwd:", currentworkingdir)
-	if s == currentWorkingDir {
-		return "."
-	}
+
 	if S.HasPrefix(s, currentWorkingDir) {
-		bytesToTrim := len(currentWorkingDir) + 1
-		return "." + PathSep + s[bytesToTrim:]
+		return ("." + PathSep + S.TrimPrefix(s, currentWorkingDir))
+		// bytesToTrim := len(currentWorkingDir) + 1
+		// return "." + PathSep + s[bytesToTrim:]
 	}
 	if S.HasPrefix(s, currentUserHomeDir) {
-		bytesToTrim := len(currentUserHomeDir) + 1
-		return "~" + PathSep + s[bytesToTrim:]
+		return ("~" + PathSep + S.TrimPrefix(s, currentUserHomeDir))
+		// bytesToTrim := len(currentUserHomeDir) + 1
+		// return "~" + PathSep + s[bytesToTrim:]
 	}
+	// No luck
 	return s
 }
 
@@ -124,24 +132,33 @@ func init() {
 		println("==> ERROR: Cannot determine current working directory")
 		return
 	}
+	if !S.HasSuffix(currentWorkingDir, PathSep) {
+		currentWorkingDir = currentWorkingDir + PathSep
+	}
+	if !S.HasSuffix(currentUserHomeDir, PathSep) {
+		currentUserHomeDir = currentUserHomeDir + PathSep
+	}
 }
 
 func SessionDemo() {
 	fmt.Fprintf(os.Stderr,
 		"Hello, %s (%s) (uid:%s,gid:%s) \n   in  %s \n",
 		currentUser.Username, currentUser.Name,
-		currentUser.Uid, currentUser.Gid, Tilded(currentWorkingDir))
-
+		currentUser.Uid, currentUser.Gid, currentWorkingDir)
+	/*
 	if S.HasSuffix(currentUserHomeDir, "/") {
 		println("--> Trimming trailing slash from UserHomeDir:", currentUserHomeDir)
 		currentUserHomeDir = S.TrimSuffix(currentUserHomeDir, "/")
 		println("--> UserHomeDir:", currentUserHomeDir)
 	}
+	*/
 }
 
+/*
 func Tilded(s string) string {
 	if S.HasPrefix(s, currentUserHomeDir) {
 		return ("~" + S.TrimPrefix(s, currentUserHomeDir))
 	}
 	return s
 }
+*/
