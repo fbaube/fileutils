@@ -42,7 +42,7 @@ func (afp AbsFilePath) S() string {
 	s := string(afp)
 	if !FP.IsAbs(s) {
 		// panic("FU.types: AbsFP is not abs: " + s)
-		println("==> fu.types: AbsFP not abs:" + s)
+		// FIXME? // println("==> fu.types: AbsFP not abs: " + s)
 	}
 	return s
 }
@@ -142,9 +142,9 @@ func init() {
 
 func SessionDemo() {
 	fmt.Fprintf(os.Stderr,
-		"Hello, %s (%s) (uid:%s,gid:%s) \n   in  %s \n",
-		currentUser.Username, currentUser.Name,
-		currentUser.Uid, currentUser.Gid, currentWorkingDir)
+		"==> User_ID: %s (%s) (uid:%s,gid:%s) \n",
+		 currentUser.Username, currentUser.Name, currentUser.Uid, currentUser.Gid)
+	fmt.Fprintf(os.Stderr, "==> Working: %s \n", currentWorkingDir)
 	/*
 	if S.HasSuffix(currentUserHomeDir, "/") {
 		println("--> Trimming trailing slash from UserHomeDir:", currentUserHomeDir)

@@ -90,7 +90,7 @@ func (pBP *BasicPath) ReadContent() *CheckedContent {
 		pBP.AbsFilePathParts.FileExt = "." + pBP.AbsFilePathParts.FileExt
 	}
 	if S.Contains(pCC.Raw, "<!DOCTYPE HTML ") {
-		println("FOUND HTML")
+		// println("FOUND HTML")
 	}
 	return pCC
 }
@@ -146,7 +146,7 @@ func (p *CheckedContent) FileType() string {
 		println("Unallocated MType[]!")
 		return "ERR/OH/CRAP"
 	}
-	return S.ToUpper(p.MType[0])
+	return p.BasicContent.FileType() 
 }
 
 // InspectFile comprises four steps:

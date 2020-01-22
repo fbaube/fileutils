@@ -109,7 +109,7 @@ func (p *CheckedContent) SetFileMtype() *CheckedContent {
 		SU.IsInSliceIgnoreCase(theFileExt, MarkdownFileExtensions) {
 		p.SniftMimeType = "text/markdown"
 		p.MType[0] = "mkdn"
-		p.MType[1] = "cnt" // or might be "map" ?
+		p.MType[1] = "tpcOrMap" // or might be "map" ?
 		p.MType[2] = "[flavr:TBS]"
 		return p
 	}

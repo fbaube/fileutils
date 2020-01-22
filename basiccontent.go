@@ -71,8 +71,11 @@ func (p *BasicContent) SetError(e error) {
 	p.bcError = e
 }
 
-// FileType returns `XML`, `MKDN`, or future stuff TBD.
+// FileType returns `XML`, `MKDN`, `HTML`, or future stuff TBD.
 func (p *BasicContent) FileType() string {
+	// Exceptional case
+	if p.MType[0] == "xml" && p.MType[1] == "html" { return "HTML" }
+	// Normal case 
 	return S.ToUpper(p.MType[0])
 }
 
