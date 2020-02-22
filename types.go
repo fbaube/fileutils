@@ -6,6 +6,7 @@ import (
 	"os/user"
 	FP "path/filepath"
 	S "strings"
+	WU "github.com/fbaube/wasmutils"
 )
 
 // AbsFilePath is a new type, based on `string`. It serves three purposes:
@@ -112,6 +113,18 @@ func (afp AbsFilePath) HasPrefix(beg AbsFilePath) bool {
 
 func init() {
 	var e error
+	if WU.IsWasm() {
+		currentUserHomeDir = "?"
+		currentWorkingDir = "."
+		currentUser = &user.User{
+			Uid: "aUid",
+    	Gid: "aGid",
+    	Username: "webuser",
+    	Name: "webuser",
+    	HomeDir: "~",
+		}
+		return
+	}
 	currentUser, e = user.Current()
 	if e != nil {
 		println("==> ERROR: Cannot determine current user")
