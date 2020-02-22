@@ -11,9 +11,10 @@ import (
 
 	h2non "github.com/h2non/filetype"
 
-	hosom "github.com/hosom/gomagic"
+	// hosom "github.com/hosom/gomagic"
 )
 
+/*
 var mmagic *hosom.Magic
 
 func init() {
@@ -23,16 +24,20 @@ func init() {
 		panic(e)
 	}
 }
+*/
 
 // GoMagic is based on <br/>
 // `https://godoc.org/github.com/hosom/gomagic#Magic.Buffer <br/>
 // func (m *Magic) Buffer(binary []byte) (string, error)``
 func GoMagic(s string) string {
+	/*
 	m, e := mmagic.Buffer([]byte(s))
 	if e != nil {
 		panic(e)
 	}
 	return m
+	*/
+	return "OBSOLETE"
 }
 
 // H2N returns: type Type struct { MIME MIME ; Extension string }
