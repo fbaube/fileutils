@@ -7,7 +7,7 @@ import (
 
 // Mstring extracts (as user-readable text) the file's MType. Note that the
 // MType is initially set by analyzing the file extension and contents, but
-// can then later revised if there is an XML `DOCTYPE` declaration.
+// can then later revised if there is an XML "DOCTYPE" declaration.
 func (p CheckedContent) Mstring() string {
 	if p.MType == nil {
 		return "-/-/-"
@@ -24,27 +24,27 @@ func (p CheckedContent) Mstring() string {
 // SetFileMtype works as follows:
 //
 // Inputs:
-// - file extension (not necessarily helpful OR reliable)
-// - file mimetype (as already analyzed by a simple third party library)
-// - file content
-// - NOT an input: the `DOCTYPE` (it is looked at later)
+//  * file extension (not necessarily helpful OR reliable)
+//  * file mimetype (as already analyzed by a simple third party library)
+//  * file content
+//  * NOT an input: the `DOCTYPE` (it is looked at later)
 //
-// Outputs:
-// - `Mtype` (a `[3]string` slice that works like a MIME type)
-// [0] xml, md, txt, bin
-// [1] img, c(onte)nt, map, sch(ema); maybe others TBD
-// [2] fmt/filext: XML Pub-ID/filext, MD flavor(?), SCH DTD/MOD/XSL, BIN filext
-// [3] IFF XML, TBS: Full Public ID string
+// Outputs: (NOTE: Obsolete comments ?)
+//  `Mtype` (a `[3]string` slice that works like a MIME type)
+//  [0] xml, md, txt, bin
+//  [1] img, c(onte)nt, map, sch(ema); maybe others TBD
+//  [2] fmt/filext: XML Pub-ID/filext, MD flavor(?), SCH DTD/MOD/XSL, BIN filext
+//  [3] IFF XML, TBS: Full Public ID string
 //
 // - `IsXML` // , DeclaredDoctype, GuessedDoctype (three bool's, for XML only)
 // - // DeclaredDoctype and GuessedDoctype are mutually exclusive
 //
-// Reference material re. MDITA: <br/>
-// https://github.com/jelovirt/dita-ot-markdown/wiki/Syntax-reference
-// <br/> The format of local link targets is detected based on file
-// extension. <br/>
-// The following extensions are treated as DITA files: <br/>
-// `.dita` =>	dita ; `.xml` => dita ; `.md` => markdown ; `.markdown` => markdown
+// Reference material re. MDITA:
+//  https://github.com/jelovirt/dita-ot-markdown/wiki/Syntax-reference
+//  The format of local link targets is detected based on file
+//  extension.
+//  The following extensions are treated as DITA files:
+//  `.dita` =>	dita ; `.xml` => dita ; `.md` => markdown ; `.markdown` => markdown
 //
 func (p *CheckedContent) SetFileMtype() *CheckedContent {
 	if p.error != nil || !p.IsOkayFile() { //p.PathType() != "FILE" {

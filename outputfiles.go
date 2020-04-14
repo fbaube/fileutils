@@ -85,7 +85,7 @@ func (pIF *CheckedContent) NewOutputFiles(subdirSuffix string) (*OutputFiles, er
 	}
 	dn = AbsFilePath(sdn)
 	// Create (or open) the directory
-	f := Must(OpenOrCreateDir(dn))
+	f := Must(dn.OpenOrCreateDir())
 	defer f.Close() /*
 		if e != nil {
 			return p, errors.Wrapf(e, "fu.NewOutputFiles.MustOpenOrCreateDir<%s>", dn)

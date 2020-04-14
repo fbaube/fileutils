@@ -10,15 +10,15 @@ import (
 
 // DirExists returns true *iff* the directory
 // exists and is in fact a directory.
-func DirExists(path AbsFilePath) bool {
-	fi, err := os.Lstat(path.S())
+func (afp AbsFilePath) DirExists() bool {
+	fi, err := os.Lstat(afp.S())
 	return (err == nil && fi.IsDir())
 }
 
 // FileSize returns the size *iff* the
 // filepath exists and is in fact a file.
-func FileSize(path AbsFilePath) int {
-	fi, err := os.Lstat(path.S())
+func (afp AbsFilePath) FileSize() int {
+	fi, err := os.Lstat(afp.S())
 	if err == nil && !fi.IsDir() {
 		return int(fi.Size())
 	}
@@ -29,50 +29,51 @@ func FileSize(path AbsFilePath) int {
 // for reading. Note that the `os.File` can be nil without error. Thus we
 // cannot (or: *do not*) distinguish btwn non-existence and an actual error.
 // OTOH if it exists but is not a directory, return an error.
-func OpenExistingDir(path AbsFilePath) (f *os.File, e error) {
+func (afp AbsFilePath) OpenExistingDir() (f *os.File, e error) {
 	// "Open(s) opens the file for reading. If successful, methods on the returned
 	// file can be used for reading; the associated FD has mode O_RDONLY."
-	f, e = os.Open(path.S())
+	f, e = os.Open(afp.S())
 	if e != nil {
 		return nil, nil // fmt.Errorf("fu.OpenExistingDir.Open<%s>: %w", path, e)
 	}
 	if f == nil {
-		panic("fu.OpenExistingDir.Open: " + path + ": no error but nil file ?!")
+		panic("fu.OpenExistingDir.Open: " + afp + ": no error but nil file ?!")
 	}
-	fi, e := os.Lstat(path.S())
+	fi, e := os.Lstat(afp.S())
 	if e != nil || !fi.IsDir() {
-		return nil, fmt.Errorf("fu.mustOpenExistingDir.notaDir<%s>: %w", path, e)
+		return nil, fmt.Errorf("fu.mustOpenExistingDir.notaDir<%s>: %w", afp, e)
 	}
 	return f, nil
 }
 
 // OpenOrCreateDir returns true if (a) the directory exists and can be
 // opened, or (b) it does not exist, and/but it can be created anew.
-func OpenOrCreateDir(path AbsFilePath) (f *os.File, e error) {
+func (afp AbsFilePath) OpenOrCreateDir() (f *os.File, e error) {
 	// Does it already exist ?
-	f, e = OpenExistingDir(path)
+	f, e = afp.OpenExistingDir()
 	if e == nil {
 		return f, nil
 	}
 	// If error, maybe it just dusnt exist, so try to create it
-	e = os.Mkdir(path.S(), 0777)
+	e = os.Mkdir(afp.S(), 0777)
 	// If error, give up.
 	if e != nil {
-		return nil, fmt.Errorf("fu.OpenOrCreateDir<%s>: can't do either: %w", path, e)
+		return nil, fmt.Errorf("fu.OpenOrCreateDir<%s>: can't do either: %w", afp, e)
 	}
 	// Now we *have* to open it
-	return Must(OpenExistingDir(path)), nil
+	return Must(afp.OpenExistingDir()), nil
 }
 
-// DirectoryContents returns the results of `(*os.File)Readdir(..)`.
-// `File.Name()` might be a relative filepath but if it was opened
+// DirectoryContents returns the results of "(*os.File)Readdir(..)".
+// "File.Name()" might be a relative filepath but if it was opened
 // okay then it at least functions as an absolute filepath.
-// If the path is not a directory then it panics. <br/>
-// `Readdir(..)` reads the contents of the directory associated
-// with the `File` argument and returns a slice of `FileInfo`
-// values, as would be returned by `Lstat(..)`, in directory order.
+// If the path is not a directory then it panics.
+//
+// The call to "Readdir(..)" reads the contents of the directory
+// associated with arg "File" and returns a slice of "FileInfo"
+// values, as would be returned by "Lstat(..)", in directory order.
 func DirectoryContents(f *os.File) ([]os.FileInfo, error) {
-	f = Must(OpenExistingDir(AbsFilePath(f.Name())))
+	f = Must(AbsFilePath(f.Name()).OpenExistingDir())
 	defer f.Close()
 	// 0 means No limit, read'em all
 	fis, e := f.Readdir(0)
@@ -82,9 +83,9 @@ func DirectoryContents(f *os.File) ([]os.FileInfo, error) {
 	return fis, nil
 }
 
-// DirectoryFiles is like `DirectoryContents(..)` except that
+// DirectoryFiles is like "DirectoryContents(..)" except that
 // results that are directories (not files) are nil'ed out. If
-// there were entries but none were files, it return (`0,nil,nil`).
+// there were entries but none were files, it return ("0,nil,nil").
 func DirectoryFiles(f *os.File) (int, []os.FileInfo, error) {
 	fis, e := DirectoryContents(f)
 	if e != nil {
@@ -104,6 +105,7 @@ func DirectoryFiles(f *os.File) (int, []os.FileInfo, error) {
 	return nFiles, fis, nil
 }
 
+// MakeDirectoryExist might not create it ?! (NOTE)
 func MakeDirectoryExist(path string) error {
 	if _, err := os.Stat(path); err != nil {
 		if os.IsNotExist(err) {
@@ -118,7 +120,7 @@ func MakeDirectoryExist(path string) error {
 }
 
 // ClearAndCreateDirectory deletes it before re-creating it.
-// The older version (below it, commented out) tried to keep
+// The older version (named "ClearDirectory") tried to keep
 // the directory as-is while emptying it.
 func ClearAndCreateDirectory(path string) error {
 // func clearAndCreateDestination(path string) error {
@@ -130,6 +132,7 @@ func ClearAndCreateDirectory(path string) error {
 	return os.Mkdir(path, os.ModePerm)
 }
 
+// ClearDirectory tries to keep the directory as-is while emptying it.
 func ClearDirectory(path string) error {
   dir, err := os.Open(path)
   if err != nil {
@@ -149,7 +152,7 @@ func ClearDirectory(path string) error {
 }
 
 // CopyDirRecursivelyFromTo copies a whole directory recursively.
-// Both argument should be directories !!
+// BOTH arguments should be directories !! Otherwise, hilarity ensures.
 func CopyDirRecursivelyFromTo(src string, dst string) error {
 	var err error
 	var fds []os.FileInfo
@@ -158,11 +161,9 @@ func CopyDirRecursivelyFromTo(src string, dst string) error {
 	if srcinfo, err = os.Stat(src); err != nil {
 		return err
 	}
-
 	if err = os.MkdirAll(dst, srcinfo.Mode()); err != nil {
 		return err
 	}
-
 	if fds, err = ioutil.ReadDir(src); err != nil {
 		return err
 	}

@@ -26,9 +26,9 @@ func init() {
 }
 */
 
-// GoMagic is based on <br/>
-// `https://godoc.org/github.com/hosom/gomagic#Magic.Buffer <br/>
-// func (m *Magic) Buffer(binary []byte) (string, error)``
+// GoMagic is based on
+//  https://godoc.org/github.com/hosom/gomagic#Magic.Buffer
+//  func (m *Magic) Buffer(binary []byte) (string, error)
 func GoMagic(s string) string {
 	/*
 	m, e := mmagic.Buffer([]byte(s))
@@ -40,14 +40,14 @@ func GoMagic(s string) string {
 	return "OBSOLETE"
 }
 
-// H2N returns: type Type struct { MIME MIME ; Extension string }
-// type MIME struct { Type, Subtype, Value string }
+// H2N returns:
+//  type Type struct { MIME MIME ; Extension string }
+//  type MIME struct { Type, Subtype, Value string }
 func H2N(s string) string {
 	m, e := h2non.Match([]byte(s))
 	if e != nil {
 		panic("H2N")
 	}
-	// return m
 	return m.MIME.Type + "/" + m.MIME.Subtype +
 		"/" + m.MIME.Value + ";" + m.Extension
 }

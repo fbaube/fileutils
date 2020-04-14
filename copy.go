@@ -10,7 +10,8 @@ import (
 	"path/filepath"
 )
 
-// CopyFromTo copies the contents of src to dst atomically.
+// CopyFromTo copies the contents of src to dst atomically,
+// using a temp file as intermediary. 
 func CopyFromTo(src, dst string) error {
 	in, err := os.Open(src)
 	if err != nil {
@@ -42,4 +43,3 @@ func CopyFromTo(src, dst string) error {
 	}
 	return nil
 }
-

@@ -2,7 +2,7 @@ package fileutils
 
 import "os"
 
-// Must wraps this packages most common
+// Must wraps this package's most common
 // return values and panics if it gets an error.
 func Must(f *os.File, e error) *os.File {
 	if e == nil {

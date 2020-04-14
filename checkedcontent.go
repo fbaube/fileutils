@@ -12,14 +12,12 @@ import (
 // MAX_FILE_SIZE is set (arbitrarily) to 2 megabytes
 const MAX_FILE_SIZE = 2000000
 
-// CheckedContent is a filepath we have redd, will read, or will create.
+// CheckedContent is a file we have redd, will read, or will create.
 // It might also be a directory or symlink, either of which requires
-// further processing elsewhere.
-// In normal usage, if it is a file, it will be opened and loaded into
-// `Raw` (by `func FileLoad()`), and at that point the content will be
-// fully decoupled from the file system.
-// Mime type guessing is done using standard libraries (both Go's and
-// a 3rd party's), so this code can still be considered very low-level.
+// further processing elsewhere. "BasicPath" is a ptr cos the content
+// might be create on-the-fly in-memory.
+//
+// In normal usage, TBS...
 type CheckedContent struct {
 	*BasicPath
 	BasicContent
@@ -38,19 +36,19 @@ func NewCheckedContent(pBP *BasicPath) *CheckedContent {
 func NewCheckedContentFromPath(path string) *CheckedContent {
 	p := new(CheckedContent)
 	p.BasicPath = NewBasicPath(path)
-	// LOAD ?
+	// NOTE: LOAD ??
 	return p
 }
 
-// GetError is necessary cos `Error()`` dusnt tell you whether `error` is `nil`,
-// which is the indication of no error. Therefore we need this function, which
-// can actually return the telltale `nil`.`
+// GetError is necessary cos "Error()"" dusnt tell you whether "error"
+// is "nil", which is the indication of no error. Therefore we need
+// this function, which can actually return the telltale "nil".
 func (p *CheckedContent) GetError() error {
 	return p.error
 }
 
-// Error satisfied interface `error`, but the
-// weird thing is that `error` can be nil.
+// Error satisfied interface "error", but the
+// weird thing is that "error" can be nil.
 func (p *CheckedContent) Error() string {
 	if p.error != nil {
 		return p.error.Error()
@@ -58,30 +56,33 @@ func (p *CheckedContent) Error() string {
 	return ""
 }
 
+// SetError sets "error" to the error.
 func (p *CheckedContent) SetError(e error) {
 	p.error = e
 }
 
-// ReadContent reads in the file (IFF it is a file) and does a
-// quick check of the MIME type before returning the promoted type.
-// If it does not exist, be nice: do nothing and return no error.
-// If it is not a file, be nice: do nothing and return no error.
-// If `Raw` is not "", be nice: the file is already loaded and
-// is quite possibly an on-the-fly temp file, so skip the load
-// and just do the quick MIME analysis.
+// ReadContent reads in the file (IFF it is a file) and does
+// a quick check of the MIME type before returning the promoted
+// type, "CheckedContent".
+//
+//  * If it does not exist, be nice: do nothing and return no error.
+//  * If it is not a file, be nice: do nothing and return no error.
+//  * If "Raw" is not "", be nice: the file is already loaded and
+//    is quite possibly an on-the-fly temp file, so skip the load
+//    and just do the quick MIME analysis.
 func (pBP *BasicPath) ReadContent() *CheckedContent {
 	pCC := new(CheckedContent)
 	pCC.BasicPath = pBP
-	TheAbsFP := Tilded(pBP.AbsFilePath.S())
+	DispFP := Tilded(pBP.AbsFilePath.S())
 	if !pBP.IsOkayFile() { // pBP.PathType() != "FILE" {
-		pCC.error = errors.New("fu.ReadContent: not a readable file: " + TheAbsFP)
+		pCC.error = errors.New("fu.ReadContent: not a readable file: " + DispFP)
 		return pCC
 	}
 	pCC.BasicContent = *new(BasicContent)
 	bb := pBP.GetContent()
 	if pBP.error != nil {
 		pCC.error = fmt.Errorf("fu.ReadContent: BP.GetContent<%s> failed: %w",
-			TheAbsFP, pBP.error)
+			DispFP, pBP.error)
 		return pCC
 	}
 	pCC.Raw = S.TrimSpace(string(bb))
@@ -96,9 +97,10 @@ func (pBP *BasicPath) ReadContent() *CheckedContent {
 }
 
 // GetContent reads in the file (IFF it is a file).
-// If an error, it is returned in `BasicPath.error`,
-// and the return value is `nil`. `
-// Open defaults to R/W, altho R/O would probably suffice.
+// If an error, it is returned in "BasicPath.error",
+// and the return value is "nil".
+// The func "os.Open(fp)" defaults to R/W, altho R/O
+// would probably suffice.
 func (pBP *BasicPath) GetContent() []byte {
 	if pBP.error != nil {
 		return nil
@@ -140,13 +142,13 @@ func (pBP *BasicPath) GetContent() []byte {
 	return bb
 }
 
-// FileType returns `XML`, `MKDN`, or future stuff TBD.
+// FileType returns "XML", "MKDN", or future stuff TBD.
 func (p *CheckedContent) FileType() string {
 	if p.MType == nil {
 		println("Unallocated MType[]!")
 		return "ERR/OH/CRAP"
 	}
-	return p.BasicContent.FileType() 
+	return p.BasicContent.FileType()
 }
 
 // InspectFile comprises four steps:
@@ -164,9 +166,9 @@ func (p *CheckedContent) FileType() string {
 // - Set by our own code, based on the results set
 // in the preceding string fields: Mtype []string
 //
-func (p *CheckedContent) InspectFile() *CheckedContent {
+func (p *CheckedContent) InspectFile() {
 	if p.error != nil || !p.IsOkayFile() { // p.PathType() != "FILE" {
-		return p
+		return
 	}
 	p.MagicMimeType = GoMagic(p.Raw)
 	// Trim long JPEG descriptions
@@ -181,7 +183,5 @@ func (p *CheckedContent) InspectFile() *CheckedContent {
 
 	// println("cc.InspectFile: Did own; now SetFileMtype")
 	p.SetFileMtype()
-
 	// fmt.Printf("    MIME: (%s) %s \n", p.SniftMimeType, p.MagicMimeType)
-	return p
 }

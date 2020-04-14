@@ -12,15 +12,15 @@ import (
 	"github.com/mgutz/str"
 )
 
-// AbsWRT is like filepath.Abs(..): it can convert a possibly-relative
+// AbsWRT is like "filepath.Abs(..)"": it can convert a possibly-relative
 // filepath to an absolute filepath. The difference is that a relative
 // filepath argument is not resolved w.r.t. the current working directory;
 // it is instead done w.r.t. the supplied directory argument.
-func AbsWRT(maybeRelFP string, wrtDir string) string {
-	if FP.IsAbs(maybeRelFP) {
-		return maybeRelFP
+func AbsWRT(problyRelFP string, wrtDir string) string {
+	if FP.IsAbs(problyRelFP) {
+		return problyRelFP
 	}
-	return FP.Join(wrtDir, maybeRelFP)
+	return FP.Join(wrtDir, problyRelFP)
 }
 
 // OpenRW opens (and returns) the filepath as a writable file.
@@ -153,7 +153,7 @@ func CopyFileGreedily(src string, dst string)  error {
 	return nil
 }
 
-// CopyFileFromTo copies a single file from src to dst
+// CopyFileFromTo copies a single file from src to dst. 
 func CopyFileFromTo(src, dst string) error {
 	var err error
 	var srcfd *os.File

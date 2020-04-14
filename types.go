@@ -30,6 +30,7 @@ const PathSep = string(os.PathSeparator)
 // These should end in the path separator!
 // NOTE See init(), at bottom.
 var currentWorkingDir, currentUserHomeDir string
+
 var currentUser *user.User
 
 // GetHomeDir is a convenience function, and
@@ -44,23 +45,26 @@ func (afp AbsFilePath) S() string {
 	if !FP.IsAbs(s) {
 		// panic("FU.types: AbsFP is not abs: " + s)
 		// FIXME? // println("==> fu.types: AbsFP not abs: " + s)
+		s, e := FP.Abs(s)
+		if e != nil { panic("su.afp.S") }
+		return s
 	}
 	return s
 }
 
 // AbsFP is like filepath.Abs(..) except using our own types.
-func AbsFP(rfp string) AbsFilePath {
-	if FP.IsAbs(rfp) {
-		return AbsFilePath(rfp)
+func AbsFP(relFP string) AbsFilePath {
+	if FP.IsAbs(relFP) {
+		return AbsFilePath(relFP)
 	}
-	afp, e := FP.Abs(rfp)
+	afp, e := FP.Abs(relFP)
 	if e != nil {
-		panic("fu.AbsFP<" + rfp + ">: " + e.Error())
+		panic("fu.AbsFP<" + relFP + ">: " + e.Error())
 	}
 	return AbsFilePath(afp)
 }
 
-// NiceFP shortens a filepath by substituting "." or "~".
+// Tilded shortens a filepath by substituting "." or "~".
 func Tilded(s string) string {
 	// If it's missing, use assumed/default...
 	if s == "" {
@@ -153,6 +157,7 @@ func init() {
 	}
 }
 
+// SessionDemo can be called anytime.
 func SessionDemo() {
 	fmt.Fprintf(os.Stderr,
 		"==> User_ID: %s (%s) (uid:%s,gid:%s) \n",

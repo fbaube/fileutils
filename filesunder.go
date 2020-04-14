@@ -8,14 +8,19 @@ import (
 	SU "github.com/fbaube/stringutils"
 )
 
+// NOT re-entrant
 var gotOkayExts bool
+// NOT re-entrant
 var theOkayExts []string
+// NOT re-entrant
 var gotOkayName bool
+// NOT re-entrant
 var theOkayName string
+// NOT re-entrant
 var theOkayFiles []AbsFilePath
 
 // FileWalkInfo records the arguments passed to every call
-// to a `filepath.WalkFunc` that refers to a valid file.
+// to a "filepath.WalkFunc" that refers to a valid file.
 //
 // NOTE that if an error is passed in, something is pretty
 // messed up. In principle we could still record the call,
@@ -24,12 +29,12 @@ var theOkayFiles []AbsFilePath
 // other calls.
 //
 // NOTE that thruout this package, the following
-// are *invalid files* that are *not* recorded:
-// * directories
-// * files that fail `FileInfo.Mode().IsRegular()`
-// * emacs backup files (suffixed "~")
-// * dotfiles (prefixed ".")
-// * the contents (recursively downward) of dot folders (prefixed ".")
+// are *invalid* files that are NOT recorded:
+//  * directories
+//  * files that fail `FileInfo.Mode().IsRegular()`
+//  * emacs backup files (suffixed "~")
+//  * dotfiles (prefixed ".")
+//  * the contents (recursively downward) of dot folders (prefixed ".")
 //
 type FileWalkInfo struct {
 	Path AbsFilePath
@@ -37,10 +42,10 @@ type FileWalkInfo struct {
 	Errg error
 }
 
-// ListFilesUnder normally handles the case where `path` is a
-// directory (but `path` may also be a simple file argument).
-// It `error` is not nil, a message is printed to the user
-// and the file in question is not added to the `FileSet`.
+// ListFilesUnder normally handles the case where "path" is a
+// directory (but "path" may also be a simple file argument).
+// It "error" is not nil, a message is printed to the user
+// and the file in question is not added to the "FileSet".
 //
 func ListFilesUnder(path string, useSymLinks bool) (FS *FileSet, err error) {
 	if path == "" {
@@ -90,14 +95,14 @@ func ListFilesUnder(path string, useSymLinks bool) (FS *FileSet, err error) {
 		// Ignore dot files, and completely skip dot folders.
 		filnam := FP.Base(P)
 		if S.HasPrefix(filnam, ".") {
-			if DirExists(AbsFilePath(P)) {
+			if AbsFilePath(P).DirExists() {
 				return FP.SkipDir
 			}
 			return nil
 		}
 		// Ignore emacs backup files
 		if S.HasSuffix(filnam, "~") {
-			if DirExists(AbsFilePath(P)) {
+			if AbsFilePath(P).DirExists() {
 				return FP.SkipDir
 			}
 			return nil
@@ -111,19 +116,19 @@ func ListFilesUnder(path string, useSymLinks bool) (FS *FileSet, err error) {
 	return FS, nil
 }
 
-// GatherInputFiles handles the case where `path` is a directory
-// (but it can also handle `path` being a simple file argument).
+// GatherInputFiles handles the case where "afp" is a directory
+// (but it can also handle "path" being a simple file argument).
 // It always excludes dotfiles (filenames that begin with "."
 // and are not the current "." or parent ".." directory) and
 // emacs backups (filenames that end with "~").
 //
 // It includes only files that end with any extension in the slice
-// `okayExts` (the check is case-insensitive). Each extension in the
-// slice argument should include the period; the function will get
-// additional functionality if & when the periods are not included.
-// If `okayExts` is nil, *all* file extensions are permitted.
-func GatherInputFiles(path AbsFilePath, okayExts []string) (okayFiles []AbsFilePath, err error) {
-	if path == "" {
+// arg "okayExts" (the check is case-insensitive). Each extension
+// in the slice argument should include the period; the function
+// will get additional functionality if & when the periods are not
+// included. If "okayExts" is nil, ALL file extensions are permitted.
+func (afp AbsFilePath) GatherInputFiles(okayExts []string) (okayFiles []AbsFilePath, err error) {
+	if afp == "" {
 		return nil, nil
 	}
 	theOkayExts = okayExts
@@ -134,8 +139,8 @@ func GatherInputFiles(path AbsFilePath, okayExts []string) (okayFiles []AbsFileP
 	theOkayFiles = nil
 
 	// A single file ? If so, just check the fie extension.
-	spath := path.S()
-	if !DirExists(path) {
+	spath := afp.S()
+	if !afp.DirExists() {
 		sfx := FP.Ext(spath)
 		if SU.IsInSliceIgnoreCase(sfx, okayExts) || !gotOkayExts {
 			abs, _ := FP.Abs(spath)
@@ -146,16 +151,15 @@ func GatherInputFiles(path AbsFilePath, okayExts []string) (okayFiles []AbsFileP
 	// PROCESS THE DIRECTORY
 	err = FP.Walk(spath, myWalkFunc)
 	if err != nil {
-		return nil, fmt.Errorf("fu.GatherInputFiles.walkTo<%s>: %w", path, err)
+		return nil, fmt.Errorf("fu.GatherInputFiles.walkTo<%s>: %w", afp, err)
 	}
 	return theOkayFiles, nil
 }
 
-// GatherNamedFiles handles the case where `path` is a file name.
-// Whether `path` includes a dot and/or a file extension makes no
-// difference.
-func GatherNamedFiles(path AbsFilePath, name string) (okayFiles []AbsFilePath, err error) {
-	if path == "" || name == "" {
+// GatherNamedFiles handles the case where "afp" is a file name. Whether
+// "afp" includes a dot and/or a file extension makes no difference.
+func (afp AbsFilePath) GatherNamedFiles(name string) (okayFiles []AbsFilePath, err error) {
+	if afp == "" || name == "" {
 		return nil, nil
 	}
 	gotOkayName = true
@@ -166,13 +170,13 @@ func GatherNamedFiles(path AbsFilePath, name string) (okayFiles []AbsFilePath, e
 	theOkayFiles = nil
 
 	// A directory ?
-	if !DirExists(path) {
-		panic(fmt.Sprintf("fu.GatherNamedFiles.walkTo<%s:%s>", path, name))
+	if !afp.DirExists() {
+		panic(fmt.Sprintf("fu.GatherNamedFiles.walkTo<%s:%s>", afp, name))
 	}
 	// PROCESS THE DIRECTORY
-	err = FP.Walk(path.S(), myWalkFunc)
+	err = FP.Walk(afp.S(), myWalkFunc)
 	if err != nil {
-		return nil, fmt.Errorf("fu.GatherNamedFiles.walkTo<%s>: %w", path, err)
+		return nil, fmt.Errorf("fu.GatherNamedFiles.walkTo<%s>: %w", afp, err)
 	}
 	return theOkayFiles, nil
 }

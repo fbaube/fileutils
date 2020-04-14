@@ -10,7 +10,7 @@ import (
 // BasicPath is a filepath we have redd, will read, or will create.
 // It might also be a directory or symlink, either of which requires
 // further processing elsewhere. In the most common usage, it is a file.
-// It can be nil, e.g. if the content was created on-the-fly.
+// It can be nil, if e.g. its content was created on-the-fly.
 type BasicPath struct {
 	error
 	// RelFilePath is a "short" argument passed in at creation time, e.g.
@@ -24,21 +24,21 @@ type BasicPath struct {
 	isDir  bool
 	isFile bool
 	isSymL bool
-	// Size is here and not in `struct CheckedPath` because its
-	// value is already made available to us when `func check()`
-	// calls `os.FileInfo os.Lstat(..)`, below.
+	// Size is here and not in "struct CheckedPath" because its
+	// value is already made available to us when "func check()""
+	// calls "os.FileInfo os.Lstat(..)"", below.
 	Size int
 }
 
-// GetError is necessary cos `Error()`` dusnt tell you whether `error` is `nil`,
-// which is the indication of no error. Therefore we need this function, which
-// can actually return the telltale `nil`.`
+// GetError is necessary cos "Error()"" dusnt tell you whether "error"
+// is "nil", which is the indication of no error. Therefore we need
+// this function, which can actually return the telltale "nil".
 func (p *BasicPath) GetError() error {
 	return p.error
 }
 
-// Error satisfied interface `error`, but the
-// weird thing is that `error` can be nil.
+// Error satisfies interface "error", but the
+// weird thing is that "error" can be nil.
 func (p *BasicPath) Error() string {
 	if p.error != nil {
 		return p.error.Error()
@@ -50,22 +50,23 @@ func (p *BasicPath) SetError(e error) {
 	p.error = e
 }
 
-// TODO: IsOkayFile(), IsOkayDir(), IsOkaySymlink()
-
+// IsOkayFile is a convenience function.
 func (p *BasicPath) IsOkayFile() bool {
 	return p.error == nil && p.Exists && p.isFile && !p.isDir
 }
 
+// IsOkayDir is a convenience function.
 func (p *BasicPath) IsOkayDir() bool {
 	return p.error == nil && p.Exists && !p.isFile && p.isDir
 }
 
+// IsOkaySymlink is a convenience function.
 func (p *BasicPath) IsOkaySymlink() bool {
 	return p.error == nil && p.Exists && !p.isFile && !p.isDir && p.isSymL
 }
 
-// NewBasicPath requires a non-nil `RelFilePath` and analyzes it.
-// It returns a pointer that can be used in a CheckedPath to
+// NewBasicPath requires a non-nil "RelFilePath" and analyzes it.
+// It returns a pointer that can be used in a "CheckedPath" to
 // start a method chain.
 func NewBasicPath(rfp string) *BasicPath {
 	rp := new(BasicPath)
@@ -75,7 +76,7 @@ func NewBasicPath(rfp string) *BasicPath {
 	return rp.setFlags()
 }
 
-// setFlags requires a non-nil `AbsFilePath` and checks for existence and type.
+// setFlags requires a non-nil "AbsFilePath" and checks for existence and type.
 func (p *BasicPath) setFlags() *BasicPath {
 	if p.error != nil {
 		return p // or nil ?
@@ -102,6 +103,7 @@ func (p *BasicPath) setFlags() *BasicPath {
 	return p
 }
 
+// ResolveSymlinks will follow links until it finds something else. 
 func (p *BasicPath) ResolveSymlinks() bool {
 	if p.error != nil {
 		return false
@@ -124,7 +126,7 @@ func (p *BasicPath) ResolveSymlinks() bool {
 		println("     resolved to:", newPath)
 		p.AbsFilePath = AbsFilePath(newPath)
 		p.setFlags()
-		wasResolved = true 
+		wasResolved = true
 	}
 	return wasResolved
 }

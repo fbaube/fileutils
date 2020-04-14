@@ -7,20 +7,20 @@ import (
 	S "strings"
 )
 
-// FileLine is TBS.
-
+// FileLine is a record (i.e. a line) in a LinesFile.
 type FileLine struct {
 	Raw string
 	RawLineNr int // source file line number
 	error // hey, why not an error per line ?
 }
 
+// LinesFile is for reading a file where each line is a record.
 type LinesFile struct {
 	*BasicPath
 	Lines []*FileLine
-	// Lines []string
 }
 
+// NewLinesFile is pretty self-explanatory. 
 func (pBP *BasicPath) NewLinesFile() (*LinesFile, error) {
 	bb := pBP.GetContent()
 	if pBP.error != nil {

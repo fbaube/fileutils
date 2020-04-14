@@ -10,20 +10,21 @@ import (
 
 // AbsFilePathParts holds the complete, fully-qualified absolute
 // path and base name and file extension of a file or directory.
-// If `DirPath` is "", the entire `FileFullName` is empty/invalid.
+// If "DirPath" is "", the entire "FileFullName" is empty/invalid.
 //
 // Notes on usage:
-// - `DirPath` must end with a slash `/`, or else we cannot
-// distinguish an empty/invalid path from the filesystem root.
-// - `Suffix` must start with a dot `.`, or else we cannot
-// distinguish the edge case where a name ends with a dot.
-// - If `AbsFilePathParts` describes a directory, the entire
-// path is in `DirPath` (ending with "/"), and both `BaseName`
-// and `Suffix` are "".
+//  * "DirPath" must end with a slash "/", or else we cannot
+//     distinguish an empty/invalid path from the filesystem root.
+//  * "Suffix" must start with a dot ".", or else we cannot
+//     distinguish the edge case where a name ends with a dot.
+//  * If "AbsFilePathParts" describes a directory, the entire
+//    path is in "DirPath" (ending with "/"), and both "BaseName"
+//    and "Suffix" are "".
 //
 // Its Echo() method yields the full absolute path and name,
 // OK for production use, so this struct dusnt need to store
 // the string-as-a-whole as another separate field.
+//
 type AbsFilePathParts struct {
 	// DirPath holds the absolute path (from "filepath.Ext(path)"),
 	// up to (and including) the last "/" directory separator.
@@ -96,11 +97,12 @@ func (p CheckedContent) String() string {
 	return s
 }
 
-// GetAbsPathParts takes an absolute filepath and uses `filepath.Abs(path)`
+// GetAbsPathParts takes an absolute filepath and uses "filepath.Abs(path)""
 // to initialize the structure, but it does not check existence or file mode.
-// `filepath.Abs(path)` has a nice side effect that if `path` is a directory,
-// then the directory path that is returned by `filepath.Split(abspath)` is
-// guaranteed to end with a path separator slash `/`. <br/>
+// "filepath.Abs(path)" has a nice side effect that if "path" is a directory,
+// then the directory path that is returned by "filepath.Split(abspath)" is
+// guaranteed to end with a path separator slash `/`.
+//
 // Also, for consistency, the file extension is forced to all lower-case.
 func (afp AbsFilePath) NewAbsPathParts() *AbsFilePathParts {
 	var filext, sdp string
