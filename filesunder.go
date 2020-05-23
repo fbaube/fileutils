@@ -22,14 +22,13 @@ var theOkayFiles []AbsFilePath
 // FileWalkInfo records the arguments passed to every call
 // to a "filepath.WalkFunc" that refers to a valid file.
 //
-// NOTE that if an error is passed in, something is pretty
-// messed up. In principle we could still record the call,
-// but the logic is complex, so instead we just print an
-// error message to the console, return, and carry on with
-// other calls.
+// NOTE If an error is passed in, something is pretty messed up.
+// In principle we could still record the call, but the logic 
+// is complex, so instead we just print an error message to the
+// console, return, and carry on with other calls.
 //
-// NOTE that thruout this package, the following
-// are *invalid* files that are NOT recorded:
+// NOTE Thruout this package, the following are
+// *invalid* files that are NOT recorded:
 //  * directories
 //  * files that fail `FileInfo.Mode().IsRegular()`
 //  * emacs backup files (suffixed "~")

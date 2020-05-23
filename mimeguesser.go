@@ -7,24 +7,12 @@ import (
 	//
 	// Three different libraries for determining MIME types were evaluated.
 	// All three produced the same results on common files.
-	// "hosom" is the easiest to use because it takes care of its own cleanup.
+	// "hosom" is the easiest to use because it does its own cleanup.
 
 	h2non "github.com/h2non/filetype"
 
 	// hosom "github.com/hosom/gomagic"
 )
-
-/*
-var mmagic *hosom.Magic
-
-func init() {
-	var e error
-	mmagic, e = hosom.Open(hosom.MAGIC_NONE)
-	if e != nil {
-		panic(e)
-	}
-}
-*/
 
 // GoMagic is based on
 //  https://godoc.org/github.com/hosom/gomagic#Magic.Buffer

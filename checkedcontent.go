@@ -36,7 +36,7 @@ func NewCheckedContent(pBP *BasicPath) *CheckedContent {
 func NewCheckedContentFromPath(path string) *CheckedContent {
 	p := new(CheckedContent)
 	p.BasicPath = NewBasicPath(path)
-	// NOTE: LOAD ??
+	// NOTE Load??
 	return p
 }
 

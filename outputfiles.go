@@ -11,7 +11,7 @@ import (
 
 // LwdxFormats is a list of the types of text-based markup that
 // are supported by LwDITA, and their corresponding file extensions.
-// NOTE maybe this belongs in another package.
+// NOTE Maybe this belongs in another package.
 //
 // Note that the "md" Markdown format for MDITA is a bit of a mishmash,
 // though based mainly on CommonMark, with a few extensions, e.g. from

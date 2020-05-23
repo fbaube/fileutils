@@ -37,7 +37,7 @@ type BasicContent struct {
 	// [1] IMG, CNT (Content), TOC (Map), SCH(ema)
 	// [2] XML: per-DTD; BIN: format/filext; MD: flavor; SCH: format/filext
 	//
-	// Common values (NOTE: this list is obsolete):
+	// Common values (NOTE This list is obsolete):
 	// * Textual  image files:  image /  text / (svg|eps)
 	// * Binary   image files:  image /  bin  / (fmt)
 	// * DITA13 content files:   dita / (tech|..) / (task|..)
@@ -49,7 +49,7 @@ type BasicContent struct {
 	// [0] = doc family = image/dita/lwdita/html/schema/xml
 	// [1] = doc format = its format/dtd
 	// [2] = specifics
-	// NOTE how a text-based image file (i.e. SVG or EPS)
+	// NOTE A text-based image file (i.e. SVG or EPS)
 	// can be `image` but not `binary`.
 	MType []string
 }
@@ -89,7 +89,7 @@ func (p *BasicContent) FileType() string {
 //  * call custom code to evaluate more deeply XML and/or as mixed content
 //  * dump those results for the purpose of refining the code
 //
-// The fields of interest in struct fileutils.InputFile (NOTE: Obs.!):
+// The fields of interest in struct fileutils.InputFile (NOTE Obs.!):
 //
 //  * Set using our own various heuristics: IsXML bool
 //  * Set using Golang stdlib: SniftMimeType string
@@ -114,26 +114,3 @@ func (p *BasicContent) InspectFile() {
 	// fmt.Printf("    MIME: (%s) %s \n", p.SniftMimeType, p.MagicMimeType)
 }
 
-// NOTE A text-based image file (i.e. SVG or EPS) can be
-// `IsImage` but `!IsBinary`.
-//
-/*
-SegmentedFile is for when we want to clearly separate HED from BOD.
-type SegmentedFile struct {
-	CheckedPath
-	// FileContent holds the file's entire contents (i.e. `GGFile.Raw`)
-	// MINUS any content analysed and read into `Header`.
-	FileContent
-	// Header basically holds all the in-file metadata, no matter what
-	// the format of the file. For MDITA (Markdown-XP) this is YAML.
-	// For XDITA and HDITA ([X]HTML) this is head/meta elements.
-	// It can be non-nil but have its sero value, which indicates
-	// that metadata was checked for but none was found.
-	// Storing metadata this way makes it easier to manage it in a
-	// consistent and format-independent manner, and makes it easier
-	// to add to it and modify it at runtime.
-	// TODO: When in-file metadata is stored as JSON K/V pairs,
-	// it can be accessed from the command line using Sqlite tools.
-	*Header
-}
-*/
