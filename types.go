@@ -171,12 +171,3 @@ func SessionDemo() {
 	}
 	*/
 }
-
-/*
-func Tilded(s string) string {
-	if S.HasPrefix(s, currentUserHomeDir) {
-		return ("~" + S.TrimPrefix(s, currentUserHomeDir))
-	}
-	return s
-}
-*/
