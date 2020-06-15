@@ -27,30 +27,36 @@ const MAX_FILE_SIZE = 2000000
 type CheckedContent struct {
 	Paths
   PathInfo
-	BasicContent // Content_raw
+	Raw string
+	// BasicContent // Content_raw
 	BasicAnalysis
 	error
 }
 
+// NewCheckedContent should work for directories and symlinks too.
 func NewCheckedContent(pPI *PathInfo) *CheckedContent {
+	var e error
 	pCC := new(CheckedContent)
 	pCC.PathInfo = *pPI
-	pBC := pPI.FetchContent()
-	if pPI.bpError != nil {
+	if pPI.IsOkayDir() || pPI.IsOkaySymlink() {
 		return pCC
 	}
-	pCC.BasicContent = *pBC
-	pCC.BasicAnalysis.FileIsOkay = pPI.IsOkayFile()
-	if pCC.BasicAnalysis.FileIsOkay && pCC.bpError == nil &&
-		 pCC.bcError == nil && pCC.error == nil {
- 		pBA, e := AnalyseFile(pBC.Raw, FP.Ext(string(pPI.absFP))) // pPI.Filext())
-		if e != nil {
-			panic(e)
-		}
-		pCC.BasicAnalysis = *pBA
-	} else {
-		println("fu.cc.newcc: Could not newcc()")
+	if !pPI.IsOkayFile() {
+		pCC.error = errors.New("Is not valid file, directory, or symlink")
+		return pCC
 	}
+	// OK, it's a file.
+	pCC.Raw, e = pPI.FetchContent()
+	if e != nil {
+		pCC.error = errors.New("Could not fetch content")
+		return pCC
+	}
+	pCC.BasicAnalysis.FileIsOkay = true
+	pBA, e := AnalyseFile(pCC.Raw, FP.Ext(string(pPI.absFP)))
+	if e != nil {
+		panic(e)
+	}
+	pCC.BasicAnalysis = *pBA
 	return pCC
 }
 
@@ -80,39 +86,25 @@ func (p *CheckedContent) SetError(e error) {
 	p.bpError = e
 }
 
-// FetchContent reads in the file (IFF it is a file) and does
-// a quick check of the MIME type before returning the promoted
-// type, "CheckedContent".
-//
-//  * If it does not exist, be nice: do nothing and return no error.
-//  * If it is not a file, be nice: do nothing and return no error.
-//  * If "Raw" is not "", be nice: the file is already loaded and
-//    is quite possibly an on-the-fly temp file, so skip the load
-//    and just do the quick MIME analysis.
-func (pPI *PathInfo) FetchContent() *BasicContent {
-	pBC := new(BasicContent)
-	// pCC.BasicPath = pBP
+// FetchContent reads in the file (IFF it is a file) and trims away
+// leading and trailing whitespace.
+func (pPI *PathInfo) FetchContent() (raw string, e error) { // *BasicContent {
 	DispFP := Tilded(pPI.absFP.S())
-	if !pPI.IsOkayFile() { // pBP.PathType() != "FILE" {
-		pBC.bcError = errors.New("fu.FetchContent: not a readable file: " + DispFP)
-		return pBC
+	if !pPI.IsOkayFile() {
+		return "", errors.New("fu.fetchcontent: not a readable file: " + DispFP)
 	}
 	var bb []byte
 	bb = pPI.GetContentBytes()
 	if pPI.bpError != nil {
-		 pBC.bcError = fmt.Errorf("fu.FetchContent: BP.GetContentBytes<%s> failed: %w",
-			DispFP, pPI.bpError)
-		return pBC
+		 return "", fmt.Errorf("fu.fetchcontent: PI.GetContentBytes<%s> failed: %w",
+				DispFP, pPI.bpError)
 	}
-	pBC.Raw = S.TrimSpace(string(bb))
+	raw = S.TrimSpace(string(bb))
 	if !S.HasPrefix(pPI.AbsFilePathParts.FileExt, ".") {
 		println("==> (oops had to add a dot to filext")
 		pPI.AbsFilePathParts.FileExt = "." + pPI.AbsFilePathParts.FileExt
 	}
-	if S.Contains(pBC.Raw, "<!DOCTYPE HTML ") {
-		// println("FOUND HTML")
-	}
-	return pBC
+	return raw, nil
 }
 
 // GetContentBytes reads in the file (IFF it is a file).
