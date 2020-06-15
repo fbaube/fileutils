@@ -30,7 +30,7 @@ type CheckedContent struct {
 	error
 }
 
-// NewCheckedContent should work for directories and symlinks too.
+// NewCheckedContent works for directories and symlinks too.
 func NewCheckedContent(pPI *PathInfo) *CheckedContent {
 	var e error
 	pCC := new(CheckedContent)
@@ -85,7 +85,7 @@ func (p *CheckedContent) SetError(e error) {
 
 // FetchContent reads in the file (IFF it is a file) and trims away
 // leading and trailing whitespace.
-func (pPI *PathInfo) FetchContent() (raw string, e error) { // *BasicContent {
+func (pPI *PathInfo) FetchContent() (raw string, e error) { 
 	DispFP := Tilded(pPI.absFP.S())
 	if !pPI.IsOkayFile() {
 		return "", errors.New("fu.fetchcontent: not a readable file: " + DispFP)
@@ -97,10 +97,6 @@ func (pPI *PathInfo) FetchContent() (raw string, e error) { // *BasicContent {
 				DispFP, pPI.bpError)
 	}
 	raw = S.TrimSpace(string(bb))
-	if !S.HasPrefix(pPI.AbsFilePathParts.FileExt, ".") {
-		println("==> (oops had to add a dot to filext")
-		pPI.AbsFilePathParts.FileExt = "." + pPI.AbsFilePathParts.FileExt
-	}
 	return raw, nil
 }
 

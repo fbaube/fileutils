@@ -15,9 +15,6 @@ type PathInfo struct {
 	bpError error
 	relFP   string
 	absFP   AbsFilePath
-	// AbsFilePathParts stores the pieces of the absolute filepath.
-	// We require that AbsFilePathParts.Echo() == AbsFilePath
-	*AbsFilePathParts
 	Exists bool
 	isDir  bool
 	isFile bool
@@ -74,7 +71,6 @@ func NewPathInfo(rfp string) *PathInfo {
 	pi := new(PathInfo)
 	pi.absFP = AbsFP(rfp)
 	absFPstr := string(pi.absFP)
-	pi.AbsFilePathParts = pi.absFP.NewAbsPathParts()
 	var FI os.FileInfo
 	FI, e := os.Lstat(absFPstr)
 	if e != nil {
