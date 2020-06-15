@@ -163,7 +163,7 @@ func AnalyseFile(sCont string, filext string) (*BasicAnalysis, error) {
   p.XmlInfo.XmlContype = "TBS"
   p.XmlInfo.XmlDoctype = XM.XmlDoctype("DOCTYPE " + doctype)
   p.XmlDoctypeFields   = pDT
-  p.XmlPreambleFields  = pPR
+  p.XmlPreambleFields  = *pPR
   p.DoctypeIsDeclared  = true
   p.DitaInfo.DitaMarkupLg = "TBS"
   p.DitaInfo.DitaContype  = "TBS"
