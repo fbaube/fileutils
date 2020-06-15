@@ -17,18 +17,15 @@ const MAX_FILE_SIZE = 2000000
 // further processing elsewhere.
 //
 // CheckedContent comprises three sub-structs:
-//  - "BasicPath" is a pointer if the content is created on-the-fly in-memory.
-//  - "BasicContent" is basically just the content - or the file count if
-//     the BasicPath is a directory.
+//  - "PathInfo" is a pointer if the content is created on-the-fly in-memory.
 //  - "BasicAnalysis" is where the results of content analysis are placed.
 //  - Each of these has its own error field, any one of which can bubble
 //    up to the "error" field of CheckedContent.
 //
 type CheckedContent struct {
-	Paths
+	RelFilePath string
   PathInfo
 	Raw string
-	// BasicContent // Content_raw
 	BasicAnalysis
 	error
 }
@@ -152,10 +149,3 @@ func (pPI *PathInfo) GetContentBytes() []byte {
 	}
 	return bb
 }
-
-// FileType returns "XML", "MKDN", or future stuff TBD.
-/*
-func (p *CheckedContent) FileType() string {
-	return p.BasicAnalysis.FileType()
-}
-*/

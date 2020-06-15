@@ -13,6 +13,7 @@ import (
 // It can be nil, if e.g. its content was created on-the-fly.
 type PathInfo struct {
 	bpError error
+	relFP   string
 	absFP   AbsFilePath
 	// AbsFilePathParts stores the pieces of the absolute filepath.
 	// We require that AbsFilePathParts.Echo() == AbsFilePath
@@ -28,7 +29,7 @@ type PathInfo struct {
 }
 
 func (p *PathInfo) AbsFP() string {
-	return string(p.absFP) 
+	return string(p.absFP)
 }
 
 // GetError is necessary cos "Error()"" dusnt tell you whether "error"
@@ -66,17 +67,6 @@ func (p *PathInfo) IsOkaySymlink() bool {
 	return p.bpError == nil && p.Exists && !p.isFile && !p.isDir && p.isSymL
 }
 
-// NewPaths requires a non-nil "RelFilePath" and analyzes it.
-// It returns a pointer that can be used in a "CheckedPath" to
-// start a method chain.
-func NewPaths(rfp string) *Paths {
-	p := new(Paths)
-	p.RelFilePath = rfp
-	p.AbsFilePath = AbsFP(rfp)
-	// p.AbsFilePathParts = p.AbsFilePath.NewAbsPathParts()
-	return p
-}
-
 // NewPathInfo requires a non-nil "RelFilePath" and analyzes it.
 // It returns a pointer that can be used in a "CheckedPath" to
 // start a method chain.
@@ -102,44 +92,6 @@ func NewPathInfo(rfp string) *PathInfo {
 	}
 	return pi
 }
-
-func (p *Paths) Filext() string {
-	fx1 := FP.Ext(p.RelFilePath)
-	fx2 := FP.Ext(string(p.AbsFilePath))
-	// fx3 := p.AbsFilePathParts.FileExt
-	if fx1 != fx2 { // || fx2 != fx3 {
-		println("ERR: fu.bp.filext:", fx1, fx2) // , fx3)
-	}
-	return fx2
-}
-
-/*
-// setFlags requires a non-nil "AbsFilePath" and checks for existence and type.
-func (p *Paths) setFlags() *PathInfo {
-	pi := new(PathInfo)
-	if p.AbsFilePath == "" {
-		pi.bpError = errors.New("fu.setFlags: Nil filepath")
-		return pi
-	}
-	pi.absFP = p.AbsFilePath
-	var FI os.FileInfo
-	FI, e := os.Lstat(p.AbsFilePath.S())
-	if e != nil {
-		pi.bpError = errors.New("fu.BasicPath.check: Lstat failed: " + p.AbsFilePath.S())
-		// The file or directory does not exist. DON'T PANIC.
-		// Just return before any flags are set, such as Exists.
-		return pi
-	}
-	pi.isDir  = FI.IsDir()
-	pi.isFile = FI.Mode().IsRegular()
-	pi.isSymL = (0 != (FI.Mode() & os.ModeSymlink))
-	pi.Exists = pi.isDir || pi.isFile || pi.isSymL
-	if pi.isFile {
-		pi.Size = int(FI.Size())
-	}
-	return pi
-}
-*/
 
 // ResolveSymlinks will follow links until it finds something else.
 func (pi *PathInfo) ResolveSymlinks() *PathInfo {
