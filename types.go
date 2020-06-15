@@ -5,8 +5,8 @@ import (
 	"os"
 	"os/user"
 	"encoding/xml"
+	S  "strings"
 	FP "path/filepath"
-	S "strings"
 	WU "github.com/fbaube/wasmutils"
 )
 
@@ -14,20 +14,6 @@ func boolToInt(b bool) int {
 	if !b { return 0 }
 	return 1
 }
-// AbsFilePath is a new type, based on `string`. It serves three purposes:
-// - clarify and bring correctness to the processing of absolute path arguments
-// - permit the use of a clearly named struct field
-// - permit the definition of methods on the type
-//
-// Note that when working with an `os.File`, `Name()` returns the name of the
-// file as was passed to `Open(..)`, so it might be a relative filepath.
-//
-type AbsFilePath string
-
-// Some prior overenthusiasm.
-// type RelFilePath string
-// type ArgFilePath string
-// type FileContent string
 
 // A token nod to Windoze compatibility.
 const PathSep = string(os.PathSeparator)
@@ -74,31 +60,6 @@ func XmlAttrS(a xml.Attr) string {
 	return XmlNameS(a.Name) + "=\"" + a.Value + "\""
 }
 
-// S is a utility method to keep code cleaner.
-func (afp AbsFilePath) S() string {
-	s := string(afp)
-	if !FP.IsAbs(s) {
-		// panic("FU.types: AbsFP is not abs: " + s)
-		// FIXME? // println("==> fu.types: AbsFP not abs: " + s)
-		s, e := FP.Abs(s)
-		if e != nil { panic("su.afp.S") }
-		return s
-	}
-	return s
-}
-
-// AbsFP is like filepath.Abs(..) except using our own types.
-func AbsFP(relFP string) AbsFilePath {
-	if FP.IsAbs(relFP) {
-		return AbsFilePath(relFP)
-	}
-	afp, e := FP.Abs(relFP)
-	if e != nil {
-		panic("fu.AbsFP<" + relFP + ">: " + e.Error())
-	}
-	return AbsFilePath(afp)
-}
-
 // Tilded shortens a filepath by substituting "." or "~".
 func Tilded(s string) string {
 	// If it's missing, use assumed/default...
@@ -138,16 +99,6 @@ func Tilded(s string) string {
 	}
 	// No luck
 	return s
-}
-
-// Append is a convenience function to keep code cleaner.
-func (afp AbsFilePath) Append(rfp string) AbsFilePath {
-	return AbsFilePath(FP.Join(afp.S(), rfp))
-}
-
-// StartsWith is like strings.HasPrefix(..) but uses our types.
-func (afp AbsFilePath) HasPrefix(beg AbsFilePath) bool {
-	return S.HasPrefix(afp.S(), beg.S())
 }
 
 func init() {
