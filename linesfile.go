@@ -16,15 +16,16 @@ type FileLine struct {
 
 // LinesFile is for reading a file where each line is a record.
 type LinesFile struct {
-	*BasicPath
+	*PathInfo
 	Lines []*FileLine
 }
 
-// NewLinesFile is pretty self-explanatory. 
-func (pBP *BasicPath) NewLinesFile() (*LinesFile, error) {
-	bb := pBP.GetContent()
-	if pBP.error != nil {
-		return nil, fmt.Errorf("fu.NewLF<%s> failed: %w", pBP.AbsFilePath, pBP.error)
+// NewLinesFile is pretty self-explanatory.
+func (pPI *PathInfo) NewLinesFile() (*LinesFile, error) {
+	var bb []byte
+	bb = pPI.GetContentBytes()
+	if pPI.bpError != nil {
+		return nil, fmt.Errorf("fu.NewLF<%s> failed: %w", pPI.absFP, pPI.bpError)
 	}
 	pLF := new(LinesFile)
 	pLF.Lines = make([]*FileLine, 0)

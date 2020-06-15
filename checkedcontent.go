@@ -4,9 +4,9 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
-	"net/http"
 	"os"
 	S "strings"
+	FP "path/filepath"
 )
 
 // MAX_FILE_SIZE is set (arbitrarily) to 2 megabytes
@@ -14,54 +14,73 @@ const MAX_FILE_SIZE = 2000000
 
 // CheckedContent is a file we have redd, will read, or will create.
 // It might also be a directory or symlink, either of which requires
-// further processing elsewhere. "BasicPath" is a ptr cos the content
-// might be create on-the-fly in-memory.
+// further processing elsewhere.
 //
-// In normal usage, TBS...
+// CheckedContent comprises three sub-structs:
+//  - "BasicPath" is a pointer if the content is created on-the-fly in-memory.
+//  - "BasicContent" is basically just the content - or the file count if
+//     the BasicPath is a directory.
+//  - "BasicAnalysis" is where the results of content analysis are placed.
+//  - Each of these has its own error field, any one of which can bubble
+//    up to the "error" field of CheckedContent.
+//
 type CheckedContent struct {
-	*BasicPath
-	BasicContent
+	Paths
+  PathInfo
+	BasicContent // Content_raw
+	BasicAnalysis
 	error
 }
 
-func NewCheckedContent(pBP *BasicPath) *CheckedContent {
-	pCC := pBP.ReadContent()
-	if pBP.error != nil {
+func NewCheckedContent(pPI *PathInfo) *CheckedContent {
+	pCC := new(CheckedContent)
+	pCC.PathInfo = *pPI
+	pBC := pPI.FetchContent()
+	if pPI.bpError != nil {
 		return pCC
 	}
-	pCC.InspectFile()
+	pCC.BasicContent = *pBC
+	pCC.BasicAnalysis.FileIsOkay = pPI.IsOkayFile()
+	if pCC.BasicAnalysis.FileIsOkay && pCC.bpError == nil &&
+		 pCC.bcError == nil && pCC.error == nil {
+ 		pBA, e := AnalyseFile(pBC.Raw, FP.Ext(string(pPI.absFP))) // pPI.Filext())
+		if e != nil {
+			panic(e)
+		}
+		pCC.BasicAnalysis = *pBA
+	} else {
+		println("fu.cc.newcc: Could not newcc()")
+	}
 	return pCC
 }
 
 func NewCheckedContentFromPath(path string) *CheckedContent {
-	p := new(CheckedContent)
-	p.BasicPath = NewBasicPath(path)
-	// NOTE Load??
-	return p
+	bp := NewPathInfo(path)
+  return NewCheckedContent(bp)
 }
 
 // GetError is necessary cos "Error()"" dusnt tell you whether "error"
 // is "nil", which is the indication of no error. Therefore we need
 // this function, which can actually return the telltale "nil".
 func (p *CheckedContent) GetError() error {
-	return p.error
+	return p.bpError
 }
 
 // Error satisfied interface "error", but the
 // weird thing is that "error" can be nil.
 func (p *CheckedContent) Error() string {
-	if p.error != nil {
-		return p.error.Error()
+	if p.bpError != nil {
+		return p.bpError.Error()
 	}
 	return ""
 }
 
 // SetError sets "error" to the error.
 func (p *CheckedContent) SetError(e error) {
-	p.error = e
+	p.bpError = e
 }
 
-// ReadContent reads in the file (IFF it is a file) and does
+// FetchContent reads in the file (IFF it is a file) and does
 // a quick check of the MIME type before returning the promoted
 // type, "CheckedContent".
 //
@@ -70,54 +89,54 @@ func (p *CheckedContent) SetError(e error) {
 //  * If "Raw" is not "", be nice: the file is already loaded and
 //    is quite possibly an on-the-fly temp file, so skip the load
 //    and just do the quick MIME analysis.
-func (pBP *BasicPath) ReadContent() *CheckedContent {
-	pCC := new(CheckedContent)
-	pCC.BasicPath = pBP
-	DispFP := Tilded(pBP.AbsFilePath.S())
-	if !pBP.IsOkayFile() { // pBP.PathType() != "FILE" {
-		pCC.error = errors.New("fu.ReadContent: not a readable file: " + DispFP)
-		return pCC
+func (pPI *PathInfo) FetchContent() *BasicContent {
+	pBC := new(BasicContent)
+	// pCC.BasicPath = pBP
+	DispFP := Tilded(pPI.absFP.S())
+	if !pPI.IsOkayFile() { // pBP.PathType() != "FILE" {
+		pBC.bcError = errors.New("fu.FetchContent: not a readable file: " + DispFP)
+		return pBC
 	}
-	pCC.BasicContent = *new(BasicContent)
-	bb := pBP.GetContent()
-	if pBP.error != nil {
-		pCC.error = fmt.Errorf("fu.ReadContent: BP.GetContent<%s> failed: %w",
-			DispFP, pBP.error)
-		return pCC
+	var bb []byte
+	bb = pPI.GetContentBytes()
+	if pPI.bpError != nil {
+		 pBC.bcError = fmt.Errorf("fu.FetchContent: BP.GetContentBytes<%s> failed: %w",
+			DispFP, pPI.bpError)
+		return pBC
 	}
-	pCC.Raw = S.TrimSpace(string(bb))
-	if !S.HasPrefix(pBP.AbsFilePathParts.FileExt, ".") {
+	pBC.Raw = S.TrimSpace(string(bb))
+	if !S.HasPrefix(pPI.AbsFilePathParts.FileExt, ".") {
 		println("==> (oops had to add a dot to filext")
-		pBP.AbsFilePathParts.FileExt = "." + pBP.AbsFilePathParts.FileExt
+		pPI.AbsFilePathParts.FileExt = "." + pPI.AbsFilePathParts.FileExt
 	}
-	if S.Contains(pCC.Raw, "<!DOCTYPE HTML ") {
+	if S.Contains(pBC.Raw, "<!DOCTYPE HTML ") {
 		// println("FOUND HTML")
 	}
-	return pCC
+	return pBC
 }
 
-// GetContent reads in the file (IFF it is a file).
+// GetContentBytes reads in the file (IFF it is a file).
 // If an error, it is returned in "BasicPath.error",
 // and the return value is "nil".
 // The func "os.Open(fp)" defaults to R/W, altho R/O
 // would probably suffice.
-func (pBP *BasicPath) GetContent() []byte {
-	if pBP.error != nil {
+func (pPI *PathInfo) GetContentBytes() []byte {
+	if pPI.bpError != nil {
 		return nil
 	}
-	TheAbsFP := Tilded(pBP.AbsFilePath.S())
-	if !pBP.IsOkayFile() {
-		pBP.error = errors.New("fu.BP.GetContent: not a file: " + TheAbsFP)
+	TheAbsFP := Tilded(pPI.absFP.S())
+	if !pPI.IsOkayFile() {
+		pPI.bpError = errors.New("fu.BP.GetContentBytes: not a file: " + TheAbsFP)
 		return nil
 	}
-	if pBP.Size == 0 {
+	if pPI.Size == 0 {
 		println("==> zero-length file:", TheAbsFP)
 		return make([]byte, 0)
 	}
 	// If it's too big, BARF!
-	if pBP.Size > MAX_FILE_SIZE {
-		pBP.error = fmt.Errorf(
-			"fu.BP.GetContent: file too large (%d): %s", pBP.Size, TheAbsFP)
+	if pPI.Size > MAX_FILE_SIZE {
+		 pPI.bpError = fmt.Errorf(
+			"fu.BP.GetContentBytes: file too large (%d): %s", pPI.Size, TheAbsFP)
 		return nil
 	}
 	// Open it (and then immediately close it), just to check.
@@ -126,15 +145,15 @@ func (pBP *BasicPath) GetContent() []byte {
 	pF, e = os.Open(TheAbsFP)
 	defer pF.Close()
 	if e != nil {
-		pBP.error = errors.New(fmt.Sprintf(
-				"fu.BP.GetContent.osOpen<%s>: %w", TheAbsFP, e))
+		pPI.bpError = errors.New(fmt.Sprintf(
+				"fu.BP.GetContentBytes.osOpen<%s>: %w", TheAbsFP, e))
 		return nil
 	}
 	var bb []byte
 	bb, e = ioutil.ReadAll(pF)
 	if e != nil {
-		pBP.error = errors.New(fmt.Sprintf(
-				"fu.BP.GetContent.ioutilReadAll<%s>: %w", TheAbsFP, e))
+		pPI.bpError = errors.New(fmt.Sprintf(
+				"fu.BP.GetContentBytes.ioutilReadAll<%s>: %w", TheAbsFP, e))
 	}
 	if len(bb) == 0 {
 		println("==> empty file?!:", TheAbsFP)
@@ -143,45 +162,8 @@ func (pBP *BasicPath) GetContent() []byte {
 }
 
 // FileType returns "XML", "MKDN", or future stuff TBD.
+/*
 func (p *CheckedContent) FileType() string {
-	if p.MType == nil {
-		println("Unallocated MType[]!")
-		return "ERR/OH/CRAP"
-	}
-	return p.BasicContent.FileType()
+	return p.BasicAnalysis.FileType()
 }
-
-// InspectFile comprises four steps:
-//
-// * use stdlib and third-party libraries to make initial guesses
-// * dump those guesses for the purpose of evaluating those libraries
-// * call custom code to evaluate more deeply XML and/or as mixed content
-// * dump those results for the purpose of refining the code
-//
-// The fields of interest in `struct fileutiles.InputFile`:
-//
-// - Set using various heuristics of our own devising: IsXML bool
-// - Set using Golang stdlib: SniftMimeType string
-// - Set using 3rd-party lib: MagicMimeType string
-// - Set by our own code, based on the results set
-// in the preceding string fields: Mtype []string
-//
-func (p *CheckedContent) InspectFile() {
-	if p.error != nil || !p.IsOkayFile() { // p.PathType() != "FILE" {
-		return
-	}
-	p.MagicMimeType = GoMagic(p.Raw)
-	// Trim long JPEG descriptions
-	if s := p.MagicMimeType; S.HasPrefix(s, "JPEG") {
-		if i := S.Index(s, "xres"); i > 0 {
-			p.MagicMimeType = "JPEG, " + s[i:]
-		}
-	}
-	// This next call assigns "text/html" to DITA maps :-/
-	contyp := http.DetectContentType([]byte(p.Raw)) // (content))
-	p.SniftMimeType = S.TrimSuffix(contyp, "; charset=utf-8")
-
-	// println("cc.InspectFile: Did own; now SetFileMtype")
-	p.SetFileMtype()
-	// fmt.Printf("    MIME: (%s) %s \n", p.SniftMimeType, p.MagicMimeType)
-}
+*/

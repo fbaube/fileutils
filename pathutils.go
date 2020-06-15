@@ -74,26 +74,25 @@ func (p AbsFilePathParts) String() string {
 }
 
 // Echo implements Markupper.
-func (p BasicPath) Echo() string {
+func (p PathInfo) Echo() string {
 	return p.AbsFilePathParts.Echo()
 }
 
 // String implements Markupper.
 func (p CheckedContent) String() string {
 	if p.IsOkayDir() {
-		return fmt.Sprintf("BscPth: DIR[%d]: %s | %s",
+		return fmt.Sprintf("PathInfo: DIR[%d]: %s | %s",
 			p.Size, p.RelFilePath, p.AbsFilePathParts.Echo())
 	}
 	var isXML string
-	if p.IsXML {
+	if p.IsXml != 0 {
 		isXML = "[XML] "
 	}
-	s := fmt.Sprintf("ChP: %sLen<%d>Mtype<%s>",
-		isXML, p.Size, p.Mstring())
+	s := fmt.Sprintf("ChP: %sLen<%d>MType<%s>",
+		isXML, p.Size, p.MType) // Mstring())
 	s += fmt.Sprintf("\n\t %s | %s",
 		p.RelFilePath, Tilded(p.AbsFilePathParts.Echo()))
-	s += fmt.Sprintf("\n\t (snift) %s | (magic) %s",
-		p.SniftMimeType, p.MagicMimeType)
+	s += fmt.Sprintf("\n\t (snift) %s ", p.MimeType)
 	return s
 }
 

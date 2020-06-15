@@ -4,11 +4,16 @@ import (
 	"fmt"
 	"os"
 	"os/user"
+	"encoding/xml"
 	FP "path/filepath"
 	S "strings"
 	WU "github.com/fbaube/wasmutils"
 )
 
+func boolToInt(b bool) int {
+	if !b { return 0 }
+	return 1
+}
 // AbsFilePath is a new type, based on `string`. It serves three purposes:
 // - clarify and bring correctness to the processing of absolute path arguments
 // - permit the use of a clearly named struct field
@@ -18,6 +23,11 @@ import (
 // file as was passed to `Open(..)`, so it might be a relative filepath.
 //
 type AbsFilePath string
+
+type Paths struct {
+	RelFilePath string
+	AbsFilePath
+}
 
 // Some prior overenthusiasm.
 // type RelFilePath string
@@ -37,6 +47,36 @@ var currentUser *user.User
 // refers to the invoking user's home directory.
 func GetHomeDir() string {
 	return currentUserHomeDir
+}
+
+func MTypeSub(mtype string, i int) string {
+	if i < 0 || i > 2 { return "" }
+	ss := S.Split(mtype, "/")
+	return ss[i]
+}
+
+func XmlStartElmS(se xml.StartElement) string {
+	// type StartElement struct { Name Name ; Attr []Attr }
+	// type Name struct         { Space, Local string }
+	// type Attr struct         { Name  Name ; Value string }
+	// <space:local space:local=value ...>
+	ret := "<" + XmlNameS(se.Name)
+	for _, a := range se.Attr {
+		ret += " " + XmlAttrS(a)
+	}
+	ret += ">"
+	return ret
+}
+
+func XmlNameS(n xml.Name) string {
+	// type Name struct         { Space, Local string }
+	if n.Space == "" { return n.Local }
+	return n.Space + ":" + n.Local
+}
+
+func XmlAttrS(a xml.Attr) string {
+	// type Attr struct         { Name  Name ; Value string }
+	return XmlNameS(a.Name) + "=\"" + a.Value + "\""
 }
 
 // S is a utility method to keep code cleaner.

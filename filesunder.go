@@ -23,7 +23,7 @@ var theOkayFiles []AbsFilePath
 // to a "filepath.WalkFunc" that refers to a valid file.
 //
 // NOTE If an error is passed in, something is pretty messed up.
-// In principle we could still record the call, but the logic 
+// In principle we could still record the call, but the logic
 // is complex, so instead we just print an error message to the
 // console, return, and carry on with other calls.
 //
@@ -51,19 +51,19 @@ func ListFilesUnder(path string, useSymLinks bool) (FS *FileSet, err error) {
 		return nil, nil
 	}
 	FS = new(FileSet)
-	FS.DirSpec = *NewBasicPath(path)
+	FS.DirSpec = *NewPathInfo(path)
 	FS.FilePaths = make([]string, 0, 10)
-	FS.CheckedFiles = make([]BasicPath, 0, 10)
+	FS.CheckedFiles = make([]PathInfo, 0, 10)
 	// A single file ? If so, don't even bother to check it :)
 	if !FS.DirSpec.IsOkayDir() { // PathType() != "DIR" { // !DirExists(FS.AbsFilePath) {
 		println("==> Warning: not a directory:", path)
-		pF, e := os.Open(FS.DirSpec.AbsFilePath.S())
+		pF, e := os.Open(FS.DirSpec.absFP.S())
 		defer pF.Close()
 		if e != nil {
 			return nil, e
 		}
 		FS.FilePaths = append(FS.FilePaths, path)
-		cp := NewBasicPath(path)
+		cp := NewPathInfo(path)
 		FS.CheckedFiles = append(FS.CheckedFiles, *cp) // *NewCheckedPath(path))
 		return FS, nil
 	}
