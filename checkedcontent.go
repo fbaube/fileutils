@@ -62,6 +62,23 @@ func NewCheckedContentFromPath(path string) *CheckedContent {
   return NewCheckedContent(bp)
 }
 
+// String implements Markupper.
+func (p CheckedContent) String() string {
+	if p.IsOkayDir() {
+		return fmt.Sprintf("PathInfo: DIR[%d]: %s | %s",
+			p.size, p.RelFilePath, p.AbsFP()) // FilePathParts.Echo())
+	}
+	var isXML string
+	if p.IsXML() {
+		isXML = "[XML] "
+	}
+	s := fmt.Sprintf("ChP: %sLen<%d>MType<%s>",
+		isXML, p.size, p.MType)
+	s += fmt.Sprintf("\n\t %s | %s", p.RelFilePath, Enhomed(p.AbsFP()))
+	s += fmt.Sprintf("\n\t (snift) %s ", p.MimeType)
+	return s
+}
+
 // GetError is necessary cos "Error()"" dusnt tell you whether "error"
 // is "nil", which is the indication of no error. Therefore we need
 // this function, which can actually return the telltale "nil".
@@ -84,9 +101,9 @@ func (p *CheckedContent) SetError(e error) {
 }
 
 // FetchContent reads in the file (IFF it is a file) and trims away
-// leading and trailing whitespace.
-func (pPI *PathInfo) FetchContent() (raw string, e error) { 
-	DispFP := Tilded(pPI.absFP.S())
+// leading and trailing whitespace, but then adds a final newline.
+func (pPI *PathInfo) FetchContent() (raw string, e error) {
+	DispFP := pPI.absFP.Tildotted()
 	if !pPI.IsOkayFile() {
 		return "", errors.New("fu.fetchcontent: not a readable file: " + DispFP)
 	}
@@ -96,7 +113,7 @@ func (pPI *PathInfo) FetchContent() (raw string, e error) {
 		 return "", fmt.Errorf("fu.fetchcontent: PI.GetContentBytes<%s> failed: %w",
 				DispFP, pPI.bpError)
 	}
-	raw = S.TrimSpace(string(bb))
+	raw = S.TrimSpace(string(bb)) + "\n"
 	return raw, nil
 }
 
@@ -109,19 +126,19 @@ func (pPI *PathInfo) GetContentBytes() []byte {
 	if pPI.bpError != nil {
 		return nil
 	}
-	TheAbsFP := Tilded(pPI.absFP.S())
+	TheAbsFP := pPI.absFP.Tildotted()
 	if !pPI.IsOkayFile() {
 		pPI.bpError = errors.New("fu.BP.GetContentBytes: not a file: " + TheAbsFP)
 		return nil
 	}
-	if pPI.Size == 0 {
+	if pPI.size == 0 {
 		println("==> zero-length file:", TheAbsFP)
 		return make([]byte, 0)
 	}
 	// If it's too big, BARF!
-	if pPI.Size > MAX_FILE_SIZE {
+	if pPI.size > MAX_FILE_SIZE {
 		 pPI.bpError = fmt.Errorf(
-			"fu.BP.GetContentBytes: file too large (%d): %s", pPI.Size, TheAbsFP)
+			"fu.BP.GetContentBytes: file too large (%d): %s", pPI.size, TheAbsFP)
 		return nil
 	}
 	// Open it (and then immediately close it), just to check.

@@ -33,6 +33,14 @@ func (afp AbsFilePath) S() string {
 	return s
 }
 
+func (afp AbsFilePath) Tildotted() string {
+	return Tildotted(afp.S())
+}
+
+func (afp AbsFilePath) Enhomed() string {
+	return Enhomed(afp.S())
+}
+
 // AbsFP is like filepath.Abs(..) except using our own types.
 func AbsFP(relFP string) AbsFilePath {
 	if FP.IsAbs(relFP) {

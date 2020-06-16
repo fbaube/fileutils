@@ -60,8 +60,8 @@ func XmlAttrS(a xml.Attr) string {
 	return XmlNameS(a.Name) + "=\"" + a.Value + "\""
 }
 
-// Tilded shortens a filepath by substituting "." or "~".
-func Tilded(s string) string {
+// Tildotted shortens a filepath by substituting "~" or ".".
+func Tildotted(s string) string {
 	// If it's missing, use assumed/default...
 	if s == "" {
 		return "."
@@ -92,6 +92,38 @@ func Tilded(s string) string {
 		// bytesToTrim := len(currentWorkingDir) + 1
 		// return "." + PathSep + s[bytesToTrim:]
 	}
+	if S.HasPrefix(s, currentUserHomeDir) {
+		return ("~" + PathSep + S.TrimPrefix(s, currentUserHomeDir))
+		// bytesToTrim := len(currentUserHomeDir) + 1
+		// return "~" + PathSep + s[bytesToTrim:]
+	}
+	// No luck
+	return s
+}
+
+// Enhomed shortens a filepath by substituting "~".
+func Enhomed(s string) string {
+	// If it's missing, use assumed/default...
+	if s == "" {
+		return "."
+	}
+	// If it can't be normalised...
+	if s == "." || s == "~" || s == PathSep {
+		return s
+	}
+	// If it can't be further normalised...
+	if S.HasPrefix(s, "~"+PathSep) {
+		return s
+	}
+	// At this point, if it's not an absolute FP, it's a relative FP,
+	// but let it slide and don't prepend "./".
+	if !FP.IsAbs(s) {
+		// panic("NiceFP barfs on: " + s)
+		return s
+	}
+	// println("arg:", s)
+	// println("cwd:", currentworkingdir)
+
 	if S.HasPrefix(s, currentUserHomeDir) {
 		return ("~" + PathSep + S.TrimPrefix(s, currentUserHomeDir))
 		// bytesToTrim := len(currentUserHomeDir) + 1

@@ -6,14 +6,19 @@ import (
 )
 
 type AnalysisRecord struct {
-	IsXml       int
 	MimeType    string
 	MType       string
 	RootTag     string // e.g. "html", enclosing both <head> and <body>
-	RootAtts    string // e.g. <html lang="en"> yields << lang="en" >> 
+	RootAtts    string // e.g. <html lang="en"> yields << lang="en" >>
   MarkdownFlavor string
 	XM.XmlInfo
 	XM.DitaInfo
+}
+
+// IsXML is true for all XML, including all HTML. 
+func (p AnalysisRecord) IsXML() bool {
+	s := p.FileType()
+	return s == "XML" || s == "HTML"
 }
 
 // FileType returns "XML", "MKDN", "HTML", or future stuff TBD.

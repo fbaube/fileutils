@@ -22,6 +22,7 @@ import(
 //
 func AnalyseFile(sCont string, filext string) (*BasicAnalysis, error) {
 
+  var pBA *BasicAnalysis
   if sCont == "" {
     println("==>", "Cannot analyze zero-length content")
     return nil, nil
@@ -42,10 +43,8 @@ func AnalyseFile(sCont string, filext string) (*BasicAnalysis, error) {
 	//  Quick check for top-level XML stuff
 	// =======================================
   preamble, doctype, rootTag, e := XM.Peek_xml(sCont)
-  fmt.Printf("--> xm.peek: \n\t prmbl: %t \n\t DT: %s \n\t RootTag: %s \n",
-    // RootTag.Name<%+v> RootTag.Attr<%+v> \n",
-    (preamble != ""), doctype, XmlStartElmS(rootTag))
-    // rootTag.Name, rootTag.Attr)
+  fmt.Printf("--> xm.peek: preamble<%s> doctype<%s> RootTag%s \n",
+    SU.Yn(preamble != ""), SU.Yn(doctype != ""), XmlStartElmS(rootTag))
 
   var isXml bool
   // Note that this check means that if an error was encountered,
@@ -81,8 +80,9 @@ func AnalyseFile(sCont string, filext string) (*BasicAnalysis, error) {
     }
   }
 
-  p := NewBasicAnalysis()
-  p.FileExt  = filext
+  pBA = NewBasicAnalysis()
+  pBA.FileExt  = filext
+  pBA.MimeType = httpContype
 
   // ===============
   //   NOT XML !!!
@@ -90,63 +90,55 @@ func AnalyseFile(sCont string, filext string) (*BasicAnalysis, error) {
   if !isXml {
     var mimetype, mtype string
     mimetype, mtype = DoContentTypes_non_xml(httpContype, sCont, filext)
-    fmt.Printf("--> NON-XML: filext|%s| mtype|%s| mimetype|%s| \n",
+    fmt.Printf("--> NON-XML: filext<%s> mtype<%s> mimetype<%s> \n",
       filext, mtype, mimetype)
-    p.FileExt  = filext
-    p.MimeType = mimetype
-    p.MType    = mtype
-    return p, nil
+    pBA.FileExt  = filext
+    pBA.MimeType = mimetype
+    pBA.MType    = mtype
+    return pBA, nil
   }
 
   // ===============
   //   YES XML !!!
   // ===============
   // var isLwDita bool
-  p.IsXml = 1
-  var pPR *XM.XmlPreambleFields
-  var pDT *XM.XmlDoctypeFields
+  if rootTag.Name.Local == "" { println("ROOT TAG OOPS") }
+  var pPRF *XM.XmlPreambleFields
+  var pDTF *XM.XmlDoctypeFields
+
   if preamble != "" {
     // println("preamble:", preamble)
-    pPR, e = XM.NewXmlPreambleFields(preamble)
+    pPRF, e = XM.NewXmlPreambleFields(preamble)
     if e != nil {
       println("xm.peek: preamble failure")
     }
-    print("--> XML preamble fields: " + pPR.String())
+    print("--> Parsed XML preamble: " + pPRF.String())
   }
+
+  mt := "none"
+  dtmt := "none"
   if doctype != "" {
-    println("doctype:", doctype)
-    mt,_ /* isLwdita */ := XM.GetMTypeByDoctype(doctype)
-    println("-->", "search results:", mt)
-    pDT, e = XM.NewXmlDoctypeFieldsInclMType(doctype)
+    println("--> Doctype:", doctype)
+    mt, _ = XM.GetMTypeByDoctype(doctype)
+    println("-->", "Doctype/MType search results:", mt)
+    pDTF, e = XM.NewXmlDoctypeFieldsInclMType(doctype)
     if e != nil {
       println("xm.peek: doctype failure")
     }
-    println("-->", "XML doctype fields:", pDT.String())
-  }
-  if rootTag.Name.Local == "" { println("ROOT TAG OOPS") }
+    println("-->", "XML doctype fields:", pDTF.String())
+    dtmt = pDTF.DoctypeMType
 
-  // =========================
-  //  NOW USE DOCTYPE INFO !!
-  // =========================
-  // rootTag xml.StartElement is valid
-  // pDoctp is valid:
-  // DoctypeMType string
-  // TopTag string
-  // XmlPublicIDcatalogRecord
-  dmt := "none"
-  if pDT != nil {
-    fmt.Printf("    RootTag: DT<%s> text<%s> \n",
-       pDT.TopTag, XmlStartElmS(rootTag))
-    if pDT.TopTag != rootTag.Name.Local {
+    fmt.Printf("--> RootTag: DT<%s> text<%s> \n",
+       pDTF.TopTag, XmlStartElmS(rootTag))
+    if pDTF.TopTag != rootTag.Name.Local {
        panic("ROOT TAG MISMATCH")
       }
-    dmt = pDT.DoctypeMType
   }
-  fmt.Printf("    MimeTyp: contype<%s> \n", p.MimeType)
-  fmt.Printf("     M-Type: DT<%s> contype<%s> \n", dmt, p.MType)
-
-  fmt.Printf("DT-ptrs BFR: p.XmlInfo<%+v> p.DitaInfo<%+v> \n",
-    p.XmlInfo, p.DitaInfo)
+  if mt != dtmt {
+    fmt.Printf("M-Type ERROR: contype<%s> DT<%s> \n", mt, dtmt)
+  }
+  fmt.Printf("DT-ptrs BFR: XmlInfo<%s> DitaInfo<%s> \n",
+    pBA.XmlInfo, pBA.DitaInfo)
   /*
   type XmlInfo struct {
     XmlContype `db:"xmlcontype"`
@@ -160,16 +152,16 @@ func AnalyseFile(sCont string, filext string) (*BasicAnalysis, error) {
     DitaMarkupLg `db:"ditamarkuplg"`
     DitaContype  `db:"ditacontype"`
   } */
-  p.XmlInfo.XmlContype = "TBS"
-  p.XmlInfo.XmlDoctype = XM.XmlDoctype("DOCTYPE " + doctype)
-  p.XmlDoctypeFields   = pDT
-  p.XmlPreambleFields  = *pPR
-  p.DoctypeIsDeclared  = true
-  p.DitaInfo.DitaMarkupLg = "TBS"
-  p.DitaInfo.DitaContype  = "TBS"
+  pBA.XmlInfo.XmlContype = "TBS"
+  pBA.XmlInfo.XmlDoctype =  XM.XmlDoctype("DOCTYPE " + doctype)
+  pBA.XmlDoctypeFields   =  pDTF
+  pBA.XmlPreambleFields  = *pPRF
+  // pBA.DoctypeIsDeclared  =  true
+  pBA.DitaInfo.DitaMarkupLg = "TBS"
+  pBA.DitaInfo.DitaContype  = "TBS"
 
-  fmt.Printf("DT-ptrs AFR: p.XmlInfo<%+v> p.DitaInfo<%+v> \n",
-    p.XmlInfo, p.DitaInfo)
+  fmt.Printf("DT-ptrs AFR: XmlInfo<%s> DitaInfo<%s> \n",
+    pBA.XmlInfo, pBA.DitaInfo)
 
-  return p, nil
+  return pBA, nil
 }

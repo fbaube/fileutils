@@ -15,14 +15,34 @@ type PathInfo struct {
 	bpError error
 	relFP   string
 	absFP   AbsFilePath
-	Exists bool
-	isDir  bool
-	isFile bool
-	isSymL bool
-	// Size is here and not in "struct CheckedPath" because its
-	// value is already made available to us when "func check()""
-	// calls "os.FileInfo os.Lstat(..)"", below.
-	Size int
+	exists  bool
+	isDir   bool
+	isFile  bool
+	isSymL  bool
+	// size is here and not elsewhere because
+	// its value is already available to us when
+	// "os.FileInfo os.Lstat(..)" is called, below.
+	size int
+}
+
+func (pi *PathInfo) String() (s string) {
+	if pi.IsOkayFile()    { s = "OK-File " } else
+	if pi.IsOkayDir()     { s = "OK-Dirr " } else
+	if pi.IsOkaySymlink() { s = "OK-SymL " } else
+	                      { s = "Not-OK " }
+	if pi.bpError != nil  { s += "ERROR " }
+	s += fmt.Sprintf("[%d] ", pi.size)
+	s += pi.absFP.Enhomed()
+	return s
+}
+
+// Echo implements Markupper.
+func (p PathInfo) Echo() string {
+	return p.AbsFP() 
+}
+
+func (p *PathInfo) Size() int {
+	return p.size
 }
 
 func (p *PathInfo) AbsFP() string {
@@ -49,19 +69,24 @@ func (p *PathInfo) SetError(e error) {
 	p.bpError = e
 }
 
+// Exists is a convenience function.
+func (p *PathInfo) Exists() bool {
+	return p.exists
+}
+
 // IsOkayFile is a convenience function.
 func (p *PathInfo) IsOkayFile() bool {
-	return p.bpError == nil && p.Exists && p.isFile && !p.isDir
+	return p.bpError == nil && p.exists && p.isFile && !p.isDir
 }
 
 // IsOkayDir is a convenience function.
 func (p *PathInfo) IsOkayDir() bool {
-	return p.bpError == nil && p.Exists && !p.isFile && p.isDir
+	return p.bpError == nil && p.exists && !p.isFile && p.isDir
 }
 
 // IsOkaySymlink is a convenience function.
 func (p *PathInfo) IsOkaySymlink() bool {
-	return p.bpError == nil && p.Exists && !p.isFile && !p.isDir && p.isSymL
+	return p.bpError == nil && p.exists && !p.isFile && !p.isDir && p.isSymL
 }
 
 // NewPathInfo requires a non-nil "RelFilePath" and analyzes it.
@@ -82,9 +107,9 @@ func NewPathInfo(rfp string) *PathInfo {
 	pi.isDir  = FI.IsDir()
 	pi.isFile = FI.Mode().IsRegular()
 	pi.isSymL = (0 != (FI.Mode() & os.ModeSymlink))
-	pi.Exists = pi.isDir || pi.isFile || pi.isSymL
+	pi.exists = pi.isDir || pi.isFile || pi.isSymL
 	if pi.isFile {
-		pi.Size = int(FI.Size())
+		 pi.size = int(FI.Size())
 	}
 	return pi
 }
