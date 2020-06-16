@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<topic id="myxditatopicid" xml:lang="en-us">
+  <title>My XDITA Topic</title>
+  <shortdesc>
+    In brief, XDITA topics are generic.
+  </shortdesc>
+  <body>
+    <section>
+      My XDITA Headline
+    </section>
+    <p>
+      This XDITA topic content is generic and simple.
+    </p>
+  </body>
+</topic>
