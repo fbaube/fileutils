@@ -30,7 +30,7 @@ func (pi *PathInfo) String() (s string) {
 	if pi.IsOkayDir()     { s = "OK-Dirr " } else
 	if pi.IsOkaySymlink() { s = "OK-SymL " } else
 	                      { s = "Not-OK " }
-	if pi.bpError != nil  { s += "ERROR " }
+	if pi.bpError != nil  { s+= "ERROR " }
 	s += fmt.Sprintf("[%d] ", pi.size)
 	s += pi.absFP.Enhomed()
 	return s
@@ -38,7 +38,7 @@ func (pi *PathInfo) String() (s string) {
 
 // Echo implements Markupper.
 func (p PathInfo) Echo() string {
-	return p.AbsFP() 
+	return p.AbsFP()
 }
 
 func (p *PathInfo) Size() int {

@@ -39,12 +39,26 @@ func AnalyseFile(sCont string, filext string) (*BasicAnalysis, error) {
 	httpContype = S.TrimSuffix(httpContype, "; charset=utf-8")
   println("-->", "HTTP stdlib:", httpContype)
 
+  pBA = NewBasicAnalysis()
+  pBA.FileExt  = filext
+  pBA.MimeType = httpContype
+
   // =======================================
 	//  Quick check for top-level XML stuff
 	// =======================================
-  preamble, doctype, rootTag, e := XM.Peek_xml(sCont)
-  fmt.Printf("--> xm.peek: preamble<%s> doctype<%s> RootTag%s \n",
-    SU.Yn(preamble != ""), SU.Yn(doctype != ""), XmlStartElmS(rootTag))
+  preamble, doctype, rootTag, dtdStuff, e := XM.Peek_xml(sCont)
+  fmt.Printf("--> xm.peek: preamble<%s> doctype<%s> DTDstuff<%s> RootTag<%s> \n",
+    SU.Yn(preamble != ""), SU.Yn(doctype != ""),
+    SU.Yn(dtdStuff), SU.Yn(rootTag.Name.Local != ""))
+  if rootTag.Name.Local == "" && !dtdStuff && (preamble != "" || doctype != "") {
+    println("ROOT TAG NIL") 
+  }
+  if dtdStuff && SU.IsInSliceIgnoreCase(filext, DTDtypeFileExtensions) {
+    println("--> DTD type detected (filext<%s>)", filext)
+    pBA.MimeType = "application/xml-dtd"
+    pBA.MType = "xml/sch/" + filext[1:]
+    return pBA, nil
+  }
 
   var isXml bool
   // Note that this check means that if an error was encountered,
@@ -73,16 +87,7 @@ func AnalyseFile(sCont string, filext string) (*BasicAnalysis, error) {
       println("--> Peek_xml oops: HTTP contype-detection got <svg>")
       isXml = true
   	}
-    if SU.IsInSliceIgnoreCase(filext, DTDtypeFileExtensions) {
-      println("--> Peek_xml oops: DTDtypeFileExtensions")
-      isXml = true
-      // RETURN "application/xml-dtd", "xml/sch/" + filext[1:]
-    }
   }
-
-  pBA = NewBasicAnalysis()
-  pBA.FileExt  = filext
-  pBA.MimeType = httpContype
 
   // ===============
   //   NOT XML !!!
@@ -102,7 +107,6 @@ func AnalyseFile(sCont string, filext string) (*BasicAnalysis, error) {
   //   YES XML !!!
   // ===============
   // var isLwDita bool
-  if rootTag.Name.Local == "" { println("ROOT TAG OOPS") }
   var pPRF *XM.XmlPreambleFields
   var pDTF *XM.XmlDoctypeFields
 
@@ -118,39 +122,35 @@ func AnalyseFile(sCont string, filext string) (*BasicAnalysis, error) {
   mt := "none"
   dtmt := "none"
   if doctype != "" {
-    println("--> Doctype:", doctype)
+    println("-->", doctype)
     mt, _ = XM.GetMTypeByDoctype(doctype)
-    println("-->", "Doctype/MType search results:", mt)
+    // println("-->", "Doctype/MType search results:", mt)
     pDTF, e = XM.NewXmlDoctypeFieldsInclMType(doctype)
     if e != nil {
       println("xm.peek: doctype failure")
     }
-    println("-->", "XML doctype fields:", pDTF.String())
+    println("-->", "Parsed doctype:", pDTF.String())
     dtmt = pDTF.DoctypeMType
 
-    fmt.Printf("--> RootTag: DT<%s> text<%s> \n",
-       pDTF.TopTag, XmlStartElmS(rootTag))
     if pDTF.TopTag != rootTag.Name.Local {
-       panic("ROOT TAG MISMATCH")
+      fmt.Printf("--> RootTag MISMATCH: doctype<%s> bodytext<%s> \n",
+        pDTF.TopTag, rootTag.Name.Local)
+      panic("ROOT TAG MISMATCH")
       }
   }
   if mt != dtmt {
-    fmt.Printf("M-Type ERROR: contype<%s> DT<%s> \n", mt, dtmt)
+    fmt.Printf("M-Type ERROR: contype<%s> doctype<%s> \n", mt, dtmt)
   }
-  fmt.Printf("DT-ptrs BFR: XmlInfo<%s> DitaInfo<%s> \n",
-    pBA.XmlInfo, pBA.DitaInfo)
   /*
   type XmlInfo struct {
-    XmlContype `db:"xmlcontype"`
-    XmlDoctype `db:"xmldoctype"`
+    XmlContype
+    XmlPreambleFields
+    XmlDoctype
    *XmlDoctypeFields
-   *XmlPreambleFields
-    RootTagCt int
-    DoctypeIsDeclared, DoctypeIsGuessed bool
   }
   type DitaInfo struct {
-    DitaMarkupLg `db:"ditamarkuplg"`
-    DitaContype  `db:"ditacontype"`
+    DitaMarkupLg
+    DitaContype
   } */
   pBA.XmlInfo.XmlContype = "TBS"
   pBA.XmlInfo.XmlDoctype =  XM.XmlDoctype("DOCTYPE " + doctype)
@@ -160,8 +160,7 @@ func AnalyseFile(sCont string, filext string) (*BasicAnalysis, error) {
   pBA.DitaInfo.DitaMarkupLg = "TBS"
   pBA.DitaInfo.DitaContype  = "TBS"
 
-  fmt.Printf("DT-ptrs AFR: XmlInfo<%s> DitaInfo<%s> \n",
-    pBA.XmlInfo, pBA.DitaInfo)
+  fmt.Printf("XmlInfo<%s> DitaInfo<%s> \n", pBA.XmlInfo, pBA.DitaInfo)
 
   return pBA, nil
 }
