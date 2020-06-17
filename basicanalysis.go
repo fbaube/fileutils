@@ -17,13 +17,6 @@ func NewBasicAnalysis() *BasicAnalysis {
   return p
 }
 
-/*
-func (pBA *BasicAnalysis) IsXML() bool {
-  if pBA.IsXml == 0 { return false }
-  return true
-}
-*/
-
 func (p BasicAnalysis) String() string {
   var x string
   if p.IsXML() { x = "IsXML.. " }

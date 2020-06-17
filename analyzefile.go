@@ -51,7 +51,7 @@ func AnalyseFile(sCont string, filext string) (*BasicAnalysis, error) {
     SU.Yn(preamble != ""), SU.Yn(doctype != ""),
     SU.Yn(dtdStuff), SU.Yn(rootTag.Name.Local != ""))
   if rootTag.Name.Local == "" && !dtdStuff && (preamble != "" || doctype != "") {
-    println("ROOT TAG NIL") 
+    println("ROOT TAG NIL")
   }
   if dtdStuff && SU.IsInSliceIgnoreCase(filext, DTDtypeFileExtensions) {
     println("--> DTD type detected (filext<%s>)", filext)
@@ -121,10 +121,15 @@ func AnalyseFile(sCont string, filext string) (*BasicAnalysis, error) {
 
   mt := "none"
   dtmt := "none"
+  // isLwdita := false
+
   if doctype != "" {
     println("-->", doctype)
     mt, _ = XM.GetMTypeByDoctype(doctype)
     // println("-->", "Doctype/MType search results:", mt)
+
+    // If we got an MType, we don't really need to make this call,
+    // but for now let's do it anyways.
     pDTF, e = XM.NewXmlDoctypeFieldsInclMType(doctype)
     if e != nil {
       println("xm.peek: doctype failure")
@@ -152,7 +157,7 @@ func AnalyseFile(sCont string, filext string) (*BasicAnalysis, error) {
     DitaMarkupLg
     DitaContype
   } */
-  pBA.XmlInfo.XmlContype = "TBS"
+  pBA.XmlInfo.XmlContype = "RootTagData"
   pBA.XmlInfo.XmlDoctype =  XM.XmlDoctype("DOCTYPE " + doctype)
   pBA.XmlDoctypeFields   =  pDTF
   pBA.XmlPreambleFields  = *pPRF
