@@ -51,7 +51,7 @@ func AnalyseFile(sCont string, filext string) (*BasicAnalysis, error) {
     SU.Yn(preamble != ""), SU.Yn(doctype != ""),
     SU.Yn(dtdStuff), SU.Yn(rootTag.Name.Local != ""))
   if rootTag.Name.Local == "" && !dtdStuff && (preamble != "" || doctype != "") {
-    println("ROOT TAG NIL")
+    println("-->", "XML file has no root tag")
   }
   if dtdStuff && SU.IsInSliceIgnoreCase(filext, DTDtypeFileExtensions) {
     println("--> DTD type detected (filext<%s>)", filext)
@@ -137,7 +137,8 @@ func AnalyseFile(sCont string, filext string) (*BasicAnalysis, error) {
     println("-->", "Parsed doctype:", pDTF.String())
     dtmt = pDTF.DoctypeMType
 
-    if pDTF.TopTag != rootTag.Name.Local {
+    if pDTF.TopTag != "" && rootTag.Name.Local != "" &&
+       pDTF.TopTag != rootTag.Name.Local {
       fmt.Printf("--> RootTag MISMATCH: doctype<%s> bodytext<%s> \n",
         pDTF.TopTag, rootTag.Name.Local)
       panic("ROOT TAG MISMATCH")

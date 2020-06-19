@@ -25,7 +25,7 @@ package fileutils
 //      have quite different processing, and we take advantage of it to
 //      keep HTML processing free of nasty surprises]
 //  [1] CNT (Content), MAP (ToC), IMG, SCH(ema) [and maybe others TBD?]
-//  [2] Depends on [0]:
+//  [2] Depends on [0]: 
 //       XML: per-DTD [and/or Pub-ID/filext];
 //      HTML: per-DTD [and/or Pub-ID/filext];
 //       BIN: format/filext;
@@ -34,7 +34,7 @@ package fileutils
 //      MKDN: flavor of Markdown (?) (note also AsciiDoc, RST, ...)
 //
 // FIXME: Let [2] (3rd) be version info (html5, lwdiat, dita13)
-//        and then keep root tag info separately. 
+//        and then keep root tag info separately.
 //
 // type XmlDoctypeFamily string
 //      XmlDoctypeFamilies are the broad groups of DOCTYPES.
