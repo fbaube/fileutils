@@ -145,7 +145,8 @@ func AnalyseFile(sCont string, filext string) (*BasicAnalysis, error) {
       }
   }
   if mt != dtmt {
-    fmt.Printf("M-Type ERROR: contype<%s> doctype<%s> \n", mt, dtmt)
+    fmt.Printf("--> M-Type MISMATCH: contype<%s> doctype<%s> \n", mt, dtmt)
+    panic("M-TYPE MISMATCH")
   }
   /*
   type XmlInfo struct {
