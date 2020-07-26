@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
-	S "strings"
 	FP "path/filepath"
+	S "strings"
 )
 
 // MAX_FILE_SIZE is set (arbitrarily) to 2 megabytes
@@ -24,7 +24,7 @@ const MAX_FILE_SIZE = 2000000
 //
 type CheckedContent struct {
 	RelFilePath string
-  PathInfo
+	PathInfo
 	Raw string
 	BasicAnalysis
 	error
@@ -51,15 +51,18 @@ func NewCheckedContent(pPI *PathInfo) *CheckedContent {
 	pCC.BasicAnalysis.FileIsOkay = true
 	pBA, e := AnalyseFile(pCC.Raw, FP.Ext(string(pPI.absFP)))
 	if e != nil {
-		panic(e)
+		// panic(e)
+		pCC.error = fmt.Errorf("fu.CC: analyze file failed: %w", e)
+		return pCC
 	}
 	pCC.BasicAnalysis = *pBA
+	// println("NewCC OK!")
 	return pCC
 }
 
 func NewCheckedContentFromPath(path string) *CheckedContent {
 	bp := NewPathInfo(path)
-  return NewCheckedContent(bp)
+	return NewCheckedContent(bp)
 }
 
 // String implements Markupper.
@@ -110,8 +113,8 @@ func (pPI *PathInfo) FetchContent() (raw string, e error) {
 	var bb []byte
 	bb = pPI.GetContentBytes()
 	if pPI.bpError != nil {
-		 return "", fmt.Errorf("fu.fetchcontent: PI.GetContentBytes<%s> failed: %w",
-				DispFP, pPI.bpError)
+		return "", fmt.Errorf("fu.fetchcontent: PI.GetContentBytes<%s> failed: %w",
+			DispFP, pPI.bpError)
 	}
 	raw = S.TrimSpace(string(bb)) + "\n"
 	return raw, nil
@@ -137,7 +140,7 @@ func (pPI *PathInfo) GetContentBytes() []byte {
 	}
 	// If it's too big, BARF!
 	if pPI.size > MAX_FILE_SIZE {
-		 pPI.bpError = fmt.Errorf(
+		pPI.bpError = fmt.Errorf(
 			"fu.BP.GetContentBytes: file too large (%d): %s", pPI.size, TheAbsFP)
 		return nil
 	}
@@ -148,14 +151,14 @@ func (pPI *PathInfo) GetContentBytes() []byte {
 	defer pF.Close()
 	if e != nil {
 		pPI.bpError = errors.New(fmt.Sprintf(
-				"fu.BP.GetContentBytes.osOpen<%s>: %w", TheAbsFP, e))
+			"fu.BP.GetContentBytes.osOpen<%s>: %w", TheAbsFP, e))
 		return nil
 	}
 	var bb []byte
 	bb, e = ioutil.ReadAll(pF)
 	if e != nil {
 		pPI.bpError = errors.New(fmt.Sprintf(
-				"fu.BP.GetContentBytes.ioutilReadAll<%s>: %w", TheAbsFP, e))
+			"fu.BP.GetContentBytes.ioutilReadAll<%s>: %w", TheAbsFP, e))
 	}
 	if len(bb) == 0 {
 		println("==> empty file?!:", TheAbsFP)
