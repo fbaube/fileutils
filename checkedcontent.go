@@ -17,13 +17,14 @@ const MAX_FILE_SIZE = 2000000
 // further processing elsewhere.
 //
 // CheckedContent comprises three sub-structs:
-//  - "PathInfo" is a pointer if the content is created on-the-fly in-memory.
+//  - The path fields in "PathInfo" are undefined if the content is created
+//    on-the-fly in-memory.
 //  - "BasicAnalysis" is where the results of content analysis are placed.
 //  - Each of these has its own error field, any one of which can bubble
 //    up to the "error" field of CheckedContent.
 //
 type CheckedContent struct {
-	RelFilePath string
+	// RelFilePath string
 	PathInfo
 	Raw string
 	BasicAnalysis
@@ -69,7 +70,7 @@ func NewCheckedContentFromPath(path string) *CheckedContent {
 func (p CheckedContent) String() string {
 	if p.IsOkayDir() {
 		return fmt.Sprintf("PathInfo: DIR[%d]: %s | %s",
-			p.size, p.RelFilePath, p.AbsFP()) // FilePathParts.Echo())
+			p.size, p.relFP, p.AbsFP()) // FilePathParts.Echo())
 	}
 	var isXML string
 	if p.IsXML() {
@@ -77,7 +78,7 @@ func (p CheckedContent) String() string {
 	}
 	s := fmt.Sprintf("ChP: %sLen<%d>MType<%s>",
 		isXML, p.size, p.MType)
-	s += fmt.Sprintf("\n\t %s | %s", p.RelFilePath, Enhomed(p.AbsFP()))
+	s += fmt.Sprintf("\n\t %s | %s", p.relFP, Enhomed(p.AbsFP()))
 	s += fmt.Sprintf("\n\t (snift) %s ", p.MimeType)
 	return s
 }

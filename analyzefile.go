@@ -169,7 +169,7 @@ func AnalyseFile(sCont string, filext string) (*BasicAnalysis, error) {
 		dtmt = pDTF.DoctypeMType
 
 		if pDTF.TopTag != "" && rootTag.Name.Local != "" &&
-			pDTF.TopTag != rootTag.Name.Local {
+			S.ToLower(pDTF.TopTag) != S.ToLower(rootTag.Name.Local) {
 			fmt.Printf("--> RootTag MISMATCH: doctype<%s> bodytext<%s> \n",
 				pDTF.TopTag, rootTag.Name.Local)
 			panic("ROOT TAG MISMATCH")
