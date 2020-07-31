@@ -21,9 +21,9 @@ import (
 //
 // If the first argument "sCont" (the content) is zero-length, return (nil, nil).
 //
-func AnalyseFile(sCont string, filext string) (*BasicAnalysis, error) {
+func AnalyseFile(sCont string, filext string) (*AnalysisRecord, error) {
 
-	var pBA *BasicAnalysis
+	var pBA *AnalysisRecord
 	if sCont == "" {
 		println("==>", "Cannot analyze zero-length content")
 		return nil, nil
@@ -42,7 +42,8 @@ func AnalyseFile(sCont string, filext string) (*BasicAnalysis, error) {
 	httpContype = S.TrimSuffix(httpContype, "; charset=utf-8")
 	println("-->", "HTTP stdlib:", httpContype)
 
-	pBA = NewBasicAnalysis()
+	pBA = new(AnalysisRecord)
+	pBA.MType = "-/-/-"
 	pBA.FileExt = filext
 	pBA.MimeType = httpContype
 

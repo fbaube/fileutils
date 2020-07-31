@@ -5,17 +5,22 @@ import (
 	"os"
 	FP "path/filepath"
 	S "strings"
+
 	SU "github.com/fbaube/stringutils"
 )
 
 // NOT re-entrant
 var gotOkayExts bool
+
 // NOT re-entrant
 var theOkayExts []string
+
 // NOT re-entrant
 var gotOkayName bool
+
 // NOT re-entrant
 var theOkayName string
+
 // NOT re-entrant
 var theOkayFiles []AbsFilePath
 
@@ -51,9 +56,9 @@ func ListFilesUnder(path string, useSymLinks bool) (FS *FileSet, err error) {
 		return nil, nil
 	}
 	FS = new(FileSet)
-	FS.DirSpec = *NewPathInfo(path)
+	FS.DirSpec = *NewPathProps(path)
 	FS.FilePaths = make([]string, 0, 10)
-	FS.CheckedFiles = make([]PathInfo, 0, 10)
+	FS.CheckedFiles = make([]PathProps, 0, 10)
 	// A single file ? If so, don't even bother to check it :)
 	if !FS.DirSpec.IsOkayDir() { // PathType() != "DIR" { // !DirExists(FS.AbsFilePath) {
 		println("==> Warning: not a directory:", path)
@@ -63,7 +68,7 @@ func ListFilesUnder(path string, useSymLinks bool) (FS *FileSet, err error) {
 			return nil, e
 		}
 		FS.FilePaths = append(FS.FilePaths, path)
-		cp := NewPathInfo(path)
+		cp := NewPathProps(path)
 		FS.CheckedFiles = append(FS.CheckedFiles, *cp) // *NewCheckedPath(path))
 		return FS, nil
 	}
