@@ -1,7 +1,8 @@
 package fileutils
 
-// Errable is for structs that have an embedded field "error",
-// not visible outside the package.
+// Errable is for structs that have an embedded field "error", not visible
+// outside the package. This makes it possible to carry around (and access)
+// the error long after it is generated.
 type Errable interface {
 	HasError() bool
 	// Error satisfies interface "error", but the weird thing is that "error"
@@ -12,5 +13,6 @@ type Errable interface {
 	// this function, which can actually return the telltale "nil".
 	GetError() error
 	// SetError lets the caller set the field "error", not visible outside.
-	SetError(e error)
+	// Make it optional, so that "error" can be invisible outside the package.
+	// SetError(e error)
 }

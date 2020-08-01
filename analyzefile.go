@@ -50,55 +50,51 @@ func AnalyseFile(sCont string, filext string) (*AnalysisRecord, error) {
 	// =======================================
 	//  Quick check for top-level XML stuff
 	// =======================================
-	preamble, doctype, rootTag, dtdStuff, e := XM.Peek_xml(sCont)
-	var gotRootTag bool
-	gotRootTag = (rootTag.Name.Local != "")
-
-	fmt.Printf("--> xm.peek: preamble<%s> doctype<%s> DTDstuff<%s> RootTag<%s> \n",
-		SU.Yn(preamble != ""), SU.Yn(doctype != ""),
-		SU.Yn(dtdStuff), SU.Yn(rootTag.Name.Local != ""))
-	if rootTag.Name.Local == "" && !dtdStuff && (preamble != "" || doctype != "") {
-		println("-->", "XML file has no root tag")
+	var elmMap map[string]*XM.FilePosition
+	elmMap = map[string]*XM.FilePosition{
+		"html":       nil,
+		"topic":      nil,
+		"concept":    nil,
+		"reference":  nil,
+		"task":       nil,
+		"bookmap":    nil,
+		"glossentry": nil,
+		"glossgroup": nil,
 	}
-	if dtdStuff && SU.IsInSliceIgnoreCase(filext, XM.DTDtypeFileExtensions) {
-		println("--> DTD type detected (filext<%s>)", filext)
+	Peek := XM.PeekAtStructure_xml(sCont, elmMap)
+	if Peek.HasError() {
+		return pBA, fmt.Errorf("fu.peekXml failed: %w", Peek.GetError())
+	}
+	var isXml, gotPreamble, gotDoctype, gotRootTag, gotDTDstuff bool
+	gotPreamble = (Peek.Preamble != "")
+	gotDoctype = (Peek.Doctype != "")
+	gotRootTag = (Peek.RootTag.Name.Local != "")
+	gotDTDstuff = Peek.HasDTDstuff
+	isXml = gotRootTag || gotDTDstuff || gotDoctype || gotPreamble
+	if !isXml {
+		println("--> Does not seem to be XML")
+	} else {
+		fmt.Printf("--> xm.peek: preamble<%s> doctype<%s> DTDstuff<%s> RootTag<%s> \n",
+			SU.Yn(gotPreamble), SU.Yn(gotDoctype), SU.Yn(gotDTDstuff), SU.Yn(gotRootTag))
+	}
+	bb, ss := SeemsToBeXml(httpContype, filext)
+	if !isXml && bb {
+		isXml = true
+		println("--> Seems to be XML after all:", ss)
+	}
+	if isXml && !(gotRootTag || gotDTDstuff) {
+		println("-->", "XML file has no root tag (and is not DTD)")
+	}
+	if gotDTDstuff && SU.IsInSliceIgnoreCase(filext, XM.DTDtypeFileExtensions) {
+		fmt.Printf("--> DTD type detected (filext<%s>) \n", filext)
 		pBA.MimeType = "application/xml-dtd"
 		pBA.MType = "xml/sch/" + filext[1:]
 		return pBA, nil
 	}
 
-	var isXml bool
-	// Note that this check means that if an error was encountered,
-	// content that might be XML will instead be processed as non-XML.
-	isXml = (e == nil && (preamble != "" || doctype != "" || rootTag.Name.Local != ""))
-	// We can do a bit more checking for XML
-	if !isXml {
-		if S.Contains(httpContype, "xml") {
-			println("--> Peek_xml oops: HTTP contype-detection got XML (in MIME type)")
-			isXml = true
-		}
-		if httpContype == "text/html" {
-			println("--> Peek_xml oops: HTTP contype-detection got XML (text/html) (HDITA?)")
-			isXml = true
-		}
-		if S.HasPrefix(httpContype, "text/") &&
-			(filext == ".dita" || filext == ".ditamap" || filext == ".map") {
-			println("--> Peek_xml oops: HTTP contype-detection got XML (text/dita-filext)")
-			isXml = true
-		}
-		if S.Contains(httpContype, "ml") {
-			println("--> Peek_xml oops: HTTP contype-detection got <ml>")
-			isXml = true
-		}
-		if S.Contains(httpContype, "svg") {
-			println("--> Peek_xml oops: HTTP contype-detection got <svg>")
-			isXml = true
-		}
-	}
-
-	// ===============
-	//   NOT XML !!!
-	// ===============
+	// =============
+	//   NOT XML ?
+	// =============
 	if !isXml {
 		var mimetype, mtype string
 		mimetype, mtype = DoContentTypes_non_xml(httpContype, sCont, filext)
@@ -117,9 +113,10 @@ func AnalyseFile(sCont string, filext string) (*AnalysisRecord, error) {
 	var pPRF *XM.XmlPreambleFields
 	var pDTF *XM.XmlDoctypeFields
 
-	if preamble != "" {
+	var e error
+	if gotPreamble {
 		// println("preamble:", preamble)
-		pPRF, e = XM.NewXmlPreambleFields(preamble)
+		pPRF, e = XM.NewXmlPreambleFields(Peek.Preamble)
 		if e != nil {
 			println("xm.peek: preamble failure")
 			return nil, fmt.Errorf("xm.peek: preamble failure: %w", e)
@@ -131,11 +128,12 @@ func AnalyseFile(sCont string, filext string) (*AnalysisRecord, error) {
 	dtmt := "none"
 	// isLwdita := false
 
-	// If we don't have a DOCTYPE, we have trouble!
-	if doctype == "" {
+	// If we don't have a DOCTYPE, it's gonna be a PITA !
+	// So le's at least try to se the MType.
+	if Peek.Doctype == "" {
 		if gotRootTag {
 			var rutag string
-			rutag = S.ToLower(rootTag.Name.Local)
+			rutag = S.ToLower(Peek.RootTag.Name.Local)
 			if rutag == "" {
 				panic("Nil root tag")
 			}
@@ -156,23 +154,23 @@ func AnalyseFile(sCont string, filext string) (*AnalysisRecord, error) {
 			pBA.MType = "xml/???/" + rutag
 		}
 	} else {
-		println("-->", doctype)
-		mt, _ = XM.GetMTypeByDoctype(doctype)
+		println("-->", Peek.Doctype)
+		mt, _ = XM.GetMTypeByDoctype(Peek.Doctype)
 		// println("-->", "Doctype/MType search results:", mt)
 
 		// If we got an MType, we don't really need to make this call,
 		// but for now let's do it anyways.
-		pDTF, e = XM.NewXmlDoctypeFieldsInclMType(doctype)
+		pDTF, e = XM.NewXmlDoctypeFieldsInclMType(Peek.Doctype)
 		if e != nil {
 			println("xm.peek: doctype failure")
 		}
 		println("-->", "Parsed doctype:", pDTF.String())
 		dtmt = pDTF.DoctypeMType
 
-		if pDTF.TopTag != "" && rootTag.Name.Local != "" &&
-			S.ToLower(pDTF.TopTag) != S.ToLower(rootTag.Name.Local) {
+		if pDTF.TopTag != "" && Peek.RootTag.Name.Local != "" &&
+			S.ToLower(pDTF.TopTag) != S.ToLower(Peek.RootTag.Name.Local) {
 			fmt.Printf("--> RootTag MISMATCH: doctype<%s> bodytext<%s> \n",
-				pDTF.TopTag, rootTag.Name.Local)
+				pDTF.TopTag, Peek.RootTag.Name.Local)
 			panic("ROOT TAG MISMATCH")
 		}
 		if mt != dtmt {
@@ -192,7 +190,7 @@ func AnalyseFile(sCont string, filext string) (*AnalysisRecord, error) {
 	    DitaContype
 	  } */
 	pBA.XmlInfo.XmlContype = "RootTagData"
-	pBA.XmlInfo.XmlDoctype = XM.XmlDoctype("DOCTYPE " + doctype)
+	pBA.XmlInfo.XmlDoctype = XM.XmlDoctype("DOCTYPE " + Peek.Doctype)
 	pBA.XmlDoctypeFields = pDTF
 	if pPRF != nil {
 		pBA.XmlPreambleFields = *pPRF
@@ -207,4 +205,25 @@ func AnalyseFile(sCont string, filext string) (*AnalysisRecord, error) {
 		pBA.MType, pBA.XmlInfo, pBA.DitaInfo)
 
 	return pBA, nil
+}
+
+func SeemsToBeXml(httpContype string, filext string) (isXml bool, msg string) {
+
+	if S.Contains(httpContype, "xml") {
+		return true, "HTTP contype-detection got XML (in MIME type)"
+	}
+	if httpContype == "text/html" {
+		return true, "HTTP contype-detection got XML (text/html, HDITA?)"
+	}
+	if S.HasPrefix(httpContype, "text/") &&
+		(filext == ".dita" || filext == ".ditamap" || filext == ".map") {
+		return true, "HTTP contype-detection got XML (text/dita-filext)"
+	}
+	if S.Contains(httpContype, "ml") {
+		return true, "HTTP contype-detection got <ml>"
+	}
+	if S.Contains(httpContype, "svg") {
+		return true, "HTTP contype-detection got <svg>"
+	}
+	return false, ""
 }

@@ -39,7 +39,7 @@ func DoContentTypes_non_xml(sniftMT, sCont, filext string) (retMT, retMType stri
 	// So, about the best we can do is check for a known file extensions.
 	if S.HasPrefix(sniftMT, "text/") &&
 		SU.IsInSliceIgnoreCase(filext, XM.MarkdownFileExtensions) {
-		return "text/markdown", "mkdn/tpcOrMap/[flavr:TBS]"
+		return "text/markdown", "mkdn/tpcOrMap/[flavrTBS]"
 	}
 	// fmt.Printf("(DD) (%s:%s) Mtype(%s) \n",
 	// 	theFileExt, theMimeType, p.MMCstring())

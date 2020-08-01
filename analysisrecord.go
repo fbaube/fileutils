@@ -7,8 +7,9 @@ import (
 )
 
 // AnalysisRecord is the results of content analysis. It is named "Record"
-// because it can be persisted to the database.
+// because it is meant to be persisted to the database.
 type AnalysisRecord struct {
+	FileExt        string
 	MimeType       string
 	MType          string
 	RootTag        string // e.g. "html", enclosing both <head> and <body>
@@ -16,9 +17,6 @@ type AnalysisRecord struct {
 	MarkdownFlavor string
 	XM.XmlInfo
 	XM.DitaInfo
-	Error error // It has to be accessible, unless we define an ErrorAccess interface.
-	// FileIsOkay bool
-	FileExt string
 }
 
 // IsXML is true for all XML, including all HTML.

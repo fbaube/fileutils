@@ -96,7 +96,7 @@ func DoContentTypes(sniftMimeType, sCont, theFileExt string) (retMimeType, retMT
 	// So, about the best we can do is check for a known file extensions.
 	if S.HasPrefix(sniftMT, "text/") &&
 		SU.IsInSliceIgnoreCase(theFileExt, XM.MarkdownFileExtensions) {
-		return "text/markdown", "mkdn/tpcOrMap/[flavr:TBS]"
+		return "text/markdown", "mkdn/tpcOrMap/[flavrTBS]"
 	}
 	if sniftMT == "text/html" {
 		// FIXME: Make case-insensitive
