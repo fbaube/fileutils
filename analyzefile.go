@@ -150,7 +150,7 @@ func AnalyseFile(sCont string, filext string) (*AnalysisRecord, error) {
 					pBA.MType = "xml/map/" + rutag
 				}
 			}
-			println("MType guessing, XML, no Doctype:", rutag, filext)
+			println("--> MType guessing, XML, no Doctype:", rutag, filext)
 			pBA.MType = "xml/???/" + rutag
 		}
 	} else {
