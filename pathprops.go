@@ -86,16 +86,20 @@ func (p *PathProps) IsOkaySymlink() bool {
 }
 
 // NewPathProps requires a non-nil "RelFilePath" and analyzes it.
-// It returns a pointer that can be used in a "CheckedPath" to
-// start a method chain.
+// It does not however load & analyse the content.
 func NewPathProps(rfp string) *PathProps {
+	var e error
 	pi := new(PathProps)
-	pi.absFP = AbsFP(rfp)
-	absFPstr := string(pi.absFP)
-	var FI os.FileInfo
-	FI, e := os.Lstat(absFPstr)
+	var afp string
+	afp, e = FP.Abs(rfp) // AbsFP(rfp)
 	if e != nil {
-		pi.SetError(errors.New("fu.BasicPath.check: Lstat failed: " + absFPstr))
+		panic(e)
+	}
+	pi.absFP = AbsFilePath(afp)
+	var FI os.FileInfo
+	FI, e = os.Lstat(afp)
+	if e != nil {
+		pi.SetError(fmt.Errorf("fu.newPP: os.Lstat<%s> failed: %w", Tildotted(afp), e))
 		// The file or directory does not exist. DON'T PANIC.
 		// Just return before any flags are set, such as Exists.
 		return pi
@@ -107,6 +111,7 @@ func NewPathProps(rfp string) *PathProps {
 	if pi.isFile {
 		pi.size = int(FI.Size())
 	}
+	println("D=> (A:NewPP)", pi.String())
 	return pi
 }
 
