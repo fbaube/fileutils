@@ -154,7 +154,7 @@ func AnalyseFile(sCont string, filext string) (*AnalysisRecord, error) {
 			pBA.MType = "xml/???/" + rutag
 		}
 	} else {
-		println("-->", Peek.Doctype)
+		println("--> fu.AF: DT:", Peek.Doctype)
 		mt, _ = XM.GetMTypeByDoctype(Peek.Doctype)
 		// println("-->", "Doctype/MType search results:", mt)
 
@@ -162,9 +162,9 @@ func AnalyseFile(sCont string, filext string) (*AnalysisRecord, error) {
 		// but for now let's do it anyways.
 		pDTF, e = XM.NewXmlDoctypeFieldsInclMType(Peek.Doctype)
 		if e != nil {
-			println("xm.peek: doctype failure")
+			println("xm.peek: doctype failure; todo TBS")
 		}
-		println("-->", "Parsed doctype:", pDTF.String())
+		println("--> fu.AF:", "Parsed DT:", pDTF.String())
 		dtmt = pDTF.DoctypeMType
 
 		if pDTF.TopTag != "" && Peek.RootTag.Name.Local != "" &&
@@ -177,6 +177,7 @@ func AnalyseFile(sCont string, filext string) (*AnalysisRecord, error) {
 			fmt.Printf("--> M-Type MISMATCH: contype<%s> doctype<%s> \n", mt, dtmt)
 			panic("M-TYPE MISMATCH")
 		}
+		println("--> fu.AF: MType:", mt)
 	}
 	/*
 	  type XmlInfo struct {
@@ -193,15 +194,16 @@ func AnalyseFile(sCont string, filext string) (*AnalysisRecord, error) {
 	pBA.XmlInfo.XmlDoctype = XM.XmlDoctype("DOCTYPE " + Peek.Doctype)
 	pBA.XmlDoctypeFields = pDTF
 	if pPRF != nil {
-		pBA.XmlPreambleFields = *pPRF
+		pBA.XmlPreambleFields = pPRF
 	} else {
-		pBA.XmlPreambleFields = XM.STD_PreambleFields
+		// SKIP
+		// pBA.XmlPreambleFields = XM.STD_PreambleFields
 	}
 	// pBA.DoctypeIsDeclared  =  true
 	pBA.DitaInfo.DitaMarkupLg = "TBS"
 	pBA.DitaInfo.DitaContype = "TBS"
 
-	fmt.Printf("--> MType<%s>\n--> XmlInfo<%s> \n--> DitaInfo<%s> \n",
+	fmt.Printf("--> fu.analyzeFile: \n--> 1) MType<%s>\n--> 2) XmlInfo<%s> \n--> 3) DitaInfo<%s> \n",
 		pBA.MType, pBA.XmlInfo, pBA.DitaInfo)
 
 	return pBA, nil
