@@ -41,6 +41,7 @@ func AnalyseFile(sCont string, filext string) (*AnalysisRecord, error) {
 	httpContype := http.DetectContentType([]byte(sCont))
 	httpContype = S.TrimSuffix(httpContype, "; charset=utf-8")
 	println("-->", "HTTP stdlib:", httpContype)
+	println("-->", "filext:", filext)
 
 	pBA = new(AnalysisRecord)
 	pBA.MType = "-/-/-"
@@ -137,13 +138,14 @@ func AnalyseFile(sCont string, filext string) (*AnalysisRecord, error) {
 			if rutag == "" {
 				panic("Nil root tag")
 			}
-			if rutag == "html" && S.HasPrefix(filext, ".ht") {
+			fmt.Printf("fu.AF: rutag<%s> filext<%s> mtype<%s> \n",
+				rutag, filext, pBA.MType)
+
+			if rutag == "html" && (filext == ".html" || filext == ".htm") {
 				pBA.MType = "html/cnt/html5"
-			}
-			if rutag == "html" && S.HasPrefix(filext, ".xht") {
+			} else if rutag == "html" && S.HasPrefix(filext, ".xht") {
 				pBA.MType = "html/cnt/xhtml"
-			}
-			if SU.IsInSliceIgnoreCase(rutag, XM.DITArootElms) &&
+			} else if SU.IsInSliceIgnoreCase(rutag, XM.DITArootElms) &&
 				SU.IsInSliceIgnoreCase(filext, XM.DITAtypeFileExtensions) {
 				pBA.MType = "xml/cnt/" + rutag
 				if rutag == "bookmap" && S.HasSuffix(filext, "map") {
@@ -151,7 +153,9 @@ func AnalyseFile(sCont string, filext string) (*AnalysisRecord, error) {
 				}
 			}
 			println("--> MType guessing, XML, no Doctype:", rutag, filext)
-			pBA.MType = "xml/???/" + rutag
+			if pBA.MType == "-/-/-" {
+				pBA.MType = "xml/???/" + rutag
+			}
 		}
 	} else {
 		println("--> fu.AF: DT:", Peek.Doctype)
@@ -203,7 +207,7 @@ func AnalyseFile(sCont string, filext string) (*AnalysisRecord, error) {
 	pBA.DitaInfo.DitaMarkupLg = "TBS"
 	pBA.DitaInfo.DitaContype = "TBS"
 
-	fmt.Printf("--> fu.analyzeFile: \n--> 1) MType<%s>\n--> 2) XmlInfo<%s> \n--> 3) DitaInfo<%s> \n",
+	fmt.Printf("--> fu.analyzeFile: \n--> 1) MType: %s \n--> 2) XmlInfo: %s \n--> 3) DitaInfo: %s \n",
 		pBA.MType, pBA.XmlInfo, pBA.DitaInfo)
 
 	return pBA, nil
