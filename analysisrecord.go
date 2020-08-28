@@ -6,12 +6,11 @@ import (
 	XM "github.com/fbaube/xmlmodels"
 )
 
-// AnalysisRecord is the results of content analysis. It is named "Record"
-// because it is meant to be persisted to the database.
+// AnalysisRecord is the results of content analysis. It is named
+// "Record" because it is meant to be persisted to the database.
+// It is embedded in db.ContentRecord
 type AnalysisRecord struct {
-	FileExt        string
-	MimeType       string
-	MType          string
+	XM.Contyping
 	RootTag        string // e.g. "html", enclosing both <head> and <body>
 	RootAtts       string // e.g. <html lang="en"> yields << lang="en" >>
 	MarkdownFlavor string
@@ -23,6 +22,10 @@ type AnalysisRecord struct {
 func (p AnalysisRecord) IsXML() bool {
 	s := p.FileType()
 	return s == "XML" || s == "HTML"
+}
+
+func (p *AnalysisRecord) String() string {
+	return ("AR!")
 }
 
 // FileType returns "XML", "MKDN", "HTML", or future stuff TBD.

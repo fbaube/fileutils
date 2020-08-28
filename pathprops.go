@@ -44,7 +44,7 @@ func (pi *PathProps) String() (s string) {
 		s += "ERROR "
 	}
 	s += fmt.Sprintf("[%d] ", pi.size)
-	s += pi.absFP.Enhomed()
+	s += pi.absFP.Tildotted()
 	return s
 }
 
