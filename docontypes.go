@@ -7,24 +7,6 @@ import (
 	XM "github.com/fbaube/xmlmodels"
 )
 
-// Mstring extracts (as user-readable text) the file's MType. Note that the
-// MType is initially set by analyzing the file extension and contents, but
-// can then later revised if there is an XML "DOCTYPE" declaration.
-/*
-func (p CheckedContent) Mstring() string {
-	if p.MType == nil {
-		return "-/-/-"
-	}
-	var ss = []string{p.MType[0], p.MType[1], p.MType[2]}
-	for i, s := range p.MType {
-		if s == "" {
-			ss[i] = "-"
-		}
-	}
-	return ss[0] + "/" + ss[1] + "/" + ss[2]
-}
-*/
-
 // DoContentTypes sets MType, MimeType, and IsXml, as follows:
 //
 // Inputs:
@@ -135,11 +117,6 @@ func DoContentTypes(sniftMimeType, sCont, theFileExt string) (retMimeType, retMT
 		// if S.HasPrefix(string(pIF.Contents), "<") && S.
 	}
 	if detectedXML {
-		/* !!
-		if "-" != p.MType[0] {
-			println("SetMtype: IsXML but empty mime[0]")
-		}
-		*/
 		retMimeType = "xml/TBD/TBD"
 		// Check for "<!DOCTYPE HTML "
 		if S.Contains(sCont, "<!DOCTYPE HTML") {
