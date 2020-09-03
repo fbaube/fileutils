@@ -1,17 +1,20 @@
 package fileutils
 
 import (
+	"encoding/xml"
 	"fmt"
 	"os"
 	"os/user"
-	"encoding/xml"
-	S  "strings"
 	FP "path/filepath"
+	S "strings"
+
 	WU "github.com/fbaube/wasmutils"
 )
 
 func boolToInt(b bool) int {
-	if !b { return 0 }
+	if !b {
+		return 0
+	}
 	return 1
 }
 
@@ -31,7 +34,9 @@ func GetHomeDir() string {
 }
 
 func MTypeSub(mtype string, i int) string {
-	if i < 0 || i > 2 { return "" }
+	if i < 0 || i > 2 {
+		return ""
+	}
 	ss := S.Split(mtype, "/")
 	return ss[i]
 }
@@ -51,7 +56,9 @@ func XmlStartElmS(se xml.StartElement) string {
 
 func XmlNameS(n xml.Name) string {
 	// type Name struct         { Space, Local string }
-	if n.Space == "" { return n.Local }
+	if n.Space == "" {
+		return n.Local
+	}
 	return n.Space + ":" + n.Local
 }
 
@@ -139,11 +146,11 @@ func init() {
 		currentUserHomeDir = "?"
 		currentWorkingDir = "."
 		currentUser = &user.User{
-			Uid: "aUid",
-    	Gid: "aGid",
-    	Username: "webuser",
-    	Name: "webuser",
-    	HomeDir: "~",
+			Uid:      "aUid",
+			Gid:      "aGid",
+			Username: "webuser",
+			Name:     "webuser",
+			HomeDir:  "~",
 		}
 		return
 	}
@@ -179,6 +186,6 @@ func init() {
 func SessionDemo() {
 	fmt.Fprintf(os.Stderr,
 		"==> User_ID: %s (%s) (uid:%s,gid:%s) \n",
-		 currentUser.Username, currentUser.Name, currentUser.Uid, currentUser.Gid)
-	fmt.Fprintf(os.Stderr, "==> Working: %s \n", currentWorkingDir)
+		currentUser.Username, currentUser.Name, currentUser.Uid, currentUser.Gid)
+	fmt.Fprintf(os.Stderr, "==> Working: %s \n", Tildotted(currentWorkingDir))
 }

@@ -10,6 +10,9 @@ import (
 	XM "github.com/fbaube/xmlmodels"
 )
 
+// <!ELEMENT map     (topicmeta?, (topicref | keydef)*)  >
+// <!ELEMENT topicmeta (navtitle?, linktext?, data*) >
+
 // AnalyseFile has drastically different handling for XML content versus
 // non-XML content, so for the sake of clarity and simplicity, it tries
 // to first process non-XML content. For XML files we have much more
@@ -21,11 +24,11 @@ import (
 //
 // If the first argument "sCont" (the content) is zero-length, return (nil, nil).
 //
-func AnalyseFile(sCont string, filext string) (*AnalysisRecord, error) {
+func AnalyseFile(sCont string, filext string) (*XM.AnalysisRecord, error) {
 
 	var pCntpg *XM.Contyping
-	var pAnlRec *AnalysisRecord
-	var hasKeyElm bool
+	var pAnlRec *XM.AnalysisRecord
+	var gotRootElm bool
 
 	if sCont == "" {
 		println("==>", "Cannot analyze zero-length content")
@@ -49,7 +52,7 @@ func AnalyseFile(sCont string, filext string) (*AnalysisRecord, error) {
 
 	// Preliminary
 	pCntpg = new(XM.Contyping)
-	pAnlRec = new(AnalysisRecord)
+	pAnlRec = new(XM.AnalysisRecord)
 	// pAnlRec.MType = ""
 	pCntpg.FileExt = filext
 	pCntpg.MimeType = httpContype
@@ -57,49 +60,41 @@ func AnalyseFile(sCont string, filext string) (*AnalysisRecord, error) {
 	// =======================================
 	//  Quick check for top-level XML stuff
 	// =======================================
-	var keyElms []string
-	keyElms = []string{
-		"html",
-		"topic",
-		"map",
-		"reference",
-		"task",
-		"bookmap",
-		"glossentry",
-		"glossgroup",
-	}
-	Peek := XM.PeekAtStructure_xml(sCont, keyElms)
+
+	Peek := XM.PeekAtStructure_xml(sCont)
 	if Peek.HasError() {
 		return nil, fmt.Errorf("fu.peekXml failed: %w", Peek.GetError())
 	}
-	hasKeyElm = (Peek.KeyElmTag != "")
-	if hasKeyElm {
+	Peek.KeyElms.Check()
+	// Should be true ALWAYS
+	gotRootElm = (Peek.RootElm.Name != "")
+	if gotRootElm {
 		var pos int
-		pos = Peek.KeyElmPos.Pos
-		fmt.Printf("D=> fu.AF: keyElm: %s / %+v \n", Peek.KeyElmTag, pos)
+		pos = Peek.RootElm.BegPos.Pos
+		fmt.Printf("D=> fu.AF: keyElm: %s / %+v \n", Peek.RootElm.Name, pos)
 		// fmt.Printf("D=> Key Elm <%s> position: %s (%d) \n",
 		// 	Peek.KeyElmTag, Peek.KeyElmPos, pos)
 		fmt.Printf("D=> Key Elm <%s> at |%s| \n",
-			Peek.KeyElmTag, sCont[pos:pos+10])
+			Peek.RootElm.Name, sCont[pos:pos+10])
 	}
-	var gotXml, gotPreamble, gotDoctype, gotRootTag, gotDTDstuff bool
+	var gotXml, gotPreamble, gotDoctype, gotDTDstuff bool
 	gotPreamble = (Peek.Preamble != "")
 	gotDoctype = (Peek.Doctype != "")
-	gotRootTag = (Peek.RootTag != "")
+	// gotRootTag = (Peek.RootTag != "")
 	gotDTDstuff = Peek.HasDTDstuff
-	gotXml = gotRootTag || gotDTDstuff || gotDoctype || gotPreamble
+	gotXml = gotRootElm || gotDTDstuff || gotDoctype || gotPreamble
 	if !gotXml {
 		println("--> Does not seem to be XML")
 	} else {
 		fmt.Printf("--> xm.peek: preamble<%s> doctype<%s> DTDstuff<%s> RootTag<%s> \n",
-			SU.Yn(gotPreamble), SU.Yn(gotDoctype), SU.Yn(gotDTDstuff), SU.Yn(gotRootTag))
+			SU.Yn(gotPreamble), SU.Yn(gotDoctype), SU.Yn(gotDTDstuff), SU.Yn(gotRootElm))
 	}
 	bb, ss := SeemsToBeXml(httpContype, filext)
 	if !gotXml && bb {
 		gotXml = true
 		println("--> Seems to be XML after all, based on file ext. and HTTP stdlib:", ss)
 	}
-	if gotXml && !(gotRootTag || gotDTDstuff) {
+	if gotXml && !(gotRootElm || gotDTDstuff) {
 		println("--> XML file has no root tag (and is not DTD)")
 	}
 	if gotDTDstuff && SU.IsInSliceIgnoreCase(filext, XM.DTDtypeFileExtensions) {
@@ -158,6 +153,14 @@ func AnalyseFile(sCont string, filext string) (*AnalysisRecord, error) {
 	pCntpg.FileExt = filext
 	pCntpg.MimeType = httpContype
 
+	println("==> fu.AF: Split the file")
+	if !Peek.IsSplittable() {
+		println("--> Can't split into meta and text")
+	} else {
+		pAnlRec.KeyElms = Peek.KeyElms
+		pAnlRec.MakeContentitySections(sCont)
+	}
+
 	// Got DOCTYPE ? If so, it is gospel.
 	if Peek.Doctype != "" {
 		// We are here if we got a DOCTYPE; we also have a file extension,
@@ -167,16 +170,16 @@ func AnalyseFile(sCont string, filext string) (*AnalysisRecord, error) {
 		if pDF.HasError() {
 			panic("FIXME:" + pDF.Error())
 		}
-		println("--> AnlzDT: Contpg:" + pCntpg.String())
-		println("--> AnlzDT: DTflds:" + pDF.String())
+		println("--> fu.af: Contpg: " + pCntpg.String())
+		println("--> fu.af: DTflds: " + pDF.String())
 
-		println("==> TODO: cp from DT fields to AnlRec")
+		pAnlRec.Contyping = *pCntpg
 
 		return pAnlRec, nil
 	}
 	// We don't have a DOCTYPE, so it's gonna be a PITA !
 	// // So let's at least try to set the MType.
-	if !gotRootTag {
+	if !gotRootElm {
 		fmt.Printf("==> Got no root tag; filext: %s \n", filext)
 		return pAnlRec, nil
 	}
@@ -185,8 +188,8 @@ func AnalyseFile(sCont string, filext string) (*AnalysisRecord, error) {
 	if rutag == "" {
 		panic("Got nil root tag")
 	}
-	rutag = S.ToLower(Peek.RootTag)
-	fmt.Printf("fu.AF: rutag<%s> filext<%s> ?mtype<%s> \n",
+	rutag = S.ToLower(Peek.RootElm.Name)
+	fmt.Printf("fu.af: rutag<%s> filext<%s> ?mtype<%s> \n",
 		rutag, filext, pAnlRec.MType)
 	pCntpg.MType = pAnlRec.MType
 	// Do some easy cases
@@ -208,7 +211,7 @@ func AnalyseFile(sCont string, filext string) (*AnalysisRecord, error) {
 	}
 
 	// At this point, mt should be valid !
-	println("--> fu.AF: Contyping (derived both ways):", pAnlRec.Contyping.String())
+	println("--> fu.af: Contyping (derived both ways):", pAnlRec.Contyping.String())
 
 	// Now we should fill in all the detail fields.
 	/*
@@ -235,7 +238,7 @@ func AnalyseFile(sCont string, filext string) (*AnalysisRecord, error) {
 	pAnlRec.DitaMarkupLg = "TBS"
 	pAnlRec.DitaContype = "TBS"
 
-	fmt.Printf("--> fu.analyzeFile: \n--> 1) MType: %s \n--> 2) XmlInfo: %s \n--> 3) DitaInfo: %s \n",
+	fmt.Printf("--> fu.af: \n--> 1) MType: %s \n--> 2) XmlInfo: %s \n--> 3) DitaInfo: %s \n",
 		pAnlRec.MType, pAnlRec.XmlInfo, pAnlRec.DitaInfo)
 
 	return pAnlRec, nil
