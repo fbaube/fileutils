@@ -159,6 +159,9 @@ func AnalyseFile(sCont string, filext string) (*XM.AnalysisRecord, error) {
 	} else {
 		pAnlRec.KeyElms = Peek.KeyElms
 		pAnlRec.MakeContentitySections(sCont)
+		fmt.Printf("--> after nuCS: meta pos<%d>len<%d> text pos<%d>len<%d> \n",
+			pAnlRec.MetaElm.BegPos.Pos, len(pAnlRec.Meta_raw),
+			pAnlRec.TextElm.BegPos.Pos, len(pAnlRec.Text_raw))
 	}
 
 	// Got DOCTYPE ? If so, it is gospel.
@@ -173,7 +176,9 @@ func AnalyseFile(sCont string, filext string) (*XM.AnalysisRecord, error) {
 		println("--> fu.af: Contpg: " + pCntpg.String())
 		println("--> fu.af: DTflds: " + pDF.String())
 
-		pAnlRec.Contyping = *pCntpg
+		// What does AnalysisRecord need from Contyping and DoctypeFields ?
+		// pAnlRec.Contyping = *pCntpg
+		pAnlRec.Contyping = pDF.Contyping
 
 		return pAnlRec, nil
 	}
@@ -240,6 +245,8 @@ func AnalyseFile(sCont string, filext string) (*XM.AnalysisRecord, error) {
 
 	fmt.Printf("--> fu.af: \n--> 1) MType: %s \n--> 2) XmlInfo: %s \n--> 3) DitaInfo: %s \n",
 		pAnlRec.MType, pAnlRec.XmlInfo, pAnlRec.DitaInfo)
+	println("--> fu.af: Meta_raw:", pAnlRec.Meta_raw)
+	println("--> fu.af: Text_raw:", pAnlRec.Text_raw)
 
 	return pAnlRec, nil
 }
