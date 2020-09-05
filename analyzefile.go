@@ -65,24 +65,17 @@ func AnalyseFile(sCont string, filext string) (*XM.AnalysisRecord, error) {
 	if Peek.HasError() {
 		return nil, fmt.Errorf("fu.peekXml failed: %w", Peek.GetError())
 	}
-	Peek.KeyElms.Check()
-	// Should be true ALWAYS
-	gotRootElm = (Peek.RootElm.Name != "")
-	if gotRootElm {
-		var pos int
-		pos = Peek.RootElm.BegPos.Pos
-		fmt.Printf("D=> fu.AF: keyElm: %s / %+v \n", Peek.RootElm.Name, pos)
-		// fmt.Printf("D=> Key Elm <%s> position: %s (%d) \n",
-		// 	Peek.KeyElmTag, Peek.KeyElmPos, pos)
-		fmt.Printf("D=> Key Elm <%s> at |%s| \n",
-			Peek.RootElm.Name, sCont[pos:pos+10])
-	}
+	isOK := Peek.KeyElms.CheckXml()
 	var gotXml, gotPreamble, gotDoctype, gotDTDstuff bool
 	gotPreamble = (Peek.Preamble != "")
 	gotDoctype = (Peek.Doctype != "")
 	// gotRootTag = (Peek.RootTag != "")
 	gotDTDstuff = Peek.HasDTDstuff
-	gotXml = gotRootElm || gotDTDstuff || gotDoctype || gotPreamble
+	mdBug := gotDTDstuff || gotDoctype || gotPreamble
+	gotXml = isOK || gotRootElm || mdBug
+	if gotXml && (!mdBug) && S.HasPrefix(filext, ".m") {
+		println("MARKDOWN PROBLEM")
+	}
 	if !gotXml {
 		println("--> Does not seem to be XML")
 	} else {
@@ -103,6 +96,17 @@ func AnalyseFile(sCont string, filext string) (*XM.AnalysisRecord, error) {
 		pAnlRec.MType = "xml/sch/" + filext[1:]
 		// Could allocate and fill field XmlInfo
 		return pAnlRec, nil
+	}
+	// Should be true ALWAYS for XML/HTML
+	gotRootElm = (Peek.RootElm.Name != "")
+	if gotRootElm {
+		var pos int
+		pos = Peek.RootElm.BegPos.Pos
+		fmt.Printf("D=> fu.AF: keyElm: %s / ch%d \n", Peek.RootElm.Name, pos)
+		// fmt.Printf("D=> Key Elm <%s> position: %s (%d) \n",
+		// 	Peek.KeyElmTag, Peek.KeyElmPos, pos)
+		fmt.Printf("D=> Key Elm <%s> at |%s| \n",
+			Peek.RootElm.Name, sCont[pos:pos+10])
 	}
 	/*
 		TAKE A DUMP HERE !!
@@ -154,14 +158,13 @@ func AnalyseFile(sCont string, filext string) (*XM.AnalysisRecord, error) {
 	pCntpg.MimeType = httpContype
 
 	println("==> fu.AF: Split the file")
+	pAnlRec.KeyElms = Peek.KeyElms
+	pAnlRec.MakeContentitySections(sCont)
+	fmt.Printf("--> after nuCS: meta pos<%d>len<%d> text pos<%d>len<%d> \n",
+		pAnlRec.MetaElm.BegPos.Pos, len(pAnlRec.Meta_raw),
+		pAnlRec.TextElm.BegPos.Pos, len(pAnlRec.Text_raw))
 	if !Peek.IsSplittable() {
 		println("--> Can't split into meta and text")
-	} else {
-		pAnlRec.KeyElms = Peek.KeyElms
-		pAnlRec.MakeContentitySections(sCont)
-		fmt.Printf("--> after nuCS: meta pos<%d>len<%d> text pos<%d>len<%d> \n",
-			pAnlRec.MetaElm.BegPos.Pos, len(pAnlRec.Meta_raw),
-			pAnlRec.TextElm.BegPos.Pos, len(pAnlRec.Text_raw))
 	}
 
 	// Got DOCTYPE ? If so, it is gospel.
@@ -190,10 +193,10 @@ func AnalyseFile(sCont string, filext string) (*XM.AnalysisRecord, error) {
 	}
 	// We are here if we have only a root tag and a file extension.
 	var rutag string
+	rutag = S.ToLower(Peek.RootElm.Name)
 	if rutag == "" {
 		panic("Got nil root tag")
 	}
-	rutag = S.ToLower(Peek.RootElm.Name)
 	fmt.Printf("fu.af: rutag<%s> filext<%s> ?mtype<%s> \n",
 		rutag, filext, pAnlRec.MType)
 	pCntpg.MType = pAnlRec.MType
