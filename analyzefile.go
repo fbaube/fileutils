@@ -28,7 +28,6 @@ func AnalyseFile(sCont string, filext string) (*XM.AnalysisRecord, error) {
 
 	var pCntpg *XM.Contyping
 	var pAnlRec *XM.AnalysisRecord
-	var gotRootElm bool
 
 	if sCont == "" {
 		println("==>", "Cannot analyze zero-length content")
@@ -66,7 +65,8 @@ func AnalyseFile(sCont string, filext string) (*XM.AnalysisRecord, error) {
 		return nil, fmt.Errorf("fu.peekXml failed: %w", Peek.GetError())
 	}
 	isOK := Peek.KeyElms.CheckXml()
-	var gotXml, gotPreamble, gotDoctype, gotDTDstuff bool
+	var gotXml, gotRootElm, gotPreamble, gotDoctype, gotDTDstuff bool
+	gotRootElm = (Peek.RootElm.Name != "")
 	gotPreamble = (Peek.Preamble != "")
 	gotDoctype = (Peek.Doctype != "")
 	// gotRootTag = (Peek.RootTag != "")
@@ -245,6 +245,19 @@ func AnalyseFile(sCont string, filext string) (*XM.AnalysisRecord, error) {
 	// pBA.DoctypeIsDeclared  =  true
 	pAnlRec.DitaMarkupLg = "TBS"
 	pAnlRec.DitaContype = "TBS"
+
+	println("D=> Setting up XmlInfo...")
+	pAnlRec.XmlInfo = *new(XM.XmlInfo)
+	// Fields to set:
+	/*
+		type XmlInfo struct {
+			XmlContype
+			// nil if no preamble - defaults to xmlmodels.STD_PreambleFields
+			*XmlPreambleFields
+			XmlDoctype
+			// XmlDoctypeFields is a ptr - nil if there is no DOCTYPE declaration.
+			*DoctypeFields
+	*/
 
 	fmt.Printf("--> fu.af: \n--> 1) MType: %s \n--> 2) XmlInfo: %s \n--> 3) DitaInfo: %s \n",
 		pAnlRec.MType, pAnlRec.XmlInfo, pAnlRec.DitaInfo)
