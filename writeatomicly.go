@@ -7,7 +7,6 @@ package fileutils
 import (
 	"bufio"
 	"io"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 )
@@ -26,7 +25,7 @@ func TempDir(dest string) string {
 
 // WriteAtomic is TBS.
 func WriteAtomic(dest string, write func(w io.Writer) error) (err error) {
-	f, err := ioutil.TempFile(TempDir(dest), "atomic-")
+	f, err := os.CreateTemp(TempDir(dest), "atomic-")
 	if err != nil {
 		return err
 	}
@@ -50,7 +49,7 @@ func WriteAtomic(dest string, write func(w io.Writer) error) (err error) {
 	if err := bufw.Flush(); err != nil {
 		return err
 	}
-	// Chmod the file world-readable (ioutil.TempFile
+	// Chmod the file world-readable (TempFile
 	// creates files with mode 0600) before renaming.
 	if err := f.Chmod(0644); err != nil {
 		return err

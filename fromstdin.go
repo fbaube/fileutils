@@ -1,13 +1,13 @@
 package fileutils
 
 import (
-	"io/ioutil"
+	"io"
 	"os"
 )
 
 // GetStringFromStdin reads "os.Stdin" completely and returns a string.
 func GetStringFromStdin() string {
-	bb, e := ioutil.ReadAll(os.Stdin)
+	bb, e := io.ReadAll(os.Stdin)
 	if e != nil {
 		return "STDIN READ FAILURE: " + e.Error()
 	}

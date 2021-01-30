@@ -5,20 +5,19 @@ package fileutils
 
 import (
 	"io"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 )
 
 // CopyFromTo copies the contents of src to dst atomically,
-// using a temp file as intermediary. 
+// using a temp file as intermediary.
 func CopyFromTo(src, dst string) error {
 	in, err := os.Open(src)
 	if err != nil {
 		return err
 	}
 	defer in.Close()
-	tmp, err := ioutil.TempFile(filepath.Dir(dst), "copyfile")
+	tmp, err := os.CreateTemp(filepath.Dir(dst), "copyfile")
 	if err != nil {
 		return err
 	}

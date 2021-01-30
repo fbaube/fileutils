@@ -9,9 +9,9 @@ import (
 
 // DoContentTypes_non_xml is TBS.
 //
-func DoContentTypes_non_xml(sniftMT, sCont, filext string) *XM.Contyping {
+func DoContentTypes_non_xml(sniftMT, sCont, filext string) *XM.ContypingInfo {
 	// theFileExt includes a leading "."
-	var ret = new(XM.Contyping)
+	var ret = new(XM.ContypingInfo)
 	ret.FileExt = filext
 	ret.MType = sniftMT
 

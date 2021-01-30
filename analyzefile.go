@@ -26,7 +26,7 @@ import (
 //
 func AnalyseFile(sCont string, filext string) (*XM.AnalysisRecord, error) {
 
-	var pCntpg *XM.Contyping
+	var pCntpg *XM.ContypingInfo
 	var pAnlRec *XM.AnalysisRecord
 
 	if sCont == "" {
@@ -49,8 +49,8 @@ func AnalyseFile(sCont string, filext string) (*XM.AnalysisRecord, error) {
 	httpContype = S.TrimSuffix(httpContype, "; charset=utf-8")
 	println("-->", "Contype per HTTP stdlib:", httpContype)
 
-	// Preliminary
-	pCntpg = new(XM.Contyping)
+	// Preliminaries
+	pCntpg = new(XM.ContypingInfo)
 	pAnlRec = new(XM.AnalysisRecord)
 	// pAnlRec.MType = ""
 	pCntpg.FileExt = filext
@@ -60,7 +60,8 @@ func AnalyseFile(sCont string, filext string) (*XM.AnalysisRecord, error) {
 	//  Quick check for top-level XML stuff
 	// =======================================
 
-	Peek := XM.PeekAtStructure_xml(sCont)
+	var Peek *XM.XmlStructurePeek
+	Peek = XM.PeekAtStructure_xml(sCont)
 	if Peek.HasError() {
 		return nil, fmt.Errorf("fu.peekXml failed: %w", Peek.GetError())
 	}
@@ -128,10 +129,10 @@ func AnalyseFile(sCont string, filext string) (*XM.AnalysisRecord, error) {
 	//   NOT XML ?
 	// =============
 	if !gotXml {
-		var nonXmlCntpg *XM.Contyping
+		var nonXmlCntpg *XM.ContypingInfo
 		nonXmlCntpg = DoContentTypes_non_xml(httpContype, sCont, filext)
 		fmt.Printf("--> NON-XML: %s \n", nonXmlCntpg)
-		pAnlRec.Contyping = *nonXmlCntpg
+		pAnlRec.ContypingInfo = *nonXmlCntpg
 		return pAnlRec, nil
 	}
 
@@ -171,17 +172,18 @@ func AnalyseFile(sCont string, filext string) (*XM.AnalysisRecord, error) {
 	if Peek.Doctype != "" {
 		// We are here if we got a DOCTYPE; we also have a file extension,
 		// and we should have a root tag (or else the DOCTYPE makes no sense !)
-		var pDF *XM.DoctypeFields
-		pDF = pCntpg.AnalyzeDoctype(Peek.Doctype)
-		if pDF.HasError() {
-			panic("FIXME:" + pDF.Error())
+		var pXDF *XM.XmlDoctypeFields
+		pXDF = pCntpg.AnalyzeXmlDoctype(Peek.Doctype)
+		if pXDF.HasError() {
+			panic("FIXME:" + pXDF.Error())
 		}
 		println("--> fu.af: Contpg: " + pCntpg.String())
-		println("--> fu.af: DTflds: " + pDF.String())
+		println("--> fu.af: DTflds: " + pXDF.String())
 
 		// What does AnalysisRecord need from Contyping and DoctypeFields ?
 		// pAnlRec.Contyping = *pCntpg
-		pAnlRec.Contyping = pDF.Contyping
+		pAnlRec.ContypingInfo = pXDF.ContypingInfo
+		pAnlRec.XmlDoctypeFields = pXDF
 
 		return pAnlRec, nil
 	}
@@ -213,13 +215,14 @@ func AnalyseFile(sCont string, filext string) (*XM.AnalysisRecord, error) {
 		}
 	}
 	println("--> MType guessing, XML, no Doctype:", rutag, filext)
-	pAnlRec.Contyping = *pCntpg
+	pAnlRec.ContypingInfo = *pCntpg
 	if pAnlRec.MType == "-/-/-" {
 		pAnlRec.MType = "xml/???/" + rutag
 	}
 
 	// At this point, mt should be valid !
-	println("--> fu.af: Contyping (derived both ways):", pAnlRec.Contyping.String())
+	println("--> fu.af: Contyping (derived both ways):",
+		pAnlRec.ContypingInfo.String())
 
 	// Now we should fill in all the detail fields.
 	/*
@@ -234,8 +237,9 @@ func AnalyseFile(sCont string, filext string) (*XM.AnalysisRecord, error) {
 	    DitaContype
 	  } */
 	pAnlRec.XmlContype = "RootTagData"
-	pAnlRec.XmlDoctype = XM.XmlDoctype("DOCTYPE " + Peek.Doctype)
-	// pAnlRec.DoctypeFields = pDF
+	// Redundant!
+	// pAnlRec.XmlDoctype = XM.XmlDoctype("DOCTYPE " + Peek.Doctype)
+	// ?? pAnlRec.DoctypeFields = pDF
 	if pPRF != nil {
 		pAnlRec.XmlPreambleFields = pPRF
 	} else {
@@ -246,21 +250,20 @@ func AnalyseFile(sCont string, filext string) (*XM.AnalysisRecord, error) {
 	pAnlRec.DitaMarkupLg = "TBS"
 	pAnlRec.DitaContype = "TBS"
 
-	println("D=> Setting up XmlInfo...")
-	pAnlRec.XmlInfo = *new(XM.XmlInfo)
-	// Fields to set:
-	/*
-		type XmlInfo struct {
-			XmlContype
-			// nil if no preamble - defaults to xmlmodels.STD_PreambleFields
-			*XmlPreambleFields
-			XmlDoctype
-			// XmlDoctypeFields is a ptr - nil if there is no DOCTYPE declaration.
-			*DoctypeFields
+	println("D=> fu.af: Would have set up XmlInfo...")
+	// pAnlRec.XmlInfo = *new(XM.XmlInfo)
+	/* Fields to set:
+			type XmlInfo struct {
+				XmlContype // "Unknown", "DTD", "DTDmod", "DTDent", "RootTagData",
+	        "RootTagMixedContent", "MultipleRootTags", "INVALID"
+				*XmlPreambleFields
+				XmlDoctype // type string // this is probly unnecessary
+				// XmlDoctypeFields is a ptr - nil if there is no DOCTYPE declaration.
+				*DoctypeFields
 	*/
-
-	fmt.Printf("--> fu.af: \n--> 1) MType: %s \n--> 2) XmlInfo: %s \n--> 3) DitaInfo: %s \n",
-		pAnlRec.MType, pAnlRec.XmlInfo, pAnlRec.DitaInfo)
+	fmt.Printf("--> fu.af: \n--> 1) MType: %s \n--> 2) XmlInfo: cntp:%s prmbl:%s DT:%s \n--> 3) DitaInfo: ML:%s cntp:%s \n",
+		pAnlRec.MType, pAnlRec.XmlContype, pAnlRec.XmlPreambleFields,
+		pAnlRec.XmlDoctypeFields, pAnlRec.DitaMarkupLg, pAnlRec.DitaContype)
 	println("--> fu.af: Meta_raw:", pAnlRec.Meta_raw)
 	println("--> fu.af: Text_raw:", pAnlRec.Text_raw)
 

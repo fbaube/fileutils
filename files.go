@@ -4,11 +4,11 @@ import (
 	"bufio"
 	"bytes"
 	"fmt"
-	"os"
 	"io"
-	"io/ioutil"
+	"os"
 	FP "path/filepath"
 	S "strings"
+
 	"github.com/mgutz/str"
 )
 
@@ -139,21 +139,21 @@ func IsXML(path string) bool {
 
 // CopyFileGreedily reads the entire file into memory,
 // and is therefore memory-constrained !
-func CopyFileGreedily(src string, dst string)  error {
+func CopyFileGreedily(src string, dst string) error {
 	var e error
 	var data []byte
-  // Read all content of src to data
-  if data, e = ioutil.ReadFile(src); e != nil {
+	// Read all content of src to data
+	if data, e = os.ReadFile(src); e != nil {
 		return e
 	}
-  // Write data to dst
-  if e = ioutil.WriteFile(dst, data, 0644); e != nil {
+	// Write data to dst
+	if e = os.WriteFile(dst, data, 0644); e != nil {
 		return e
 	}
 	return nil
 }
 
-// CopyFileFromTo copies a single file from src to dst. 
+// CopyFileFromTo copies a single file from src to dst.
 func CopyFileFromTo(src, dst string) error {
 	var err error
 	var srcfd *os.File

@@ -3,7 +3,6 @@ package fileutils
 import (
 	"fmt"
 	"os"
-	"io/ioutil"
 	"path"
 	FP "path/filepath"
 )
@@ -123,7 +122,7 @@ func MakeDirectoryExist(path string) error {
 // The older version (named "ClearDirectory") tried to keep
 // the directory as-is while emptying it.
 func ClearAndCreateDirectory(path string) error {
-// func clearAndCreateDestination(path string) error {
+	// func clearAndCreateDestination(path string) error {
 	if err := os.RemoveAll(path); err != nil {
 		if !os.IsNotExist(err) {
 			return fmt.Errorf("Can't remove item <%s>: %w", path, err)
@@ -134,14 +133,14 @@ func ClearAndCreateDirectory(path string) error {
 
 // ClearDirectory tries to keep the directory as-is while emptying it.
 func ClearDirectory(path string) error {
-  dir, err := os.Open(path)
-  if err != nil {
-    return fmt.Errorf("Can't access directory <%s>: %w", path, err)
+	dir, err := os.Open(path)
+	if err != nil {
+		return fmt.Errorf("Can't access directory <%s>: %w", path, err)
 	}
-  defer dir.Close()
+	defer dir.Close()
 	names, err := dir.Readdirnames(-1)
-  if err != nil {
-    return fmt.Errorf("Can't read directory <%s>: %w", path, err)
+	if err != nil {
+		return fmt.Errorf("Can't read directory <%s>: %w", path, err)
 	}
 	for _, name := range names {
 		if err = os.RemoveAll(FP.Join(path, name)); err != nil {
@@ -155,7 +154,7 @@ func ClearDirectory(path string) error {
 // BOTH arguments should be directories !! Otherwise, hilarity ensures.
 func CopyDirRecursivelyFromTo(src string, dst string) error {
 	var err error
-	var fds []os.FileInfo
+	var fds []os.DirEntry // FileInfo
 	var srcinfo os.FileInfo
 
 	if srcinfo, err = os.Stat(src); err != nil {
@@ -164,7 +163,7 @@ func CopyDirRecursivelyFromTo(src string, dst string) error {
 	if err = os.MkdirAll(dst, srcinfo.Mode()); err != nil {
 		return err
 	}
-	if fds, err = ioutil.ReadDir(src); err != nil {
+	if fds, err = os.ReadDir(src); err != nil {
 		return err
 	}
 	for _, fd := range fds {

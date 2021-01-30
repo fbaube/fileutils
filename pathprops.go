@@ -3,7 +3,7 @@ package fileutils
 import (
 	"errors"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"os"
 	FP "path/filepath"
 	S "strings"
@@ -41,7 +41,7 @@ func (pi *PathProps) String() (s string) {
 		s = "Not-OK "
 	}
 	if pi.HasError() {
-		s += "ERROR "
+		s += "ERROR  "
 	}
 	s += fmt.Sprintf("[%d] ", pi.size)
 	s += pi.absFP.Tildotted()
@@ -176,10 +176,10 @@ func (pPI *PathProps) GetContentBytes() []byte {
 		return nil
 	}
 	var bb []byte
-	bb, e = ioutil.ReadAll(pF)
+	bb, e = io.ReadAll(pF)
 	if e != nil {
 		pPI.SetError(errors.New(fmt.Sprintf(
-			"fu.BP.GetContentBytes.ioutilReadAll<%s>: %w", TheAbsFP, e)))
+			"fu.BP.GetContentBytes.ioReadAll<%s>: %w", TheAbsFP, e)))
 	}
 	if len(bb) == 0 {
 		println("==> empty file?!:", TheAbsFP)

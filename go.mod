@@ -1,13 +1,15 @@
 module github.com/fbaube/fileutils
 
-go 1.13
+go 1.16
 
 require (
-	github.com/fatih/color v1.7.0 // indirect
-	github.com/fbaube/stringutils v0.0.0-20190821134257-e58363dd8ea7
-	github.com/h2non/filetype v1.0.10
-	github.com/hosom/gomagic v0.0.0-20160718182707-cbc00aac97a4
-	github.com/mattn/go-colorable v0.1.4 // indirect
-	github.com/mattn/go-isatty v0.0.10 // indirect
+	github.com/fbaube/db v0.0.0-20200903170036-141c85acd354
+	github.com/fbaube/gtoken v0.0.0-20200909161945-cb41a76bba0f
+	github.com/fbaube/parseutils v0.0.0-20200828073136-6498eb7390a5
+	github.com/fbaube/stringutils v0.0.0-20200828181116-aee08ff9d3a5
+	github.com/fbaube/wasmutils v0.0.0-20200523130244-46c70c6a3e08
+	github.com/fbaube/xmlmodels v0.0.0-20200909161905-d2cb478ca930
 	github.com/mgutz/str v1.2.0
 )
+
+replace github.com/fbaube/xmlmodels => /Users/fbaube/go/src/github.com/fbaube/xmlmodels
