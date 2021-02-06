@@ -167,7 +167,6 @@ func AnalyseFile(sCont string, filext string) (*XM.AnalysisRecord, error) {
 	if !Peek.IsSplittable() {
 		println("--> Can't split into meta and text")
 	}
-
 	// Got DOCTYPE ? If so, it is gospel.
 	if Peek.Doctype != "" {
 		// We are here if we got a DOCTYPE; we also have a file extension,
