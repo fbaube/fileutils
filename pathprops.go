@@ -32,7 +32,7 @@ type PathProps struct {
 
 func (pi *PathProps) String() (s string) {
 	if pi.IsOkayFile() {
-		s = "OK-File "
+		s = fmt.Sprintf("OK-File [%d] ", pi.size)
 	} else if pi.IsOkayDir() {
 		s = "OK-Dirr "
 	} else if pi.IsOkaySymlink() {
@@ -41,9 +41,8 @@ func (pi *PathProps) String() (s string) {
 		s = "Not-OK "
 	}
 	if pi.HasError() {
-		s += "ERROR  "
+		s += "hasERROR  "
 	}
-	s += fmt.Sprintf("[%d] ", pi.size)
 	s += pi.absFP.Tildotted()
 	return s
 }
