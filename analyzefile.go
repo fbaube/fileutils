@@ -26,7 +26,9 @@ import (
 //
 func AnalyseFile(sCont string, filext string) (*XM.AnalysisRecord, error) {
 
+	// pCntpg is ContypingInfo is FileExt MimeType MType Doctype IsLwDita IsProcbl
 	var pCntpg *XM.ContypingInfo
+	// pAnlRec is AnalysisRecord is basicly all analysis results, incl. ContypingInfo
 	var pAnlRec *XM.AnalysisRecord
 
 	if sCont == "" {
@@ -38,7 +40,7 @@ func AnalyseFile(sCont string, filext string) (*XM.AnalysisRecord, error) {
 	if filext == "." {
 		filext = ""
 	}
-	fmt.Printf("==> Starting file content analysis: len<%d> filext<%s> \n", len(sCont), filext)
+	fmt.Printf("==> Analysing file: len<%d> filext<%s> \n", len(sCont), filext)
 
 	// =======================================
 	//  stdlib HTTP content detection library
@@ -47,7 +49,7 @@ func AnalyseFile(sCont string, filext string) (*XM.AnalysisRecord, error) {
 	var httpContype string
 	httpContype = http.DetectContentType([]byte(sCont))
 	httpContype = S.TrimSuffix(httpContype, "; charset=utf-8")
-	println("-->", "Contype per HTTP stdlib:", httpContype)
+	println("-->", "Contype acrdg to HTTP stdlib:", httpContype)
 
 	// Preliminaries
 	pCntpg = new(XM.ContypingInfo)
@@ -65,42 +67,41 @@ func AnalyseFile(sCont string, filext string) (*XM.AnalysisRecord, error) {
 	if Peek.HasError() {
 		return nil, fmt.Errorf("fu.peekXml failed: %w", Peek.GetError())
 	}
-	isOK := Peek.KeyElms.CheckXml()
+	// This is false IFF no root elm is found
+	foundRootElm := Peek.KeyElms.CheckXmlSections()
 	var gotXml, gotRootElm, gotPreamble, gotDoctype, gotDTDstuff bool
-	gotRootElm = (Peek.RootElm.Name != "")
 	gotPreamble = (Peek.Preamble != "")
 	gotDoctype = (Peek.Doctype != "")
-	// gotRootTag = (Peek.RootTag != "")
 	gotDTDstuff = Peek.HasDTDstuff
-	mdBug := gotDTDstuff || gotDoctype || gotPreamble
-	gotXml = isOK || gotRootElm || mdBug
-	if gotXml && (!mdBug) && S.HasPrefix(filext, ".m") {
+	mdBugCheck := gotDTDstuff || gotDoctype || gotPreamble
+	gotXml = foundRootElm || mdBugCheck
+	if gotXml && (!mdBugCheck) && S.HasPrefix(filext, ".m") && filext != ".map" {
 		println("MARKDOWN PROBLEM")
 	}
 	if !gotXml {
 		println("--> Does not seem to be XML")
 	} else {
-		fmt.Printf("--> xm.peek: preamble<%s> doctype<%s> DTDstuff<%s> RootTag<%s> \n",
+		fmt.Printf("--> is XML: preamble<%s> doctype<%s> DTDstuff<%s> RootTag<%s> \n",
 			SU.Yn(gotPreamble), SU.Yn(gotDoctype), SU.Yn(gotDTDstuff), SU.Yn(gotRootElm))
 	}
-	bb, ss := SeemsToBeXml(httpContype, filext)
+	// returns (isXml bool, msg string)
+	bb, ss := HttpContypeSeemsToBeXml(httpContype, filext)
 	if !gotXml && bb {
 		gotXml = true
-		println("--> Seems to be XML after all, based on file ext. and HTTP stdlib:", ss)
+		println("--> Warning! Seems to be XML after all, based on file ext. and HTTP stdlib:", ss)
 	}
 	if gotXml && !(gotRootElm || gotDTDstuff) {
-		println("--> XML file has no root tag (and is not DTD)")
+		println("--> Warning! XML file has no root tag (and is not DTD)")
 	}
 	if gotDTDstuff && SU.IsInSliceIgnoreCase(filext, XM.DTDtypeFileExtensions) {
-		fmt.Printf("--> DTD content detected (filext<%s>) \n", filext)
+		fmt.Printf("--> DTD content detected (and filext<%s>) \n", filext)
 		pAnlRec.MimeType = "application/xml-dtd"
 		pAnlRec.MType = "xml/sch/" + filext[1:]
 		// Could allocate and fill field XmlInfo
 		return pAnlRec, nil
 	}
 	// Should be true ALWAYS for XML/HTML
-	gotRootElm = (Peek.RootElm.Name != "")
-	if gotRootElm {
+	if foundRootElm {
 		var pos int
 		pos = Peek.RootElm.BegPos.Pos
 		fmt.Printf("D=> fu.AF: keyElm: %s / ch%d \n", Peek.RootElm.Name, pos)
@@ -279,7 +280,7 @@ func CollectKeysOfNonNilMapValues(M map[string]*XM.FilePosition) []string {
 	return ss
 }
 
-func SeemsToBeXml(httpContype string, filext string) (isXml bool, msg string) {
+func HttpContypeSeemsToBeXml(httpContype string, filext string) (isXml bool, msg string) {
 
 	if S.Contains(httpContype, "xml") {
 		return true, "HTTP contype-detection got XML (in MIME type)"
