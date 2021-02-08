@@ -72,8 +72,13 @@ func AnalyseFile(sCont string, filext string) (*XM.AnalysisRecord, error) {
 	var Peek *XM.XmlStructurePeek
 	// Peek also sets KeyElms (Root,Meta,Text)
 	Peek = XM.PeekAtStructure_xml(sCont)
+	// Here an error might be from, for example, applying XML parsing
+	// to a binary file. So, an error should not be fatal.
+	var xmlParsingFailed bool
 	if Peek.HasError() {
-		return nil, fmt.Errorf("fu.peekXml failed: %w", Peek.GetError())
+		// return nil, fmt.Errorf("fu.peekXml failed: %w", Peek.GetError())
+		println("--> XML parsing got error:", Peek.GetError())
+		xmlParsingFailed = true
 	}
 	// =======================================
 	//  Now ANALYSE the analyses.
@@ -81,9 +86,9 @@ func AnalyseFile(sCont string, filext string) (*XM.AnalysisRecord, error) {
 	foundRootElm := Peek.KeyElms.CheckXmlSections()
 	gotDoctype := (Peek.Doctype != "")
 	gotXml := foundRootElm || Peek.HasDTDstuff || gotDoctype || hasXmlPre
-	if !gotXml {
+	if xmlParsingFailed || !gotXml {
 		println("--> Does not seem to be XML")
-		if htCntpIsXml {
+		if htCntpIsXml && !xmlParsingFailed {
 			gotXml = true
 			println("--> BUT seems to be XML after all, based on file ext'n and HTTP stdlib:", htCntpMsg)
 		}
