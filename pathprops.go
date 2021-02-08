@@ -7,6 +7,8 @@ import (
 	"os"
 	FP "path/filepath"
 	S "strings"
+
+	SU "github.com/fbaube/stringutils"
 )
 
 // MAX_FILE_SIZE is set (arbitrarily) to 2 megabytes
@@ -32,7 +34,7 @@ type PathProps struct {
 
 func (pi *PathProps) String() (s string) {
 	if pi.IsOkayFile() {
-		s = fmt.Sprintf("OK-File [%d] ", pi.size)
+		s = fmt.Sprintf("OK-File (len:%d) ", pi.size)
 	} else if pi.IsOkayDir() {
 		s = "OK-Dirr "
 	} else if pi.IsOkaySymlink() {
@@ -145,9 +147,7 @@ func NewPathPropsRelativeTo(rfp, relTo string) *PathProps {
 	if pi.isFile {
 		pi.size = int(FI.Size())
 	}
-	println("==>")
-	println("==> PATH PROPS:", pi.String())
-	println("==>")
+	println("==>", SU.Gbg(" "+pi.String()+" "))
 	return pi
 }
 
