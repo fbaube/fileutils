@@ -10,7 +10,7 @@ import (
 	XM "github.com/fbaube/xmlmodels"
 )
 
-// <!ELEMENT map     (topicmeta?, (topicref | keydef)*)  >
+// <!ELEMENT  map     (topicmeta?, (topicref | keydef)*)  >
 // <!ELEMENT topicmeta (navtitle?, linktext?, data*) >
 
 // AnalyseFile has drastically different handling for XML content versus
@@ -24,12 +24,15 @@ import (
 //
 // If the first argument "sCont" (the content) is zero-length, return (nil, nil).
 //
+// The return value is an XM.AnalysisRecord, which has a BUNCH of fields.
+//
 func AnalyseFile(sCont string, filext string) (*XM.AnalysisRecord, error) {
 
 	// pCntpg is ContypingInfo is FileExt MimeType MType Doctype IsLwDita IsProcbl
 	var pCntpg *XM.ContypingInfo
 	// pAnlRec is AnalysisRecord is basicly all analysis results, incl. ContypingInfo
 	var pAnlRec *XM.AnalysisRecord
+	pAnlRec = new(XM.AnalysisRecord)
 
 	if sCont == "" {
 		println("==>", "Cannot analyze zero-length content")
@@ -40,95 +43,89 @@ func AnalyseFile(sCont string, filext string) (*XM.AnalysisRecord, error) {
 	if filext == "." {
 		filext = ""
 	}
-	fmt.Printf("==> Analysing file: len<%d> filext<%s> \n", len(sCont), filext)
+	fmt.Printf("--> Analysing file: len<%d> filext<%s> \n", len(sCont), filext)
 
+	// ========================================
+	//  MAIN PRELIMINARY ANALYSIS: Check for
+	//  root tag and other top-level XML stuff
+	// ========================================
+	var peek *XM.XmlStructurePeek
+	// Peek also sets KeyElms (Root,Meta,Text)
+	peek = XM.PeekAtStructure_xml(sCont)
+	// NOTE! An error from oeeking might be from, for example, applying XML
+	// parsing to a binary file. So, an error should not be fatal.
+	var xmlParsingFailed bool
+	if peek.HasError() {
+		// return nil, fmt.Errorf("fu.peekXml failed: %w", Peek.GetError())
+		println("--> XML parsing got error:", peek.GetError())
+		xmlParsingFailed = true
+	}
 	// =======================================
-	//  ANALYSIS #1: Use the stdlib
-	//  HTTP content detection library
+	//  If it's DTD stuff, we're done.
 	// =======================================
-	// Note that it assigns "text/html" to DITA maps :-/
+	if peek.HasDTDstuff && SU.IsInSliceIgnoreCase(filext, XM.DTDtypeFileExtensions) {
+		fmt.Printf("--> DTD content detected (& filext<%s>) \n", filext)
+		pAnlRec.MimeType = "application/xml-dtd"
+		pAnlRec.MType = "xml/sch/" + filext[1:]
+		// Could allocate and fill field XmlInfo
+		return pAnlRec, nil
+	}
+	// ===============================
+	//  Set variables, including
+	//  supporting analysis by stdlib
+	// ===============================
+	gotRootElm := (peek.KeyElms.CheckXmlSections())
+	gotDoctype := (peek.Doctype != "")
+	gotPreambl := (peek.Preamble != "")
+	gotSomeXml := (gotRootElm || gotDoctype || gotPreambl)
+	// Note that stdlib assigns "text/html" to DITA maps :-/
 	var httpContype string
 	httpContype = http.DetectContentType([]byte(sCont))
 	httpContype = S.TrimSuffix(httpContype, "; charset=utf-8")
 	println("-->", "Contype acrdg to HTTP stdlib:", httpContype)
 	htCntpIsXml, htCntpMsg := HttpContypeIsXml(httpContype, filext)
 
-	// Preliminaries for deeper analysis
-	pCntpg = new(XM.ContypingInfo)
-	pAnlRec = new(XM.AnalysisRecord)
-	pCntpg.FileExt = filext
-	pCntpg.MimeType = httpContype
-	// pAnlRec.MType = ""
-
-	// =======================================
-	//  ANALYSIS #2: Check for an XML preamble
-	// =======================================
-	hasXmlPre := S.HasPrefix(sCont, "<?xml ")
-
-	// =======================================
-	//  ANALYSIS #3: Quick check for root
-	//  tag and other top-level XML stuff
-	// =======================================
-	var Peek *XM.XmlStructurePeek
-	// Peek also sets KeyElms (Root,Meta,Text)
-	Peek = XM.PeekAtStructure_xml(sCont)
-	// Here an error might be from, for example, applying XML parsing
-	// to a binary file. So, an error should not be fatal.
-	var xmlParsingFailed bool
-	if Peek.HasError() {
-		// return nil, fmt.Errorf("fu.peekXml failed: %w", Peek.GetError())
-		println("--> XML parsing got error:", Peek.GetError())
-		xmlParsingFailed = true
-	}
-	// =======================================
-	//  Now ANALYSE the analyses.
-	// =======================================
-	foundRootElm := Peek.KeyElms.CheckXmlSections()
-	gotDoctype := (Peek.Doctype != "")
-	gotXml := foundRootElm || Peek.HasDTDstuff || gotDoctype || hasXmlPre
-	if xmlParsingFailed || !gotXml {
-		println("--> Does not seem to be XML")
-		if htCntpIsXml && !xmlParsingFailed {
-			gotXml = true
-			println("--> BUT seems to be XML after all, based on file ext'n and HTTP stdlib:", htCntpMsg)
-		}
-	}
-	if gotXml {
-		fmt.Printf("--> is XML: preamble<%s> doctype<%s> RootTag<%s> DTDstuff<%s> \n",
-			SU.Yn(hasXmlPre), SU.Yn(gotDoctype), SU.Yn(foundRootElm), SU.Yn(Peek.HasDTDstuff))
-		if !(foundRootElm || Peek.HasDTDstuff) {
-			println("--> Warning! XML file has no root tag (and is not DTD)")
-		}
-	}
-	// =======================================
-	//  If it's DTD stuff, we're done.
-	// =======================================
-	if Peek.HasDTDstuff && SU.IsInSliceIgnoreCase(filext, XM.DTDtypeFileExtensions) {
-		fmt.Printf("--> DTD content detected (and filext<%s>) \n", filext)
-		pAnlRec.MimeType = "application/xml-dtd"
-		pAnlRec.MType = "xml/sch/" + filext[1:]
-		// Could allocate and fill field XmlInfo
-		return pAnlRec, nil
-	}
 	// ==============================
 	//  If it's not XML, we're done.
 	// ==============================
-	if !gotXml {
-		var nonXmlCntpg *XM.ContypingInfo
-		nonXmlCntpg = DoContentTypes_non_xml(httpContype, sCont, filext)
-		fmt.Printf("==> NON-XML: %s \n", nonXmlCntpg)
-		pAnlRec.ContypingInfo = *nonXmlCntpg
+	if xmlParsingFailed || !gotSomeXml {
+		pAnlRec.ContypingInfo = *DoContentTypes_non_xml(httpContype, sCont, filext)
+		fmt.Printf("==> NON-XML: %s \n", pAnlRec.ContypingInfo)
+		println("!!> Fix the content extents")
 		return pAnlRec, nil
 	}
-	// ==============
-	//  YES IT'S XML
-	// ==============
-	// var isLwDita bool
-	var pPRF *XM.XmlPreambleFields
+
+	// ======================================
+	//  Handle a possible pathological case.
+	// ======================================
+	if xmlParsingFailed {
+		println("--> Does not seem to be XML")
+		if htCntpIsXml {
+			println("--> Although HTTP stdlib seems to think it is:", htCntpMsg)
+		}
+	}
+
+	// =========================================
+	//  So from this point onward, WE HAVE XML.
+	// =========================================
+	fmt.Printf("--> IS-XML: preamble?<%s> doctype?<%s> RootTag<%s> DTDstuff?<%s> \n",
+		SU.Yn(gotPreambl), SU.Yn(gotDoctype), SU.Yn(gotRootElm), SU.Yn(peek.HasDTDstuff))
+	if !(gotRootElm || peek.HasDTDstuff) {
+		println("--> WARNING! XML file has no root tag (and is not DTD)")
+	}
+
+	// Preliminaries for deeper analysis
+	pCntpg = new(XM.ContypingInfo)
+	pCntpg.FileExt = filext
+	pCntpg.MimeType = httpContype
 	var e error
-	if hasXmlPre {
+	// pAnlRec.MType = ""
+	// var isLwDita bool
+
+	var pPRF *XM.XmlPreambleFields
+	if gotPreambl {
 		// println("preamble:", preamble)
-		pPRF, e = XM.NewXmlPreambleFields(Peek.Preamble)
+		pPRF, e = XM.NewXmlPreambleFields(peek.Preamble)
 		if e != nil {
 			println("xm.peek: preamble failure")
 			return nil, fmt.Errorf("xm.peek: preamble failure: %w", e)
@@ -139,23 +136,23 @@ func AnalyseFile(sCont string, filext string) (*XM.AnalysisRecord, error) {
 	//  Time to do some heavy lifting.
 	// ================================
 	println("==> Now split the file")
-	pAnlRec.KeyElms = Peek.KeyElms
+	pAnlRec.KeyElms = peek.KeyElms
 	pAnlRec.MakeContentitySections(sCont)
 	fmt.Printf("--> meta pos<%d>len<%d> text pos<%d>len<%d> \n",
 		pAnlRec.MetaElm.BegPos.Pos, len(pAnlRec.Meta_raw),
 		pAnlRec.TextElm.BegPos.Pos, len(pAnlRec.Text_raw))
-	if !Peek.IsSplittable() {
+	if !peek.IsSplittable() {
 		println("--> Can't split into meta and text")
 	}
 	// =================================
 	//  If we have DOCTYPE,
 	//  it is gospel (and we are done).
 	// =================================
-	if Peek.Doctype != "" {
+	if peek.Doctype != "" {
 		// We are here if we got a DOCTYPE; we also have a file extension,
 		// and we should have a root tag (or else the DOCTYPE makes no sense !)
 		var pXDTF *XM.XmlDoctypeFields
-		pXDTF = pCntpg.AnalyzeXmlDoctype(Peek.Doctype)
+		pXDTF = pCntpg.AnalyzeXmlDoctype(peek.Doctype)
 		if pXDTF.HasError() {
 			panic("FIXME:" + pXDTF.Error())
 		}
@@ -171,16 +168,15 @@ func AnalyseFile(sCont string, filext string) (*XM.AnalysisRecord, error) {
 	// =====================
 	//  No DOCTYPE. Bummer.
 	// =====================
-	if !foundRootElm {
-		fmt.Printf("==> Got no root tag; filext: %s \n", filext)
-		return pAnlRec, nil
+	if !gotRootElm {
+		return pAnlRec, fmt.Errorf("Got no XML root tag in file with ext <%s>", filext)
 	}
 	// ==========================================
 	//  Let's at least try to set the MType.
 	//  We have a root tag and a file extension.
 	// ==========================================
-	rutag := S.ToLower(Peek.RootElm.Name)
-	fmt.Printf("Guessing for: roottag<%s> filext<%s> ?mtype<%s> \n",
+	rutag := S.ToLower(peek.RootElm.Name)
+	fmt.Printf("Guessing XML typing for: roottag<%s> filext<%s> ?mtype<%s> \n",
 		rutag, filext, pAnlRec.MType)
 	pCntpg.MType = pAnlRec.MType
 	// Do some easy cases
@@ -204,17 +200,6 @@ func AnalyseFile(sCont string, filext string) (*XM.AnalysisRecord, error) {
 		pAnlRec.ContypingInfo.String())
 
 	// Now we should fill in all the detail fields.
-	/*
-	  type XmlInfo struct {
-	    XmlContype
-	    XmlPreambleFields
-	    XmlDoctype
-	   *XmlDoctypeFields
-	  }
-	  type DitaInfo struct {
-	    DitaMarkupLg
-	    DitaContype
-	  } */
 	pAnlRec.XmlContype = "RootTagData"
 	// Redundant!
 	// pAnlRec.XmlDoctype = XM.XmlDoctype("DOCTYPE " + Peek.Doctype)
