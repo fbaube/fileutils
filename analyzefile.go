@@ -74,7 +74,7 @@ func AnalyseFile(sCont string, filext string) (*XM.AnalysisRecord, error) {
 	//  Set variables, including
 	//  supporting analysis by stdlib
 	// ===============================
-	gotRootElm := (peek.KeyElms.CheckXmlSections())
+	gotRootElm := (peek.KeyElmsWithRanges.CheckXmlSections())
 	gotDoctype := (peek.Doctype != "")
 	gotPreambl := (peek.Preamble != "")
 	gotSomeXml := (gotRootElm || gotDoctype || gotPreambl)
@@ -148,7 +148,7 @@ func AnalyseFile(sCont string, filext string) (*XM.AnalysisRecord, error) {
 	//  Time to do some heavy lifting.
 	// ================================
 	println("==> Now split the file")
-	pAnlRec.KeyElms = peek.KeyElms
+	pAnlRec.KeyElmsWithRanges = peek.KeyElmsWithRanges
 	pAnlRec.MakeXmlContentitySections(sCont)
 	fmt.Printf("--> meta pos<%d>len<%d> text pos<%d>len<%d> \n",
 		pAnlRec.MetaElm.BegPos.Pos, len(pAnlRec.Meta_raw),
