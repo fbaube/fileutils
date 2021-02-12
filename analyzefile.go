@@ -108,8 +108,20 @@ func AnalyseFile(sCont string, filext string) (*XM.AnalysisRecord, error) {
 	// =========================================
 	//  So from this point onward, WE HAVE XML.
 	// =========================================
-	fmt.Printf("--> IS-XML: preamble?<%s> doctype?<%s> RootTag<%s> DTDstuff?<%s> \n",
-		SU.Yn(gotPreambl), SU.Yn(gotDoctype), SU.Yn(gotRootElm), SU.Yn(peek.HasDTDstuff))
+	var sP, sD, sR, sDtd string
+	if gotPreambl {
+		sP = "<?xml..> "
+	}
+	if gotDoctype {
+		sD = "<!DOCTYPE..> "
+	}
+	if gotRootElm {
+		sR = "<rootTag> "
+	}
+	if peek.HasDTDstuff {
+		sDtd = "<!DTD stuff> "
+	}
+	fmt.Printf("--> IS-XML: %s%s%s%s \n", sP, sD, sR, sDtd)
 	if !(gotRootElm || peek.HasDTDstuff) {
 		println("--> WARNING! XML file has no root tag (and is not DTD)")
 	}
@@ -127,8 +139,8 @@ func AnalyseFile(sCont string, filext string) (*XM.AnalysisRecord, error) {
 		// println("preamble:", preamble)
 		pPRF, e = XM.NewXmlPreambleFields(peek.Preamble)
 		if e != nil {
-			println("xm.peek: preamble failure")
-			return nil, fmt.Errorf("xm.peek: preamble failure: %w", e)
+			println("xm.peek: preamble failure in:", peek.Preamble)
+			return nil, fmt.Errorf("xm<>>e<> preamble failure: %w", e)
 		}
 		// print("--> Parsed XML preamble: " + pPRF.String())
 	}
@@ -137,7 +149,7 @@ func AnalyseFile(sCont string, filext string) (*XM.AnalysisRecord, error) {
 	// ================================
 	println("==> Now split the file")
 	pAnlRec.KeyElms = peek.KeyElms
-	pAnlRec.MakeContentitySections(sCont)
+	pAnlRec.MakeXmlContentitySections(sCont)
 	fmt.Printf("--> meta pos<%d>len<%d> text pos<%d>len<%d> \n",
 		pAnlRec.MetaElm.BegPos.Pos, len(pAnlRec.Meta_raw),
 		pAnlRec.TextElm.BegPos.Pos, len(pAnlRec.Text_raw))

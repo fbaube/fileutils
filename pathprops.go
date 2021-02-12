@@ -114,9 +114,7 @@ func NewPathProps(fp string) *PathProps {
 	if pi.isFile {
 		pi.size = int(FI.Size())
 	}
-	println("==>")
-	println("==> PATH PROPS:", pi.String())
-	println("==>")
+	// println("==> new fu.pathprops:", pi.String())
 	return pi
 }
 
