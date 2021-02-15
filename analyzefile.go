@@ -151,11 +151,13 @@ func AnalyseFile(sCont string, filext string) (*XM.AnalysisRecord, error) {
 	pAnlRec.ContentityStructure = peek.ContentityStructure
 	pAnlRec.MakeXmlContentitySections(sCont)
 	fmt.Printf("--> meta pos<%d>len<%d> text pos<%d>len<%d> \n",
-		pAnlRec.MetaElm.BegPos.Pos, len(pAnlRec.Meta_raw),
-		pAnlRec.TextElm.BegPos.Pos, len(pAnlRec.Text_raw))
-	if !peek.IsSplittable() {
-		println("--> Can't split into meta and text")
-	}
+		pAnlRec.Meta.Beg.Pos, len(pAnlRec.MetaRaw()),
+		pAnlRec.Text.Beg.Pos, len(pAnlRec.TextRaw()))
+	/*
+		if !peek.IsSplittable() {
+			println("--> Can't split into meta and text")
+		}
+	*/
 	// =================================
 	//  If we have DOCTYPE,
 	//  it is gospel (and we are done).
@@ -187,7 +189,7 @@ func AnalyseFile(sCont string, filext string) (*XM.AnalysisRecord, error) {
 	//  Let's at least try to set the MType.
 	//  We have a root tag and a file extension.
 	// ==========================================
-	rutag := S.ToLower(peek.RootElm.Name)
+	rutag := S.ToLower(peek.Root.Name)
 	fmt.Printf("Guessing XML typing for: roottag<%s> filext<%s> ?mtype<%s> \n",
 		rutag, filext, pAnlRec.MType)
 	pCntpg.MType = pAnlRec.MType
@@ -240,8 +242,8 @@ func AnalyseFile(sCont string, filext string) (*XM.AnalysisRecord, error) {
 	fmt.Printf("--> fu.af: \n--> 1) MType: %s \n--> 2) XmlInfo: cntp:%s prmbl:%s DT:%s \n--> 3) DitaInfo: ML:%s cntp:%s \n",
 		pAnlRec.MType, pAnlRec.XmlContype, pAnlRec.XmlPreambleFields,
 		pAnlRec.XmlDoctypeFields, pAnlRec.DitaMarkupLg, pAnlRec.DitaContype)
-	println("--> fu.af: Meta_raw:", pAnlRec.Meta_raw)
-	println("--> fu.af: Text_raw:", pAnlRec.Text_raw)
+	println("--> fu.af: Meta_raw:", pAnlRec.MetaRaw())
+	println("--> fu.af: Text_raw:", pAnlRec.TextRaw())
 
 	return pAnlRec, nil
 }
