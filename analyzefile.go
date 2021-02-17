@@ -43,7 +43,7 @@ func AnalyseFile(sCont string, filext string) (*XM.AnalysisRecord, error) {
 	if filext == "." {
 		filext = ""
 	}
-	fmt.Printf("--> Analysing file: len<%d> filext<%s> \n", len(sCont), filext)
+	// fmt.Printf("--> Analysing file: len<%d> filext<%s> \n", len(sCont), filext)
 
 	// ========================================
 	//  MAIN PRELIMINARY ANALYSIS: Check for
@@ -82,7 +82,7 @@ func AnalyseFile(sCont string, filext string) (*XM.AnalysisRecord, error) {
 	var httpContype string
 	httpContype = http.DetectContentType([]byte(sCont))
 	httpContype = S.TrimSuffix(httpContype, "; charset=utf-8")
-	println("-->", "Contype acrdg to HTTP stdlib:", httpContype)
+	println("-->", "HTTP stdlib says:", httpContype)
 	htCntpIsXml, htCntpMsg := HttpContypeIsXml(httpContype, filext)
 
 	// ==============================
@@ -91,7 +91,7 @@ func AnalyseFile(sCont string, filext string) (*XM.AnalysisRecord, error) {
 	if xmlParsingFailed || !gotSomeXml {
 		pAnlRec.ContypingInfo = *DoContentTypes_non_xml(httpContype, sCont, filext)
 		fmt.Printf("==> NON-XML: %s \n", pAnlRec.ContypingInfo)
-		println("!!> Fix the content extents")
+		// println("!!> Fix the content extents")
 		return pAnlRec, nil
 	}
 
@@ -116,7 +116,7 @@ func AnalyseFile(sCont string, filext string) (*XM.AnalysisRecord, error) {
 		sD = "<!DOCTYPE..> "
 	}
 	if gotRootElm {
-		sR = "<rootTag> "
+		sR = "root<" + peek.Root.Name + "> "
 	}
 	if peek.HasDTDstuff {
 		sDtd = "<!DTD stuff> "
@@ -150,13 +150,14 @@ func AnalyseFile(sCont string, filext string) (*XM.AnalysisRecord, error) {
 	println("==> Now split the file")
 	pAnlRec.ContentityStructure = peek.ContentityStructure
 	pAnlRec.MakeXmlContentitySections(sCont)
-	fmt.Printf("--> meta pos<%d>len<%d> text pos<%d>len<%d> \n",
-		pAnlRec.Meta.Beg.Pos, len(pAnlRec.MetaRaw()),
-		pAnlRec.Text.Beg.Pos, len(pAnlRec.TextRaw()))
 	/*
-		if !peek.IsSplittable() {
-			println("--> Can't split into meta and text")
-		}
+		fmt.Printf("--> meta pos<%d>len<%d> text pos<%d>len<%d> \n",
+			pAnlRec.Meta.Beg.Pos, len(pAnlRec.MetaRaw()),
+			pAnlRec.Text.Beg.Pos, len(pAnlRec.TextRaw()))
+		/*
+			if !peek.IsSplittable() {
+				println("--> Can't split into meta and text")
+			}
 	*/
 	// =================================
 	//  If we have DOCTYPE,
@@ -190,7 +191,7 @@ func AnalyseFile(sCont string, filext string) (*XM.AnalysisRecord, error) {
 	//  We have a root tag and a file extension.
 	// ==========================================
 	rutag := S.ToLower(peek.Root.Name)
-	fmt.Printf("Guessing XML typing for: roottag<%s> filext<%s> ?mtype<%s> \n",
+	fmt.Printf("XML sans DOCTYPE: root<%s> filext<%s> ?mtype<%s> \n",
 		rutag, filext, pAnlRec.MType)
 	pCntpg.MType = pAnlRec.MType
 	// Do some easy cases
@@ -210,8 +211,7 @@ func AnalyseFile(sCont string, filext string) (*XM.AnalysisRecord, error) {
 		pAnlRec.MType = "xml/???/" + rutag
 	}
 	// At this point, mt should be valid !
-	println("--> Contyping (derived both ways):",
-		pAnlRec.ContypingInfo.String())
+	println("--> Contyping:", pAnlRec.ContypingInfo.String())
 
 	// Now we should fill in all the detail fields.
 	pAnlRec.XmlContype = "RootTagData"
@@ -228,22 +228,14 @@ func AnalyseFile(sCont string, filext string) (*XM.AnalysisRecord, error) {
 	pAnlRec.DitaMarkupLg = "TBS"
 	pAnlRec.DitaContype = "TBS"
 
-	println("D=> fu.af: Would have set up XmlInfo...")
+	println("D=> fu.af: TODO set more XML info")
 	// pAnlRec.XmlInfo = *new(XM.XmlInfo)
-	/* Fields to set:
-			type XmlInfo struct {
-				XmlContype // "Unknown", "DTD", "DTDmod", "DTDent", "RootTagData",
-	        "RootTagMixedContent", "MultipleRootTags", "INVALID"
-				*XmlPreambleFields
-				XmlDoctype // type string // this is probly unnecessary
-				// XmlDoctypeFields is a ptr - nil if there is no DOCTYPE declaration.
-				*DoctypeFields
-	*/
-	fmt.Printf("--> fu.af: \n--> 1) MType: %s \n--> 2) XmlInfo: cntp:%s prmbl:%s DT:%s \n--> 3) DitaInfo: ML:%s cntp:%s \n",
-		pAnlRec.MType, pAnlRec.XmlContype, pAnlRec.XmlPreambleFields,
-		pAnlRec.XmlDoctypeFields, pAnlRec.DitaMarkupLg, pAnlRec.DitaContype)
-	println("--> fu.af: Meta_raw:", pAnlRec.MetaRaw())
-	println("--> fu.af: Text_raw:", pAnlRec.TextRaw())
+
+	fmt.Printf("--> fu.af: MType<%s> xcntp<%s> ditaML<%s> ditaCntp<%s> DT<%s> \n",
+		pAnlRec.MType, pAnlRec.XmlContype, // pAnlRec.XmlPreambleFields,
+		pAnlRec.DitaMarkupLg, pAnlRec.DitaContype, pAnlRec.XmlDoctypeFields)
+	// println("--> fu.af: MetaRaw:", pAnlRec.MetaRaw())
+	// println("--> fu.af: TextRaw:", pAnlRec.TextRaw())
 
 	return pAnlRec, nil
 }
