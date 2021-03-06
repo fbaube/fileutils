@@ -92,6 +92,7 @@ func AnalyseFile(sCont string, filext string) (*XM.AnalysisRecord, error) {
 		pAnlRec.ContypingInfo = *DoContentTypes_non_xml(httpContype, sCont, filext)
 		fmt.Printf("==> NON-XML: %s \n", pAnlRec.ContypingInfo)
 		// println("!!> Fix the content extents")
+		println("??>", "|RAW|", pAnlRec.Raw, "|END|")
 		return pAnlRec, nil
 	}
 

@@ -182,10 +182,10 @@ func init() {
 	}
 }
 
-// SessionDemo can be called anytime.
-func SessionDemo() {
-	fmt.Fprintf(os.Stderr,
-		"==> User_ID: %s (%s) (uid:%s,gid:%s) \n",
+// SessionSummary can be called anytime.
+func SessionSummary() string {
+	s1 := fmt.Sprintf("User_ID: %s (%s) (uid:%s,gid:%s)",
 		currentUser.Username, currentUser.Name, currentUser.Uid, currentUser.Gid)
-	fmt.Fprintf(os.Stderr, "==> Working: %s \n", Tildotted(currentWorkingDir))
+	s2 := "Working: " + Tildotted(currentWorkingDir)
+	return s1 + "\n" + s2
 }
