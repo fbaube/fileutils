@@ -6,6 +6,7 @@ import (
 	FP "path/filepath"
 	S "strings"
 
+	L "github.com/fbaube/mlog"
 	SU "github.com/fbaube/stringutils"
 	XM "github.com/fbaube/xmlmodels"
 )
@@ -82,7 +83,7 @@ func AnalyseFile(sCont string, filext string) (*XM.AnalysisRecord, error) {
 	var httpContype string
 	httpContype = http.DetectContentType([]byte(sCont))
 	httpContype = S.TrimSuffix(httpContype, "; charset=utf-8")
-	println("-->", "HTTP stdlib says:", httpContype)
+	L.L.Info("HTTP stdlib says: " + httpContype)
 	htCntpIsXml, htCntpMsg := HttpContypeIsXml(httpContype, filext)
 
 	// ==============================
@@ -90,9 +91,9 @@ func AnalyseFile(sCont string, filext string) (*XM.AnalysisRecord, error) {
 	// ==============================
 	if xmlParsingFailed || !gotSomeXml {
 		pAnlRec.ContypingInfo = *DoContentTypes_non_xml(httpContype, sCont, filext)
-		fmt.Printf("==> NON-XML: %s \n", pAnlRec.ContypingInfo)
+		L.L.Success("NON-XML: " + pAnlRec.ContypingInfo.String())
 		// println("!!> Fix the content extents")
-		println("??>", "|RAW|", pAnlRec.Raw, "|END|")
+		L.L.Dbg("|RAW|" + pAnlRec.Raw + "|END|")
 		return pAnlRec, nil
 	}
 
@@ -100,9 +101,9 @@ func AnalyseFile(sCont string, filext string) (*XM.AnalysisRecord, error) {
 	//  Handle a possible pathological case.
 	// ======================================
 	if xmlParsingFailed {
-		println("--> Does not seem to be XML")
+		L.L.Dbg("Does not seem to be XML")
 		if htCntpIsXml {
-			println("--> Although HTTP stdlib seems to think it is:", htCntpMsg)
+			L.L.Dbg("Although HTTP stdlib seems to think it is:", htCntpMsg)
 		}
 	}
 
@@ -122,7 +123,7 @@ func AnalyseFile(sCont string, filext string) (*XM.AnalysisRecord, error) {
 	if peek.HasDTDstuff {
 		sDtd = "<!DTD stuff> "
 	}
-	fmt.Printf("--> IS-XML: %s%s%s%s \n", sP, sD, sR, sDtd)
+	L.L.Success("IS-XML: %s%s%s%s", sP, sD, sR, sDtd)
 	if !(gotRootElm || peek.HasDTDstuff) {
 		println("--> WARNING! XML file has no root tag (and is not DTD)")
 	}
@@ -148,7 +149,7 @@ func AnalyseFile(sCont string, filext string) (*XM.AnalysisRecord, error) {
 	// ================================
 	//  Time to do some heavy lifting.
 	// ================================
-	println("==> Now split the file")
+	L.L.Progress("Now split the file")
 	pAnlRec.ContentityStructure = peek.ContentityStructure
 	pAnlRec.MakeXmlContentitySections(sCont)
 	/*
@@ -172,8 +173,8 @@ func AnalyseFile(sCont string, filext string) (*XM.AnalysisRecord, error) {
 		if pXDTF.HasError() {
 			panic("FIXME:" + pXDTF.Error())
 		}
-		println("--> Contyping: " + pCntpg.String())
-		println("--> DTDfields: " + pXDTF.String())
+		L.L.Dbg("Contyping: " + pCntpg.String())
+		L.L.Dbg("DTDfields: " + pXDTF.String())
 
 		// What does AnalysisRecord need from Contyping and DoctypeFields ?
 		pAnlRec.ContypingInfo = pXDTF.ContypingInfo
@@ -192,7 +193,7 @@ func AnalyseFile(sCont string, filext string) (*XM.AnalysisRecord, error) {
 	//  We have a root tag and a file extension.
 	// ==========================================
 	rutag := S.ToLower(peek.Root.Name)
-	fmt.Printf("XML sans DOCTYPE: root<%s> filext<%s> ?mtype<%s> \n",
+	L.L.Dbg("XML sans DOCTYPE: root<%s> filext<%s> ?mtype<%s> \n",
 		rutag, filext, pAnlRec.MType)
 	pCntpg.MType = pAnlRec.MType
 	// Do some easy cases
@@ -212,7 +213,7 @@ func AnalyseFile(sCont string, filext string) (*XM.AnalysisRecord, error) {
 		pAnlRec.MType = "xml/???/" + rutag
 	}
 	// At this point, mt should be valid !
-	println("--> Contyping:", pAnlRec.ContypingInfo.String())
+	L.L.Dbg("Contyping: " + pAnlRec.ContypingInfo.String())
 
 	// Now we should fill in all the detail fields.
 	pAnlRec.XmlContype = "RootTagData"
@@ -229,10 +230,10 @@ func AnalyseFile(sCont string, filext string) (*XM.AnalysisRecord, error) {
 	pAnlRec.DitaMarkupLg = "TBS"
 	pAnlRec.DitaContype = "TBS"
 
-	println("D=> fu.af: TODO set more XML info")
+	L.L.Warning("fu.af: TODO set more XML info")
 	// pAnlRec.XmlInfo = *new(XM.XmlInfo)
 
-	fmt.Printf("--> fu.af: MType<%s> xcntp<%s> ditaML<%s> ditaCntp<%s> DT<%s> \n",
+	L.L.Info("fu.af: MType<%s> xcntp<%s> ditaML<%s> ditaCntp<%s> DT<%s> \n",
 		pAnlRec.MType, pAnlRec.XmlContype, // pAnlRec.XmlPreambleFields,
 		pAnlRec.DitaMarkupLg, pAnlRec.DitaContype, pAnlRec.XmlDoctypeFields)
 	// println("--> fu.af: MetaRaw:", pAnlRec.MetaRaw())
