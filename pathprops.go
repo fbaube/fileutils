@@ -7,8 +7,6 @@ import (
 	"os"
 	FP "path/filepath"
 	S "strings"
-
-	SU "github.com/fbaube/stringutils"
 )
 
 // MAX_FILE_SIZE is set (arbitrarily) to 2 megabytes
@@ -145,7 +143,7 @@ func NewPathPropsRelativeTo(rfp, relTo string) *PathProps {
 	if pi.isFile {
 		pi.size = int(FI.Size())
 	}
-	println("==>", SU.Gbg(" "+pi.String()+" "))
+	// println("==>", SU.Gbg(" "+pi.String()+" "))
 	return pi
 }
 
