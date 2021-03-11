@@ -91,7 +91,7 @@ func AnalyseFile(sCont string, filext string) (*XM.AnalysisRecord, error) {
 	// ==============================
 	if xmlParsingFailed || !gotSomeXml {
 		pAnlRec.ContypingInfo = *DoContentTypes_non_xml(httpContype, sCont, filext)
-		L.L.Success("NON-XML: " + pAnlRec.ContypingInfo.String())
+		L.L.Okay("Non-XML: " + pAnlRec.ContypingInfo.String())
 		// println("!!> Fix the content extents")
 		L.L.Dbg("|RAW|" + pAnlRec.Raw + "|END|")
 		return pAnlRec, nil
@@ -123,7 +123,7 @@ func AnalyseFile(sCont string, filext string) (*XM.AnalysisRecord, error) {
 	if peek.HasDTDstuff {
 		sDtd = "<!DTD stuff> "
 	}
-	L.L.Success("IS-XML: %s%s%s%s", sP, sD, sR, sDtd)
+	L.L.Okay("Is XML: found: %s%s%s%s", sP, sD, sR, sDtd)
 	if !(gotRootElm || peek.HasDTDstuff) {
 		println("--> WARNING! XML file has no root tag (and is not DTD)")
 	}
@@ -193,7 +193,7 @@ func AnalyseFile(sCont string, filext string) (*XM.AnalysisRecord, error) {
 	//  We have a root tag and a file extension.
 	// ==========================================
 	rutag := S.ToLower(peek.Root.Name)
-	L.L.Dbg("XML sans DOCTYPE: root<%s> filext<%s> ?mtype<%s> \n",
+	L.L.Info("XML without DOCTYPE: root<%s> filext<%s> MType<%s>",
 		rutag, filext, pAnlRec.MType)
 	pCntpg.MType = pAnlRec.MType
 	// Do some easy cases

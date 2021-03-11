@@ -3,6 +3,7 @@ package fileutils
 import (
 	S "strings"
 
+	L "github.com/fbaube/mlog"
 	SU "github.com/fbaube/stringutils"
 	XM "github.com/fbaube/xmlmodels"
 )
@@ -49,6 +50,6 @@ func DoContentTypes_non_xml(sniftMT, sCont, filext string) *XM.ContypingInfo {
 	}
 	// fmt.Printf("(DD) (%s:%s) Mtype(%s) \n",
 	// 	theFileExt, theMimeType, p.MMCstring())
-	println("==> fu.DoContentTypes_non_xml reached no conclusion")
+	L.L.Warning("Reached no conclusion about type of non-XMl content")
 	return ret
 }

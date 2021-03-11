@@ -7,6 +7,8 @@ import (
 	"os"
 	FP "path/filepath"
 	S "strings"
+
+	L "github.com/fbaube/mlog"
 )
 
 // MAX_FILE_SIZE is set (arbitrarily) to 2 megabytes
@@ -187,8 +189,14 @@ func (pPI *PathProps) GetContentBytes() []byte {
 		pPI.SetError(errors.New("fu.BP.GetContentBytes: not a file: " + TheAbsFP))
 		return nil
 	}
+	// Zero-length ?
 	if pPI.size == 0 {
-		println("==> zero-length file:", TheAbsFP)
+		L.L.Warning("Zero-length file: " + TheAbsFP)
+		return make([]byte, 0)
+	}
+	// Suspiciously tiny ?
+	if pPI.size < 6 {
+		L.L.Warning("Too-tiny file, ignoring: " + TheAbsFP)
 		return make([]byte, 0)
 	}
 	// If it's too big, BARF!

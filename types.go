@@ -184,7 +184,7 @@ func init() {
 
 // SessionSummary can be called anytime.
 func SessionSummary() string {
-	return fmt.Sprintf("%s (full:%s) (uid:%s,gid:%s) in: %s",
-		currentUser.Username, currentUser.Name, currentUser.Uid,
-		currentUser.Gid, Tildotted(currentWorkingDir))
+	return fmt.Sprintf("%s (uid:%s,gid:%s,fullname:%s) in: %s",
+		currentUser.Username, currentUser.Uid, currentUser.Gid,
+		currentUser.Name, Tildotted(currentWorkingDir))
 }
