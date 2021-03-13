@@ -50,6 +50,6 @@ func DoContentTypes_non_xml(sniftMT, sCont, filext string) *XM.ContypingInfo {
 	}
 	// fmt.Printf("(DD) (%s:%s) Mtype(%s) \n",
 	// 	theFileExt, theMimeType, p.MMCstring())
-	L.L.Warning("Reached no conclusion about type of non-XMl content")
+	L.L.Warning("Reached no conclusion about type of non-XML content")
 	return ret
 }
