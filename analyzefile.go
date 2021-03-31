@@ -15,15 +15,16 @@ import (
 // <!ELEMENT topicmeta (navtitle?, linktext?, data*) >
 
 // AnalyseFile has drastically different handling for XML content versus
-// non-XML content. Most of the function is mkaing several checks for the
-// presence of XML. For XML files we have much more info available, so
-// processing is both simpler and more complicated.
+// non-XML content. Most of the function is making several checks for the
+// presence of XML. When a file is identified as XML, we have much more
+// info available, so processing becomes both simpler and more complicated.
 //
 // The second argument "filext" can be any filepath; the Go stdlib is used
 // to split off the file extension. It can also be "", if (for example) the
 // content is entered interactively, without a file name or assigned MIME type.
 //
-// If the first argument "sCont" (the content) is zero-length, return (nil, nil).
+// If the first argument "sCont" (the content) is zero-length (or less than
+// six bytes) return (nil, nil).
 //
 // The return value is an XM.AnalysisRecord, which has a BUNCH of fields.
 //
@@ -36,7 +37,11 @@ func AnalyseFile(sCont string, filext string) (*XM.AnalysisRecord, error) {
 	pAnlRec = new(XM.AnalysisRecord)
 
 	if sCont == "" {
-		println("==>", "Cannot analyze zero-length content")
+		L.L.Warning("Cannot analyze zero-length content")
+		return nil, nil
+	}
+	if len(sCont) < 6 {
+		L.L.Warning("Content is too short (%d bytes) to analyse", len(sCont))
 		return nil, nil
 	}
 	// A trailing dot in the filename provides no filetype info.
@@ -65,7 +70,7 @@ func AnalyseFile(sCont string, filext string) (*XM.AnalysisRecord, error) {
 	//  If it's DTD stuff, we're done.
 	// =======================================
 	if peek.HasDTDstuff && SU.IsInSliceIgnoreCase(filext, XM.DTDtypeFileExtensions) {
-		fmt.Printf("--> DTD content detected (& filext<%s>) \n", filext)
+		L.L.Okay("DTD content detected (& filext<%s>)", filext)
 		pAnlRec.MimeType = "application/xml-dtd"
 		pAnlRec.MType = "xml/sch/" + filext[1:]
 		// Could allocate and fill field XmlInfo
@@ -92,7 +97,7 @@ func AnalyseFile(sCont string, filext string) (*XM.AnalysisRecord, error) {
 	if xmlParsingFailed || !gotSomeXml {
 		pAnlRec.ContypingInfo = *DoContentTypes_non_xml(httpContype, sCont, filext)
 		L.L.Okay("Non-XML: " + pAnlRec.ContypingInfo.String())
-		// println("!!> Fix the content extents")
+		L.L.Warning("Fix the content extents")
 		L.L.Dbg("|RAW|" + pAnlRec.Raw + "|END|")
 		return pAnlRec, nil
 	}
