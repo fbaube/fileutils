@@ -1,6 +1,7 @@
 package fileutils
 
 import (
+	"errors"
 	"fmt"
 	"net/http"
 	FP "path/filepath"
@@ -38,11 +39,11 @@ func AnalyseFile(sCont string, filext string) (*XM.AnalysisRecord, error) {
 
 	if sCont == "" {
 		L.L.Warning("Cannot analyze zero-length content")
-		return nil, nil
+		return nil, errors.New("cannot analyze zero-length content")
 	}
 	if len(sCont) < 6 {
 		L.L.Warning("Content is too short (%d bytes) to analyse", len(sCont))
-		return nil, nil
+		return nil, errors.New(fmt.Sprintf("content is too short (%d bytes) to analyse", len(sCont)))
 	}
 	// A trailing dot in the filename provides no filetype info.
 	filext = FP.Ext(filext)
@@ -232,15 +233,15 @@ func AnalyseFile(sCont string, filext string) (*XM.AnalysisRecord, error) {
 		// pBA.XmlPreambleFields = XM.STD_PreambleFields
 	}
 	// pBA.DoctypeIsDeclared  =  true
-	pAnlRec.DitaMarkupLg = "TBS"
+	pAnlRec.DitaFlavor = "TBS"
 	pAnlRec.DitaContype = "TBS"
 
 	L.L.Warning("fu.af: TODO set more XML info")
 	// pAnlRec.XmlInfo = *new(XM.XmlInfo)
 
-	L.L.Info("fu.af: MType<%s> xcntp<%s> ditaML<%s> ditaCntp<%s> DT<%s> \n",
+	L.L.Info("fu.af: MType<%s> xcntp<%s> ditaFlav<%s> ditaCntp<%s> DT<%s> \n",
 		pAnlRec.MType, pAnlRec.XmlContype, // pAnlRec.XmlPreambleFields,
-		pAnlRec.DitaMarkupLg, pAnlRec.DitaContype, pAnlRec.XmlDoctypeFields)
+		pAnlRec.DitaFlavor, pAnlRec.DitaContype, pAnlRec.XmlDoctypeFields)
 	// println("--> fu.af: MetaRaw:", pAnlRec.MetaRaw())
 	// println("--> fu.af: TextRaw:", pAnlRec.TextRaw())
 
