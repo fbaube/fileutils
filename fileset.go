@@ -45,7 +45,7 @@ func NewOneFileSet(s string) *FileSet {
 		panic("fu.FileSet.NewOneFS: not a file: " + s)
 	}
 	p.FilePaths = make([]string, 0, 1)
-	p.FilePaths = append(p.FilePaths, string(p.DirSpec.absFP))
+	p.FilePaths = append(p.FilePaths, string(p.DirSpec.AbsFP))
 	p.CheckedFiles = make([]PathProps, 0, 1)
 	p.CheckedFiles = append(p.CheckedFiles, p.DirSpec)
 	return p

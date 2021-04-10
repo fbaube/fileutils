@@ -18,10 +18,13 @@ const MAX_FILE_SIZE = 2000000
 // It might also be a directory or symlink, either of which requires
 // further processing elsewhere. In the most common usage, it is a file.
 // It can be nil, if e.g. its content was created on-the-fly.
+//
+// Note that RelFP and AbsFP must be exported to be persisted to the DB.
+//
 type PathProps struct {
 	error  error
-	relFP  string
-	absFP  AbsFilePath
+	RelFP  string
+	AbsFP  AbsFilePath
 	exists bool
 	isDir  bool
 	isFile bool
@@ -45,26 +48,27 @@ func (pi *PathProps) String() (s string) {
 	if pi.HasError() {
 		s += "hasERROR  "
 	}
-	s += pi.absFP.Tildotted()
+	s += pi.AbsFP.Tildotted()
 	return s
 }
 
 // Echo implements Markupper.
 func (p PathProps) Echo() string {
-	return p.AbsFP()
+	return p.AbsFP.S()
 }
 
 func (p *PathProps) Size() int {
 	return p.size
 }
 
+/*
 func (p *PathProps) AbsFP() string {
 	return string(p.absFP)
 }
-
 func (p *PathProps) RelFP() string {
 	return string(p.relFP)
 }
+*/
 
 // Exists is a convenience function.
 func (p *PathProps) Exists() bool {
@@ -97,7 +101,7 @@ func NewPathProps(fp string) *PathProps {
 	if e != nil {
 		panic("newPP: " + e.Error())
 	}
-	pi.absFP = AbsFilePath(afp)
+	pi.AbsFP = AbsFilePath(afp)
 	var FI os.FileInfo
 	FI, e = os.Lstat(afp)
 	if e != nil {
@@ -126,9 +130,9 @@ func NewPathPropsRelativeTo(rfp, relTo string) *PathProps {
 	if !FP.IsAbs(relTo) {
 		panic("newPPrelTo: not an abs.FP: " + relTo)
 	}
-	pi.relFP = rfp
+	pi.RelFP = rfp
 	afp := FP.Join(relTo, rfp)
-	pi.absFP = AbsFP(afp)
+	pi.AbsFP = AbsFP(afp)
 	var FI os.FileInfo
 	FI, e = os.Lstat(afp)
 	if e != nil {
@@ -162,14 +166,14 @@ func (pi *PathProps) ResolveSymlinks() *PathProps {
 	for pi.IsOkaySymlink() {
 		// func os.Readlink(pathname string) (string, error)
 		// func FP.EvalSymlinks(path string) (string, error)
-		newPath, e = FP.EvalSymlinks(pi.absFP.S())
+		newPath, e = FP.EvalSymlinks(pi.AbsFP.S())
 		if e != nil {
-			pi.SetError(fmt.Errorf("fu.RslvSymLx <%s>: %w", pi.absFP, e))
+			pi.SetError(fmt.Errorf("fu.RslvSymLx <%s>: %w", pi.AbsFP, e))
 			return nil
 		}
-		println("--> Symlink from:", pi.absFP)
+		println("--> Symlink from:", pi.AbsFP)
 		println("     resolved to:", newPath)
-		pi.absFP = AbsFilePath(newPath)
+		pi.AbsFP = AbsFilePath(newPath)
 		pi = NewPathProps(newPath)
 	}
 	return pi
@@ -184,7 +188,7 @@ func (pPI *PathProps) GetContentBytes() []byte {
 	if pPI.HasError() {
 		return nil
 	}
-	TheAbsFP := pPI.absFP.Tildotted()
+	TheAbsFP := pPI.AbsFP.Tildotted()
 	if !pPI.IsOkayFile() {
 		pPI.SetError(errors.New("fu.BP.GetContentBytes: not a file: " + TheAbsFP))
 		return nil
@@ -230,7 +234,7 @@ func (pPI *PathProps) GetContentBytes() []byte {
 // FetchContent reads in the file (IFF it is a file) and trims away
 // leading and trailing whitespace, but then adds a final newline.
 func (pPI *PathProps) FetchContent() (raw string, e error) {
-	DispFP := pPI.absFP.Tildotted()
+	DispFP := pPI.AbsFP.Tildotted()
 	if !pPI.IsOkayFile() {
 		return "", errors.New("fu.fetchcontent: not a readable file: " + DispFP)
 	}

@@ -7,6 +7,9 @@ import (
 	FP "path/filepath"
 	S "strings"
 
+	"github.com/gabriel-vasile/mimetype"
+	"golang.org/x/tools/godoc/util"
+
 	L "github.com/fbaube/mlog"
 	SU "github.com/fbaube/stringutils"
 	XM "github.com/fbaube/xmlmodels"
@@ -86,10 +89,29 @@ func AnalyseFile(sCont string, filext string) (*XM.AnalysisRecord, error) {
 	gotPreambl := (peek.Preamble != "")
 	gotSomeXml := (gotRootElm || gotDoctype || gotPreambl)
 	// Note that stdlib assigns "text/html" to DITA maps :-/
+
+	// =======================
+	//  Content type detection
+	// =======================
 	var httpContype string
+	var mimeLibTree *mimetype.MIME
+	var mimeLibIsBinary bool
+	var stdUtilIsBinary bool
 	httpContype = http.DetectContentType([]byte(sCont))
+	stdUtilIsBinary = !util.IsText([]byte(sCont))
+	mimeLibTree = mimetype.Detect([]byte(sCont))
+	mimeLibIsBinary = true
+	for mime := mimeLibTree; mime != nil; mime = mime.Parent() {
+		if mime.Is("text/plain") {
+			mimeLibIsBinary = false
+		}
+	}
 	httpContype = S.TrimSuffix(httpContype, "; charset=utf-8")
 	L.L.Info("HTTP stdlib says: " + httpContype)
+	L.L.Info("Mime    lib says: %+v", mimeLibTree)
+	L.L.Info("Mime    lib says: isBinary %t", mimeLibIsBinary)
+	L.L.Info("Util stdlib says: isBinary %t", stdUtilIsBinary)
+
 	htCntpIsXml, htCntpMsg := HttpContypeIsXml(httpContype, filext)
 
 	// ==============================
@@ -124,7 +146,7 @@ func AnalyseFile(sCont string, filext string) (*XM.AnalysisRecord, error) {
 		sD = "<!DOCTYPE..> "
 	}
 	if gotRootElm {
-		sR = "root<" + peek.Root.Name + "> "
+		sR = "root<" + peek.Root.TagName + "> "
 	}
 	if peek.HasDTDstuff {
 		sDtd = "<!DTD stuff> "
@@ -198,7 +220,7 @@ func AnalyseFile(sCont string, filext string) (*XM.AnalysisRecord, error) {
 	//  Let's at least try to set the MType.
 	//  We have a root tag and a file extension.
 	// ==========================================
-	rutag := S.ToLower(peek.Root.Name)
+	rutag := S.ToLower(peek.Root.TagName)
 	L.L.Info("XML without DOCTYPE: root<%s> filext<%s> MType<%s>",
 		rutag, filext, pAnlRec.MType)
 	pCntpg.MType = pAnlRec.MType
