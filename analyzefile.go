@@ -95,11 +95,13 @@ func AnalyseFile(sCont string, filext string) (*XM.AnalysisRecord, error) {
 	// =======================
 	var httpContype string
 	var mimeLibTree *mimetype.MIME
+	var mimeLibTreeS string // *mimetype.MIME
 	var mimeLibIsBinary bool
 	var stdUtilIsBinary bool
 	httpContype = http.DetectContentType([]byte(sCont))
 	stdUtilIsBinary = !util.IsText([]byte(sCont))
 	mimeLibTree = mimetype.Detect([]byte(sCont))
+	mimeLibTreeS = mimeLibTree.String()
 	mimeLibIsBinary = true
 	for mime := mimeLibTree; mime != nil; mime = mime.Parent() {
 		if mime.Is("text/plain") {
@@ -107,8 +109,10 @@ func AnalyseFile(sCont string, filext string) (*XM.AnalysisRecord, error) {
 		}
 	}
 	httpContype = S.TrimSuffix(httpContype, "; charset=utf-8")
+	mimeLibTreeS = S.TrimSuffix(mimeLibTreeS, "; charset=utf-8")
 	L.L.Info("HTTP stdlib says: " + httpContype)
-	L.L.Info("Mime    lib says: %+v", mimeLibTree)
+	// L.L.Info("Mime    lib says: %+v", mimeLibTree)
+	L.L.Info("Mime    lib says: " + mimeLibTreeS)
 	L.L.Info("Mime    lib says: isBinary %t", mimeLibIsBinary)
 	L.L.Info("Util stdlib says: isBinary %t", stdUtilIsBinary)
 
