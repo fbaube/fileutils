@@ -8,7 +8,8 @@ import (
 	XM "github.com/fbaube/xmlmodels"
 )
 
-// DoContentTypes_non_xml is TBS.
+// DoContentTypes_non_xml is called (1) when the content is identified as binary,
+// and (2) TBS,
 //
 func DoContentTypes_non_xml(sniftMT, sCont, filext string) *XM.ContypingInfo {
 	// theFileExt includes a leading "."

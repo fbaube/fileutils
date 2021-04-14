@@ -23,23 +23,25 @@ import (
 // presence of XML. When a file is identified as XML, we have much more
 // info available, so processing becomes both simpler and more complicated.
 //
+// Binary content is tagged as such and no further examination is done.
+// So, the basic top-level classificaton of content is:
+// (1) Binary
+// (2) XML (when DOCTYPE is detected)
+// (3) Everything else (incl. plain text, Markdown, and XML/HTML that lacks DOCTYPE)
+//
 // The second argument "filext" can be any filepath; the Go stdlib is used
 // to split off the file extension. It can also be "", if (for example) the
 // content is entered interactively, without a file name or assigned MIME type.
 //
-// If the first argument "sCont" (the content) is zero-length (or less than
-// six bytes) return (nil, nil).
+// If the first argument "sCont" (the content) is less than six bytes, return (nil, nil).
 //
 // The return value is an XM.AnalysisRecord, which has a BUNCH of fields.
 //
 func AnalyseFile(sCont string, filext string) (*XM.AnalysisRecord, error) {
 
-	// pCntpg is ContypingInfo is FileExt MimeType MType Doctype IsLwDita IsProcbl
-	var pCntpg *XM.ContypingInfo
-	// pAnlRec is AnalysisRecord is basicly all analysis results, incl. ContypingInfo
-	var pAnlRec *XM.AnalysisRecord
-	pAnlRec = new(XM.AnalysisRecord)
-
+	// ===========================
+	//  Handle pathological cases
+	// ===========================
 	if sCont == "" {
 		L.L.Warning("Cannot analyze zero-length content")
 		return nil, errors.New("cannot analyze zero-length content")
@@ -48,60 +50,33 @@ func AnalyseFile(sCont string, filext string) (*XM.AnalysisRecord, error) {
 		L.L.Warning("Content is too short (%d bytes) to analyse", len(sCont))
 		return nil, errors.New(fmt.Sprintf("content is too short (%d bytes) to analyse", len(sCont)))
 	}
+	// ===================
+	//  Prepare variables
+	// ===================
+	// pAnlRec is AnalysisRecord is basicly all of our analysis results, incl. ContypingInfo
+	var pAnlRec *XM.AnalysisRecord
+	// pCntpg is ContypingInfo is all of: FileExt MimeType MType Doctype IsLwDita IsProcbl
+	var pCntpg *XM.ContypingInfo
+	pAnlRec = new(XM.AnalysisRecord)
 	// A trailing dot in the filename provides no filetype info.
 	filext = FP.Ext(filext)
 	if filext == "." {
 		filext = ""
 	}
-	// fmt.Printf("--> Analysing file: len<%d> filext<%s> \n", len(sCont), filext)
-
-	// ========================================
-	//  MAIN PRELIMINARY ANALYSIS: Check for
-	//  root tag and other top-level XML stuff
-	// ========================================
-	var peek *XM.XmlStructurePeek
-	// Peek also sets KeyElms (Root,Meta,Text)
-	peek = XM.PeekAtStructure_xml(sCont)
-	// NOTE! An error from oeeking might be from, for example, applying XML
-	// parsing to a binary file. So, an error should not be fatal.
-	var xmlParsingFailed bool
-	if peek.HasError() {
-		// return nil, fmt.Errorf("fu.peekXml failed: %w", Peek.GetError())
-		println("--> XML parsing got error:", peek.GetError())
-		xmlParsingFailed = true
-	}
-	// =======================================
-	//  If it's DTD stuff, we're done.
-	// =======================================
-	if peek.HasDTDstuff && SU.IsInSliceIgnoreCase(filext, XM.DTDtypeFileExtensions) {
-		L.L.Okay("DTD content detected (& filext<%s>)", filext)
-		pAnlRec.MimeType = "application/xml-dtd"
-		pAnlRec.MType = "xml/sch/" + filext[1:]
-		// Could allocate and fill field XmlInfo
-		return pAnlRec, nil
-	}
-	// ===============================
-	//  Set variables, including
-	//  supporting analysis by stdlib
-	// ===============================
-	gotRootElm := (peek.ContentityStructure.CheckXmlSections())
-	gotDoctype := (peek.Doctype != "")
-	gotPreambl := (peek.Preamble != "")
-	gotSomeXml := (gotRootElm || gotDoctype || gotPreambl)
-	// Note that stdlib assigns "text/html" to DITA maps :-/
-
-	// =======================
+	L.L.Dbg("Analysing file: len<%d> filext<%s>", len(sCont), filext)
+	// ========================
 	//  Content type detection
-	// =======================
+	// ========================
 	var httpContype string
 	var mimeLibTree *mimetype.MIME
 	var mimeLibTreeS string // *mimetype.MIME
-	var mimeLibIsBinary bool
-	var stdUtilIsBinary bool
+	var mimeLibIsBinary, stdUtilIsBinary, isBinary bool
+	// MIME type ?
 	httpContype = http.DetectContentType([]byte(sCont))
-	stdUtilIsBinary = !util.IsText([]byte(sCont))
 	mimeLibTree = mimetype.Detect([]byte(sCont))
 	mimeLibTreeS = mimeLibTree.String()
+	// Binary ?
+	stdUtilIsBinary = !util.IsText([]byte(sCont))
 	mimeLibIsBinary = true
 	for mime := mimeLibTree; mime != nil; mime = mime.Parent() {
 		if mime.Is("text/plain") {
@@ -110,17 +85,92 @@ func AnalyseFile(sCont string, filext string) (*XM.AnalysisRecord, error) {
 	}
 	httpContype = S.TrimSuffix(httpContype, "; charset=utf-8")
 	mimeLibTreeS = S.TrimSuffix(mimeLibTreeS, "; charset=utf-8")
-	L.L.Info("HTTP stdlib says: " + httpContype)
-	// L.L.Info("Mime    lib says: %+v", mimeLibTree)
-	L.L.Info("Mime    lib says: " + mimeLibTreeS)
-	L.L.Info("Mime    lib says: isBinary %t", mimeLibIsBinary)
-	L.L.Info("Util stdlib says: isBinary %t", stdUtilIsBinary)
+	var sMime string
+	if httpContype == mimeLibTreeS {
+		sMime = httpContype
+	} else {
+		sMime = httpContype + "/" + mimeLibTreeS
+	}
+	L.L.Info("filext<%s> snift-MIME-type: %s", filext, sMime)
 
-	htCntpIsXml, htCntpMsg := HttpContypeIsXml(httpContype, filext)
+	// ===========================
+	//  Check for & handle BINARY
+	// ===========================
+	isBinary = mimeLibIsBinary
+	if stdUtilIsBinary != mimeLibIsBinary {
+		L.L.Warning("MIME disagreement re is-binary: http-stdlib<%t> mime-lib<%t>",
+			stdUtilIsBinary, mimeLibIsBinary)
+	}
+	if isBinary {
+		// For BINARY we won't ourselves do any more processing, so we can
+		// basically trust that the sniffed MIME type is sufficient, and return.
+		pAnlRec.MimeType = sMime
+		pAnlRec.MType = "bin/"
+		L.L.Dbg("BINARY!")
+		if S.HasPrefix(sMime, "image/") {
+			hasEPS := S.Contains(sMime, "eps")
+			hasTXT := S.Contains(sMime, "text") || S.Contains(sMime, "txt")
+			if hasTXT || hasEPS {
+				// TODO
+				L.L.Warning("EPS/TXT confusion for MIME type: " + sMime)
+				pAnlRec.MType = "txt/img/??!"
+			}
+			return pAnlRec, nil
+		}
+	}
+	// =====================
+	//  Quick check for XML
+	//  based on MIME type
+	// =====================
+	hIsXml, hMsg := HttpContypeIsXml("http-stdlib", httpContype, filext)
+	mIsXml, mMsg := HttpContypeIsXml("3p-mime-lib", mimeLibTreeS, filext)
+	if hIsXml || mIsXml {
+		L.L.Info("(isXml:%t) %s", hIsXml, hMsg)
+		L.L.Info("(isXml:%t) %s", mIsXml, mMsg)
+	} else {
+		L.L.Info("XML not detected yet")
+	}
 
-	// ==============================
-	//  If it's not XML, we're done.
-	// ==============================
+	// ===================================
+	//  MAIN XML PRELIMINARY ANALYSIS:
+	//  Peek into file to look for root
+	//  tag and other top-level XML stuff
+	// ===================================
+
+	// Peek also sets KeyElms (Root,Meta,Text)
+	var peek *XM.XmlStructurePeek
+	peek = XM.PeekAtStructure_xml(sCont)
+	// NOTE! An error from peeking might be from, for
+	// example, applying XML parsing to a Markdown file.
+	// So, an error should not be fatal.
+	var xmlParsingFailed bool
+	if peek.HasError() {
+		L.L.Info("XML parsing got error: " + peek.GetError().Error())
+		xmlParsingFailed = true
+	}
+	// ===============================
+	//  If it's DTD stuff, we're done
+	// ===============================
+	if peek.HasDTDstuff && SU.IsInSliceIgnoreCase(filext, XM.DTDtypeFileExtensions) {
+		L.L.Okay("DTD content detected (& filext<%s>)", filext)
+		pAnlRec.MimeType = "application/xml-dtd"
+		pAnlRec.MType = "xml/sch/" + S.ToLower(filext[1:])
+		L.L.Warning("should allocate and fill field XmlInfo")
+		return pAnlRec, nil
+	}
+	// ===============================
+	//  Set bool variables, including
+	//  supporting analysis by stdlib
+	// ===============================
+	gotRootElm := (peek.ContentityStructure.CheckXmlSections())
+	gotDoctype := (peek.Doctype != "")
+	gotPreambl := (peek.Preamble != "")
+	gotSomeXml := (gotRootElm || gotDoctype || gotPreambl)
+	// Note that stdlib assigns "text/html" to DITA maps :-/
+
+	// ================================
+	//  So if it's not XML, we're done
+	// ================================
 	if xmlParsingFailed || !gotSomeXml {
 		pAnlRec.ContypingInfo = *DoContentTypes_non_xml(httpContype, sCont, filext)
 		L.L.Okay("Non-XML: " + pAnlRec.ContypingInfo.String())
@@ -134,8 +184,11 @@ func AnalyseFile(sCont string, filext string) (*XM.AnalysisRecord, error) {
 	// ======================================
 	if xmlParsingFailed {
 		L.L.Dbg("Does not seem to be XML")
-		if htCntpIsXml {
-			L.L.Dbg("Although HTTP stdlib seems to think it is:", htCntpMsg)
+		if hIsXml {
+			L.L.Dbg("Although http-stdlib seems to think it is:", hMsg)
+		}
+		if mIsXml {
+			L.L.Dbg("Although 3p-mime-lib seems to think it is:", mMsg)
 		}
 	}
 
@@ -265,7 +318,7 @@ func AnalyseFile(sCont string, filext string) (*XM.AnalysisRecord, error) {
 	L.L.Warning("fu.af: TODO set more XML info")
 	// pAnlRec.XmlInfo = *new(XM.XmlInfo)
 
-	L.L.Info("fu.af: MType<%s> xcntp<%s> ditaFlav<%s> ditaCntp<%s> DT<%s> \n",
+	L.L.Info("fu.af: MType<%s> xcntp<%s> ditaFlav<%s> ditaCntp<%s> DT<%s>",
 		pAnlRec.MType, pAnlRec.XmlContype, // pAnlRec.XmlPreambleFields,
 		pAnlRec.DitaFlavor, pAnlRec.DitaContype, pAnlRec.XmlDoctypeFields)
 	// println("--> fu.af: MetaRaw:", pAnlRec.MetaRaw())
@@ -284,23 +337,24 @@ func CollectKeysOfNonNilMapValues(M map[string]*XM.FilePosition) []string {
 	return ss
 }
 
-func HttpContypeIsXml(httpContype string, filext string) (isXml bool, msg string) {
+func HttpContypeIsXml(src, sContype, filext string) (isXml bool, msg string) {
+	src += " contype-detection "
 
-	if S.Contains(httpContype, "xml") {
-		return true, "HTTP contype-detection got XML (in MIME type)"
+	if S.Contains(sContype, "xml") {
+		return true, src + "got XML (in MIME type)"
 	}
-	if httpContype == "text/html" {
-		return true, "HTTP contype-detection got XML (text/html, HDITA?)"
+	if sContype == "text/html" {
+		return true, src + "got XML (text/html, HDITA?)"
 	}
-	if S.HasPrefix(httpContype, "text/") &&
+	if S.HasPrefix(sContype, "text/") &&
 		(filext == ".dita" || filext == ".ditamap" || filext == ".map") {
-		return true, "HTTP contype-detection got XML (text/dita-filext)"
+		return true, src + "got XML (text/dita-filext)"
 	}
-	if S.Contains(httpContype, "ml") {
-		return true, "HTTP contype-detection got <ml>"
+	if S.Contains(sContype, "ml") {
+		return true, src + "got <ml>"
 	}
-	if S.Contains(httpContype, "svg") {
-		return true, "HTTP contype-detection got <svg>"
+	if S.Contains(sContype, "svg") {
+		return true, src + "got <svg>"
 	}
 	return false, ""
 }
