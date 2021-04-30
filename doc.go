@@ -1,9 +1,7 @@
-// Package fileutils does handy file stuff, like for example build a
-// filepath (struct BasicPath) and read in the file (struct BasicContent)
-// and figure out its content type (struct CheckedContent), or search a
-// directory tree for certain file types. 
+// Package fileutils does handy stuff at the level of files and directories.
+// This includes basic file content snalysis an categorisation.
 //
-// AbsFilePath, versus RelFilePath
+// AbsoluteFilePath/AbsFP versus RelativeFilePath/RelFP
 //
 // Many functions in this package are agnostic about getting an absolute
 // or a relative path argument, so these functions take string arguments.
@@ -22,8 +20,8 @@
 //
 // Because this package supports the processing of mixed content in
 // the three markup formats supported by LwDITA (Lightweight DITA),
-// it introduces the idea of an MType, analogous to a MIME type,
-// stored as a slice [3]string. See file mtype.go .
+// it introduces the idea of an MType, analogous to a MIME type.
+// See file mtype.go .
 //
 // Dependencies on package os
 //
@@ -50,6 +48,8 @@
 //
 // A mix of pure functions and os.File methods.
 // See comments below in source file.
+//
+// 4) Maybe also some dependencies on package aferoutils
 //
 package fileutils
 

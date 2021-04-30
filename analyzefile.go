@@ -65,6 +65,11 @@ func AnalyseFile(sCont string, filext string) (*XM.AnalysisRecord, error) {
 	}
 	L.L.Dbg("Analysing file: len<%d> filext<%s>", len(sCont), filext)
 	// ========================
+	//  Try a coupla shortcuts
+	// ========================
+	cheatYaml := S.HasPrefix(sCont, "---\n")
+	cheatXml := S.HasPrefix(sCont, "<?xml")
+	// ========================
 	//  Content type detection
 	// ========================
 	var httpContype string
@@ -102,6 +107,9 @@ func AnalyseFile(sCont string, filext string) (*XM.AnalysisRecord, error) {
 			stdUtilIsBinary, mimeLibIsBinary)
 	}
 	if isBinary {
+		if cheatYaml || cheatXml {
+			L.L.Panic("analyzefile: binary + yaml/xml")
+		}
 		// For BINARY we won't ourselves do any more processing, so we can
 		// basically trust that the sniffed MIME type is sufficient, and return.
 		pAnlRec.MimeType = sMime
@@ -155,7 +163,7 @@ func AnalyseFile(sCont string, filext string) (*XM.AnalysisRecord, error) {
 		L.L.Okay("DTD content detected (& filext<%s>)", filext)
 		pAnlRec.MimeType = "application/xml-dtd"
 		pAnlRec.MType = "xml/sch/" + S.ToLower(filext[1:])
-		L.L.Warning("should allocate and fill field XmlInfo")
+		L.L.Warning("DDT stuff: should allocate and fill field XmlInfo")
 		return pAnlRec, nil
 	}
 	// ===============================
@@ -172,9 +180,45 @@ func AnalyseFile(sCont string, filext string) (*XM.AnalysisRecord, error) {
 	//  So if it's not XML, we're done
 	// ================================
 	if xmlParsingFailed || !gotSomeXml {
-		pAnlRec.ContypingInfo = *DoContentTypes_non_xml(httpContype, sCont, filext)
+		if cheatXml {
+			L.L.Panic("analyzefile: non-xml + xml")
+		}
+		pAnlRec.ContypingInfo = *DoContypingInfo_non_xml(httpContype, sCont, filext)
 		L.L.Okay("Non-XML: " + pAnlRec.ContypingInfo.String())
-		L.L.Warning("Fix the content extents")
+		// Check for YAMNL metadata
+		iEnd, e := SU.YamlMetadataHeaderRange(sCont)
+		// if there is an error, it will mess up parsing the file, so just exit.
+		if e != nil {
+			L.L.Error("Metadata header YAML error: " + e.Error())
+			return pAnlRec, fmt.Errorf("metadata header YAML error: %w", e)
+		}
+		// Default: no YAML metadata found
+		pAnlRec.Text.Beg = *XM.NewFilePosition(0)
+		pAnlRec.Text.End = *XM.NewFilePosition(len(sCont))
+		pAnlRec.Meta.Beg = *XM.NewFilePosition(0)
+		pAnlRec.Meta.End = *XM.NewFilePosition(0)
+		// No YAML metadata found ?
+		if iEnd <= 0 {
+			pAnlRec.Meta.Beg = *XM.NewFilePosition(0)
+			pAnlRec.Meta.End = *XM.NewFilePosition(0)
+			pAnlRec.Text.Beg = *XM.NewFilePosition(0)
+			pAnlRec.Text.End = *XM.NewFilePosition(len(sCont))
+		} else {
+			// Found YAML metadata
+			s2 := SU.TrimYamlMetadataDelimiters(sCont[:iEnd])
+			ps, e := SU.GetYamlMetadataAsPropSet(s2)
+			if e != nil {
+				L.L.Error("loading YAML: " + e.Error())
+				return pAnlRec, fmt.Errorf("loading YAML: %w", e)
+			}
+			// SUCCESS! Set ranges.
+			pAnlRec.Meta.Beg = *XM.NewFilePosition(0)
+			pAnlRec.Meta.End = *XM.NewFilePosition(iEnd)
+			pAnlRec.Text.Beg = *XM.NewFilePosition(iEnd)
+			pAnlRec.Text.End = *XM.NewFilePosition(len(sCont))
+
+			pAnlRec.MetaProps = ps
+		}
 		L.L.Dbg("|RAW|" + pAnlRec.Raw + "|END|")
 		return pAnlRec, nil
 	}
@@ -195,6 +239,9 @@ func AnalyseFile(sCont string, filext string) (*XM.AnalysisRecord, error) {
 	// =========================================
 	//  So from this point onward, WE HAVE XML.
 	// =========================================
+	if cheatYaml {
+		L.L.Panic("analyzefile: xml + yaml")
+	}
 	var sP, sD, sR, sDtd string
 	if gotPreambl {
 		sP = "<?xml..> "
