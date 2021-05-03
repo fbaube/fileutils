@@ -64,6 +64,11 @@ func AnalyseFile(sCont string, filext string) (*XM.AnalysisRecord, error) {
 		filext = ""
 	}
 	L.L.Dbg("Analysing file: len<%d> filext<%s>", len(sCont), filext)
+	// =====================================
+	//   Don't forget to set the content.
+	// (Omitting this caused a lot of bugs.)
+	// =====================================
+	pAnlRec.Raw = sCont
 	// ========================
 	//  Try a coupla shortcuts
 	// ========================
@@ -218,6 +223,7 @@ func AnalyseFile(sCont string, filext string) (*XM.AnalysisRecord, error) {
 			pAnlRec.Text.End = *XM.NewFilePosition(len(sCont))
 
 			pAnlRec.MetaProps = ps
+			L.L.Dbg("Got YAML: " + s2)
 		}
 		L.L.Dbg("|RAW|" + pAnlRec.Raw + "|END|")
 		return pAnlRec, nil
@@ -282,6 +288,9 @@ func AnalyseFile(sCont string, filext string) (*XM.AnalysisRecord, error) {
 	//  Time to do some heavy lifting.
 	// ================================
 	L.L.Progress("Now split the file")
+	if pAnlRec.Raw == "" {
+		L.L.Error("analyzeFile XML: nil Raw")
+	}
 	pAnlRec.ContentityStructure = peek.ContentityStructure
 	pAnlRec.MakeXmlContentitySections(sCont)
 	/*
@@ -385,7 +394,7 @@ func CollectKeysOfNonNilMapValues(M map[string]*XM.FilePosition) []string {
 }
 
 func HttpContypeIsXml(src, sContype, filext string) (isXml bool, msg string) {
-	src += " contype-detection "
+	src += " contype-det'n "
 
 	if S.Contains(sContype, "xml") {
 		return true, src + "got XML (in MIME type)"

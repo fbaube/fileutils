@@ -45,7 +45,7 @@ func DoContypingInfo_non_xml(sniftMT, sCont, filext string) *XM.ContypingInfo {
 	if S.HasPrefix(sniftMT, "text/") &&
 		SU.IsInSliceIgnoreCase(filext, XM.MarkdownFileExtensions) {
 		ret.MimeType = "text/markdown"
-		ret.MType = "mkdn/tpcOrMap/[flavrTBS]"
+		ret.MType = "mkdn/tpcOrMap/?fmt"
 		return ret
 	}
 	// fmt.Printf("(DD) (%s:%s) Mtype(%s) \n",
