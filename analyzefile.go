@@ -101,7 +101,7 @@ func AnalyseFile(sCont string, filext string) (*XM.AnalysisRecord, error) {
 	} else {
 		sMime = httpContype + "/" + mimeLibTreeS
 	}
-	L.L.Info("filext<%s> snift-MIME-type: %s", filext, sMime)
+	L.L.Info("<%s> snift-MIME-type: %s", filext, sMime)
 
 	// ===========================
 	//  Check for & handle BINARY
@@ -138,8 +138,15 @@ func AnalyseFile(sCont string, filext string) (*XM.AnalysisRecord, error) {
 	hIsXml, hMsg := HttpContypeIsXml("http-stdlib", httpContype, filext)
 	mIsXml, mMsg := HttpContypeIsXml("3p-mime-lib", mimeLibTreeS, filext)
 	if hIsXml || mIsXml {
-		L.L.Info("(isXml:%t) %s", hIsXml, hMsg)
-		L.L.Info("(isXml:%t) %s", mIsXml, mMsg)
+		hS, mS := "is-", "is-"
+		if !hIsXml {
+			hS = "not"
+		}
+		if !mIsXml {
+			mS = "not"
+		}
+		L.L.Info("(%sXML) %s", hS, hMsg)
+		L.L.Info("(%sXML) %s", mS, mMsg)
 	} else {
 		L.L.Info("XML not detected yet")
 	}
@@ -223,9 +230,9 @@ func AnalyseFile(sCont string, filext string) (*XM.AnalysisRecord, error) {
 			pAnlRec.Text.End = *XM.NewFilePosition(len(sCont))
 
 			pAnlRec.MetaProps = ps
-			L.L.Dbg("Got YAML: " + s2)
+			L.L.Dbg("Got YAML metadata: " + s2)
 		}
-		L.L.Dbg("|RAW|" + pAnlRec.Raw + "|END|")
+		L.L.Dbg("|RAW|" + SU.NormalizeWhitespace(pAnlRec.Raw) + "|END|")
 		return pAnlRec, nil
 	}
 
@@ -334,8 +341,8 @@ func AnalyseFile(sCont string, filext string) (*XM.AnalysisRecord, error) {
 	//  We have a root tag and a file extension.
 	// ==========================================
 	rutag := S.ToLower(peek.Root.TagName)
-	L.L.Info("XML without DOCTYPE: root<%s> filext<%s> MType<%s>",
-		rutag, filext, pAnlRec.MType)
+	L.L.Info("XML without DOCTYPE: <%s> root<%s> MType<%s>",
+		filext, rutag, pAnlRec.MType)
 	pCntpg.MType = pAnlRec.MType
 	// Do some easy cases
 	if rutag == "html" && (filext == ".html" || filext == ".htm") {
@@ -374,9 +381,11 @@ func AnalyseFile(sCont string, filext string) (*XM.AnalysisRecord, error) {
 	L.L.Warning("fu.af: TODO set more XML info")
 	// pAnlRec.XmlInfo = *new(XM.XmlInfo)
 
-	L.L.Info("fu.af: MType<%s> xcntp<%s> ditaFlav<%s> ditaCntp<%s> DT<%s>",
+	// L.L.Info("fu.af: MType<%s> xcntp<%s> ditaFlav<%s> ditaCntp<%s> DT<%s>",
+	L.L.Info("fu.af: MType<%s> xcntp<%s> dita:TBS DcTp<%s>",
 		pAnlRec.MType, pAnlRec.XmlContype, // pAnlRec.XmlPreambleFields,
-		pAnlRec.DitaFlavor, pAnlRec.DitaContype, pAnlRec.XmlDoctypeFields)
+		// pAnlRec.DitaFlavor, pAnlRec.DitaContype,
+		pAnlRec.XmlDoctypeFields)
 	// println("--> fu.af: MetaRaw:", pAnlRec.MetaRaw())
 	// println("--> fu.af: TextRaw:", pAnlRec.TextRaw())
 
