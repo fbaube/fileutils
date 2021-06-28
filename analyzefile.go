@@ -63,7 +63,7 @@ func AnalyseFile(sCont string, filext string) (*XM.AnalysisRecord, error) {
 	if filext == "." {
 		filext = ""
 	}
-	L.L.Dbg("Analysing file: len<%d> filext<%s>", len(sCont), filext)
+	L.L.Dbg("Analysing file: <%s>[%d]", filext, len(sCont))
 	// =====================================
 	//   Don't forget to set the content.
 	// (Omitting this caused a lot of bugs.)
