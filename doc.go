@@ -22,6 +22,10 @@
 // the three markup formats supported by LwDITA (Lightweight DITA),
 // it introduces the idea of an MType, analogous to a MIME type.
 // See file mtype.go .
+
+// Dependencies
+//
+// This package imports github.com/fbaube/(stringutils,wasmutils)
 //
 // Dependencies on package os
 //
