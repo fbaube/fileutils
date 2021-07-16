@@ -1,10 +1,12 @@
 package main
 
-import(
-  // flag "github.com/spf13/pflag"
-  "fmt"
-  "os"
-  FU "github.com/fbaube/fileutils"
+import (
+	// flag "github.com/spf13/pflag"
+	"fmt"
+	"os"
+
+	"github.com/fbaube/db"
+	FU "github.com/fbaube/fileutils"
 )
 
 var myAppName = "filetype"
@@ -23,15 +25,20 @@ func errorbarf(e error, s string) {
 }
 
 func main() {
-  if len(os.Args) < 2 {
-    println(myAppName, ": Describe file using fbaube/fileutils")
-    println("Usage:", myAppName, "myfilename")
-    os.Exit(0)
-  }
-  filename := os.Args[1]
-  fileinfo := FU.NewPathInfo(filename)
-  println("File info:", fileinfo.String())
-  chkdcont := FU.NewCheckedContent(fileinfo)
-  fmt.Printf("%s \n", chkdcont)
-  os.Exit(0)
+	if len(os.Args) < 2 {
+		println(myAppName, ": Describe file using gh/fbaube/fileutils")
+		println("Usage:", myAppName, "myfilename")
+		os.Exit(0)
+	}
+	filename := os.Args[1]
+	fileinfo := FU.NewPathProps(filename)
+	println("File info:", fileinfo.String())
+	chkdcont := db.NewContentityRecord(fileinfo)
+	/*
+		if chkdcont.GetError() != nil {
+			println("Error encountered:", "TBS")
+		}
+	*/
+	fmt.Printf("%s \n", chkdcont)
+	os.Exit(0)
 }
