@@ -12,7 +12,7 @@ import (
 
 	L "github.com/fbaube/mlog"
 	SU "github.com/fbaube/stringutils"
-	XM "github.com/fbaube/xmlmodels"
+	XU "github.com/fbaube/xmlutils"
 )
 
 // <!ELEMENT  map     (topicmeta?, (topicref | keydef)*)  >
@@ -35,9 +35,9 @@ import (
 //
 // If the first argument "sCont" (the content) is less than six bytes, return (nil, nil).
 //
-// The return value is an XM.AnalysisRecord, which has a BUNCH of fields.
+// The return value is an XU.AnalysisRecord, which has a BUNCH of fields.
 //
-func AnalyseFile(sCont string, filext string) (*XM.AnalysisRecord, error) {
+func AnalyseFile(sCont string, filext string) (*XU.AnalysisRecord, error) {
 
 	// ===========================
 	//  Handle pathological cases
@@ -54,10 +54,10 @@ func AnalyseFile(sCont string, filext string) (*XM.AnalysisRecord, error) {
 	//  Prepare variables
 	// ===================
 	// pAnlRec is AnalysisRecord is basicly all of our analysis results, incl. ContypingInfo
-	var pAnlRec *XM.AnalysisRecord
+	var pAnlRec *XU.AnalysisRecord
 	// pCntpg is ContypingInfo is all of: FileExt MimeType MType Doctype IsLwDita IsProcbl
-	var pCntpg *XM.ContypingInfo
-	pAnlRec = new(XM.AnalysisRecord)
+	var pCntpg *XU.ContypingInfo
+	pAnlRec = new(XU.AnalysisRecord)
 	// A trailing dot in the filename provides no filetype info.
 	filext = FP.Ext(filext)
 	if filext == "." {
@@ -158,8 +158,8 @@ func AnalyseFile(sCont string, filext string) (*XM.AnalysisRecord, error) {
 	// ===================================
 
 	// Peek also sets KeyElms (Root,Meta,Text)
-	var peek *XM.XmlStructurePeek
-	peek = XM.PeekAtStructure_xml(sCont)
+	var peek *XU.XmlStructurePeek
+	peek = XU.PeekAtStructure_xml(sCont)
 	// NOTE! An error from peeking might be from, for
 	// example, applying XML parsing to a Markdown file.
 	// So, an error should not be fatal.
@@ -171,7 +171,7 @@ func AnalyseFile(sCont string, filext string) (*XM.AnalysisRecord, error) {
 	// ===============================
 	//  If it's DTD stuff, we're done
 	// ===============================
-	if peek.HasDTDstuff && SU.IsInSliceIgnoreCase(filext, XM.DTDtypeFileExtensions) {
+	if peek.HasDTDstuff && SU.IsInSliceIgnoreCase(filext, XU.DTDtypeFileExtensions) {
 		L.L.Okay("DTD content detected (& filext<%s>)", filext)
 		pAnlRec.MimeType = "application/xml-dtd"
 		pAnlRec.MType = "xml/sch/" + S.ToLower(filext[1:])
@@ -205,16 +205,16 @@ func AnalyseFile(sCont string, filext string) (*XM.AnalysisRecord, error) {
 			return pAnlRec, fmt.Errorf("metadata header YAML error: %w", e)
 		}
 		// Default: no YAML metadata found
-		pAnlRec.Text.Beg = *XM.NewFilePosition(0)
-		pAnlRec.Text.End = *XM.NewFilePosition(len(sCont))
-		pAnlRec.Meta.Beg = *XM.NewFilePosition(0)
-		pAnlRec.Meta.End = *XM.NewFilePosition(0)
+		pAnlRec.Text.Beg = *XU.NewFilePosition(0)
+		pAnlRec.Text.End = *XU.NewFilePosition(len(sCont))
+		pAnlRec.Meta.Beg = *XU.NewFilePosition(0)
+		pAnlRec.Meta.End = *XU.NewFilePosition(0)
 		// No YAML metadata found ?
 		if iEnd <= 0 {
-			pAnlRec.Meta.Beg = *XM.NewFilePosition(0)
-			pAnlRec.Meta.End = *XM.NewFilePosition(0)
-			pAnlRec.Text.Beg = *XM.NewFilePosition(0)
-			pAnlRec.Text.End = *XM.NewFilePosition(len(sCont))
+			pAnlRec.Meta.Beg = *XU.NewFilePosition(0)
+			pAnlRec.Meta.End = *XU.NewFilePosition(0)
+			pAnlRec.Text.Beg = *XU.NewFilePosition(0)
+			pAnlRec.Text.End = *XU.NewFilePosition(len(sCont))
 		} else {
 			// Found YAML metadata
 			s2 := SU.TrimYamlMetadataDelimiters(sCont[:iEnd])
@@ -224,10 +224,10 @@ func AnalyseFile(sCont string, filext string) (*XM.AnalysisRecord, error) {
 				return pAnlRec, fmt.Errorf("loading YAML: %w", e)
 			}
 			// SUCCESS! Set ranges.
-			pAnlRec.Meta.Beg = *XM.NewFilePosition(0)
-			pAnlRec.Meta.End = *XM.NewFilePosition(iEnd)
-			pAnlRec.Text.Beg = *XM.NewFilePosition(iEnd)
-			pAnlRec.Text.End = *XM.NewFilePosition(len(sCont))
+			pAnlRec.Meta.Beg = *XU.NewFilePosition(0)
+			pAnlRec.Meta.End = *XU.NewFilePosition(iEnd)
+			pAnlRec.Text.Beg = *XU.NewFilePosition(iEnd)
+			pAnlRec.Text.End = *XU.NewFilePosition(len(sCont))
 
 			pAnlRec.MetaProps = ps
 			L.L.Dbg("Got YAML metadata: " + s2)
@@ -274,17 +274,17 @@ func AnalyseFile(sCont string, filext string) (*XM.AnalysisRecord, error) {
 	}
 
 	// Preliminaries for deeper analysis
-	pCntpg = new(XM.ContypingInfo)
+	pCntpg = new(XU.ContypingInfo)
 	pCntpg.FileExt = filext
 	pCntpg.MimeType = httpContype
 	var e error
 	// pAnlRec.MType = ""
 	// var isLwDita bool
 
-	var pPRF *XM.XmlPreambleFields
+	var pPRF *XU.XmlPreambleFields
 	if gotPreambl {
 		// println("preamble:", preamble)
-		pPRF, e = XM.NewXmlPreambleFields(peek.Preamble)
+		pPRF, e = XU.NewXmlPreambleFields(peek.Preamble)
 		if e != nil {
 			println("xm.peek: preamble failure in:", peek.Preamble)
 			return nil, fmt.Errorf("xm<>>e<> preamble failure: %w", e)
@@ -316,7 +316,7 @@ func AnalyseFile(sCont string, filext string) (*XM.AnalysisRecord, error) {
 	if peek.Doctype != "" {
 		// We are here if we got a DOCTYPE; we also have a file extension,
 		// and we should have a root tag (or else the DOCTYPE makes no sense !)
-		var pXDTF *XM.XmlDoctypeFields
+		var pXDTF *XU.XmlDoctypeFields
 		pXDTF = pCntpg.AnalyzeXmlDoctype(peek.Doctype)
 		if pXDTF.HasError() {
 			panic("FIXME:" + pXDTF.Error())
@@ -349,8 +349,8 @@ func AnalyseFile(sCont string, filext string) (*XM.AnalysisRecord, error) {
 		pCntpg.MType = "html/cnt/html5"
 	} else if rutag == "html" && S.HasPrefix(filext, ".xht") {
 		pCntpg.MType = "html/cnt/xhtml"
-	} else if SU.IsInSliceIgnoreCase(rutag, XM.DITArootElms) &&
-		SU.IsInSliceIgnoreCase(filext, XM.DITAtypeFileExtensions) {
+	} else if SU.IsInSliceIgnoreCase(rutag, XU.DITArootElms) &&
+		SU.IsInSliceIgnoreCase(filext, XU.DITAtypeFileExtensions) {
 		pCntpg.MType = "xml/cnt/" + rutag
 		if rutag == "bookmap" && S.HasSuffix(filext, "map") {
 			pCntpg.MType = "xml/map/" + rutag
@@ -366,20 +366,20 @@ func AnalyseFile(sCont string, filext string) (*XM.AnalysisRecord, error) {
 	// Now we should fill in all the detail fields.
 	pAnlRec.XmlContype = "RootTagData"
 	// Redundant!
-	// pAnlRec.XmlDoctype = XM.XmlDoctype("DOCTYPE " + Peek.Doctype)
+	// pAnlRec.XmlDoctype = XU.XmlDoctype("DOCTYPE " + Peek.Doctype)
 	// ?? pAnlRec.DoctypeFields = pDF
 	if pPRF != nil {
 		pAnlRec.XmlPreambleFields = pPRF
 	} else {
 		// SKIP
-		// pBA.XmlPreambleFields = XM.STD_PreambleFields
+		// pBA.XmlPreambleFields = XU.STD_PreambleFields
 	}
 	// pBA.DoctypeIsDeclared  =  true
 	pAnlRec.DitaFlavor = "TBS"
 	pAnlRec.DitaContype = "TBS"
 
 	L.L.Warning("fu.af: TODO set more XML info")
-	// pAnlRec.XmlInfo = *new(XM.XmlInfo)
+	// pAnlRec.XmlInfo = *new(XU.XmlInfo)
 
 	// L.L.Info("fu.af: MType<%s> xcntp<%s> ditaFlav<%s> ditaCntp<%s> DT<%s>",
 	L.L.Info("fu.af: MType<%s> xcntp<%s> dita:TBS DcTp<%s>",
@@ -392,7 +392,7 @@ func AnalyseFile(sCont string, filext string) (*XM.AnalysisRecord, error) {
 	return pAnlRec, nil
 }
 
-func CollectKeysOfNonNilMapValues(M map[string]*XM.FilePosition) []string {
+func CollectKeysOfNonNilMapValues(M map[string]*XU.FilePosition) []string {
 	var ss []string
 	for K, V := range M {
 		if V != nil {

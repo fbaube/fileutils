@@ -4,7 +4,7 @@ import (
 	S "strings"
 
 	SU "github.com/fbaube/stringutils"
-	XM "github.com/fbaube/xmlmodels"
+	XU "github.com/fbaube/xmlutils"
 )
 
 // DoContentTypes sets MType, MimeType, and IsXml, as follows:
@@ -67,7 +67,7 @@ func DoContentTypes(sniftMimeType, sCont, theFileExt string) (retMimeType, retMT
 
 	// Quick exit: DTDs ( .dtd .mod .ent )
 	if // S.HasPrefix(theContent, "<!") &&
-	SU.IsInSliceIgnoreCase(theFileExt, XM.DTDtypeFileExtensions) {
+	SU.IsInSliceIgnoreCase(theFileExt, XU.DTDtypeFileExtensions) {
 		return "application/xml-dtd", "xml/sch/" + theFileExt[1:]
 	}
 	// Markdown is a tough case, because it's basically a text file.
@@ -77,7 +77,7 @@ func DoContentTypes(sniftMimeType, sCont, theFileExt string) (retMimeType, retMT
 	// at least not more than the first few characters.
 	// So, about the best we can do is check for a known file extensions.
 	if S.HasPrefix(sniftMT, "text/") &&
-		SU.IsInSliceIgnoreCase(theFileExt, XM.MarkdownFileExtensions) {
+		SU.IsInSliceIgnoreCase(theFileExt, XU.MarkdownFileExtensions) {
 		return "text/markdown", "mkdn/tpcOrMap/?fmt"
 	}
 	if sniftMT == "text/html" {

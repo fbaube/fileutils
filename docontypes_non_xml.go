@@ -5,14 +5,14 @@ import (
 
 	L "github.com/fbaube/mlog"
 	SU "github.com/fbaube/stringutils"
-	XM "github.com/fbaube/xmlmodels"
+	XU "github.com/fbaube/xmlutils"
 )
 
 // DoContypingInfo_non_xml is called when the content is identified
 // as non-XML, but it does not expect to see binary content.
-func DoContypingInfo_non_xml(sniftMT, sCont, filext string) *XM.ContypingInfo {
+func DoContypingInfo_non_xml(sniftMT, sCont, filext string) *XU.ContypingInfo {
 	// theFileExt includes a leading "."
-	var ret = new(XM.ContypingInfo)
+	var ret = new(XU.ContypingInfo)
 	ret.FileExt = filext
 	ret.MType = sniftMT
 
@@ -43,7 +43,7 @@ func DoContypingInfo_non_xml(sniftMT, sCont, filext string) *XM.ContypingInfo {
 	// few characters. So, about the best we can do is check for a known
 	// file extensions.
 	if S.HasPrefix(sniftMT, "text/") &&
-		SU.IsInSliceIgnoreCase(filext, XM.MarkdownFileExtensions) {
+		SU.IsInSliceIgnoreCase(filext, XU.MarkdownFileExtensions) {
 		ret.MimeType = "text/markdown"
 		ret.MType = "mkdn/tpcOrMap/?fmt"
 		return ret
