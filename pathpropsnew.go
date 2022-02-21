@@ -38,8 +38,8 @@ func NewPathProps(fp string) *PathProps {
 	return pi
 }
 
-// NewPathPropsRelativeTo requires a relative filepath plus an absolute filepath.
-// This func does not load & analyse the content.
+// NewPathPropsRelativeTo requires a relative filepath plus an absolute
+// filepath being referenced. This func does not load & analyse the content.
 func NewPathPropsRelativeTo(rfp, relTo string) *PathProps {
 	var e error
 	pi := new(PathProps)

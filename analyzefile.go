@@ -317,15 +317,15 @@ func AnalyseFile(sCont string, filext string) (*XU.AnalysisRecord, error) {
 		// We are here if we got a DOCTYPE; we also have a file extension,
 		// and we should have a root tag (or else the DOCTYPE makes no sense !)
 		var pXDTF *XU.XmlDoctypeFields
+
 		pXDTF = pCntpg.AnalyzeXmlDoctype(peek.Doctype)
 		if pXDTF.HasError() {
 			panic("FIXME:" + pXDTF.Error())
 		}
+		L.L.Dbg("MType:     " + pCntpg.MType)
 		L.L.Dbg("Contyping: " + pCntpg.String())
 		L.L.Dbg("DTDfields: " + pXDTF.String())
 
-		// What does AnalysisRecord need from Contyping and DoctypeFields ?
-		pAnlRec.ContypingInfo = pXDTF.ContypingInfo
 		pAnlRec.XmlDoctypeFields = pXDTF
 
 		return pAnlRec, nil
