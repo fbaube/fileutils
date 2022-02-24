@@ -232,7 +232,9 @@ func AnalyseFile(sCont string, filext string) (*XU.AnalysisRecord, error) {
 			pAnlRec.MetaProps = ps
 			L.L.Dbg("Got YAML metadata: " + s2)
 		}
-		L.L.Dbg("|RAW|" + SU.NormalizeWhitespace(pAnlRec.Raw) + "|END|")
+		s := SU.NormalizeWhitespace(pAnlRec.Raw)
+		s = SU.TruncateTo(s, 60)
+		L.L.Dbg("|RAW|" + s + "|END|")
 		return pAnlRec, nil
 	}
 
@@ -378,7 +380,6 @@ func AnalyseFile(sCont string, filext string) (*XU.AnalysisRecord, error) {
 	pAnlRec.DitaFlavor = "TBS"
 	pAnlRec.DitaContype = "TBS"
 
-	L.L.Warning("fu.af: TODO set more XML info")
 	// pAnlRec.XmlInfo = *new(XU.XmlInfo)
 
 	// L.L.Info("fu.af: MType<%s> xcntp<%s> ditaFlav<%s> ditaCntp<%s> DT<%s>",
@@ -388,6 +389,8 @@ func AnalyseFile(sCont string, filext string) (*XU.AnalysisRecord, error) {
 		pAnlRec.XmlDoctypeFields)
 	// println("--> fu.af: MetaRaw:", pAnlRec.MetaRaw())
 	// println("--> fu.af: TextRaw:", pAnlRec.TextRaw())
+
+	// ## // ## // text/xml/image/svg + xml
 
 	return pAnlRec, nil
 }
