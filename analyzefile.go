@@ -233,7 +233,7 @@ func AnalyseFile(sCont string, filext string) (*XU.AnalysisRecord, error) {
 			L.L.Dbg("Got YAML metadata: " + s2)
 		}
 		s := SU.NormalizeWhitespace(pAnlRec.Raw)
-		s = SU.TruncateTo(s, 60)
+		s = SU.TruncateTo(s, 56)
 		L.L.Dbg("|RAW|" + s + "|END|")
 		return pAnlRec, nil
 	}
@@ -328,7 +328,15 @@ func AnalyseFile(sCont string, filext string) (*XU.AnalysisRecord, error) {
 		L.L.Dbg("Contyping: " + pCntpg.String())
 		L.L.Dbg("DTDfields: " + pXDTF.String())
 
+		if pCntpg.MType == "" {
+			panic("fu.af: no MType, L332")
+		}
+
 		pAnlRec.XmlDoctypeFields = pXDTF
+
+		if pCntpg.MType == "" {
+			panic("fu.af: no MType, L338")
+		}
 
 		return pAnlRec, nil
 	}
