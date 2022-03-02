@@ -7,7 +7,7 @@ import (
 	FP "path/filepath"
 	S "strings"
 
-	"github.com/gabriel-vasile/mimetype"
+	MT "github.com/gabriel-vasile/mimetype"
 	"golang.org/x/tools/godoc/util"
 
 	L "github.com/fbaube/mlog"
@@ -77,38 +77,41 @@ func AnalyseFile(sCont string, filext string) (*XU.AnalysisRecord, error) {
 	// ========================
 	//  Content type detection
 	// ========================
-	var httpContype string
-	var mimeLibTree *mimetype.MIME
-	var mimeLibTreeS string // *mimetype.MIME
+	var httpStdlibContype string
+	var mimeLibDatContype *MT.MIME
+	var mimeLibStrContype string // *mimetype.MIME
 	var mimeLibIsBinary, stdUtilIsBinary, isBinary bool
 	// MIME type ?
-	httpContype = http.DetectContentType([]byte(sCont))
-	mimeLibTree = mimetype.Detect([]byte(sCont))
-	mimeLibTreeS = mimeLibTree.String()
+	httpStdlibContype = http.DetectContentType([]byte(sCont))
+	mimeLibDatContype = MT.Detect([]byte(sCont))
+	mimeLibStrContype = mimeLibDatContype.String()
 	// Binary ?
 	stdUtilIsBinary = !util.IsText([]byte(sCont))
 	mimeLibIsBinary = true
-	for mime := mimeLibTree; mime != nil; mime = mime.Parent() {
+	for mime := mimeLibDatContype; mime != nil; mime = mime.Parent() {
 		if mime.Is("text/plain") {
 			mimeLibIsBinary = false
 		}
 	}
-	httpContype = S.TrimSuffix(httpContype, "; charset=utf-8")
-	mimeLibTreeS = S.TrimSuffix(mimeLibTreeS, "; charset=utf-8")
+	httpStdlibContype = S.TrimSuffix(httpStdlibContype, "; charset=utf-8")
+	mimeLibStrContype = S.TrimSuffix(mimeLibStrContype, "; charset=utf-8")
 	var sMime string
-	if httpContype == mimeLibTreeS {
-		sMime = httpContype
+	if httpStdlibContype == mimeLibStrContype {
+		sMime = httpStdlibContype
 	} else {
-		sMime = httpContype + "/" + mimeLibTreeS
+		sMime = httpStdlibContype + "/" + mimeLibStrContype
 	}
 	L.L.Info("<%s> snift-MIME-type: %s", filext, sMime)
+	sniftMimeType := sMime
+	// pCntpg.MimeTypeAsSnift = sMime
 
 	// ===========================
 	//  Check for & handle BINARY
 	// ===========================
 	isBinary = mimeLibIsBinary
 	if stdUtilIsBinary != mimeLibIsBinary {
-		L.L.Warning("MIME disagreement re is-binary: http-stdlib<%t> mime-lib<%t>",
+		L.L.Warning("MIME disagreement re is-binary: "+
+			"http-stdlib<%t> mime-lib<%t>",
 			stdUtilIsBinary, mimeLibIsBinary)
 	}
 	if isBinary {
@@ -135,8 +138,10 @@ func AnalyseFile(sCont string, filext string) (*XU.AnalysisRecord, error) {
 	//  Quick check for XML
 	//  based on MIME type
 	// =====================
-	hIsXml, hMsg := HttpContypeIsXml("http-stdlib", httpContype, filext)
-	mIsXml, mMsg := HttpContypeIsXml("3p-mime-lib", mimeLibTreeS, filext)
+	hIsXml, hMsg := HttpContypeIsXml("http-stdlib",
+		httpStdlibContype, filext)
+	mIsXml, mMsg := HttpContypeIsXml("3p-mime-lib",
+		mimeLibStrContype, filext)
 	if hIsXml || mIsXml {
 		hS, mS := "is-", "is-"
 		if !hIsXml {
@@ -195,9 +200,10 @@ func AnalyseFile(sCont string, filext string) (*XU.AnalysisRecord, error) {
 		if cheatXml {
 			L.L.Panic("analyzefile: non-xml + xml")
 		}
-		pAnlRec.ContypingInfo = *DoContypingInfo_non_xml(httpContype, sCont, filext)
+		pAnlRec.ContypingInfo = *DoContypingInfo_non_xml(
+			httpStdlibContype, sCont, filext)
 		L.L.Okay("Non-XML: " + pAnlRec.ContypingInfo.String())
-		// Check for YAMNL metadata
+		// Check for YAML metadata
 		iEnd, e := SU.YamlMetadataHeaderRange(sCont)
 		// if there is an error, it will mess up parsing the file, so just exit.
 		if e != nil {
@@ -278,7 +284,8 @@ func AnalyseFile(sCont string, filext string) (*XU.AnalysisRecord, error) {
 	// Preliminaries for deeper analysis
 	pCntpg = new(XU.ContypingInfo)
 	pCntpg.FileExt = filext
-	pCntpg.MimeType = httpContype
+	pCntpg.MimeType = httpStdlibContype
+	pCntpg.MimeTypeAsSnift = sniftMimeType
 	var e error
 	// pAnlRec.MType = ""
 	// var isLwDita bool
@@ -324,20 +331,18 @@ func AnalyseFile(sCont string, filext string) (*XU.AnalysisRecord, error) {
 		if pXDTF.HasError() {
 			panic("FIXME:" + pXDTF.Error())
 		}
-		L.L.Dbg("MType:     " + pCntpg.MType)
-		L.L.Dbg("Contyping: " + pCntpg.String())
-		L.L.Dbg("DTDfields: " + pXDTF.String())
+		L.L.Dbg("gotDT: MType:     " + pCntpg.MType)
+		L.L.Dbg("gotDT: Contyping: " + pCntpg.String())
+		L.L.Dbg("gotDT: DTDfields: " + pXDTF.String())
 
 		if pCntpg.MType == "" {
-			panic("fu.af: no MType, L332")
+			panic("fu.af: no MType, L339")
 		}
-
 		pAnlRec.XmlDoctypeFields = pXDTF
 
 		if pCntpg.MType == "" {
-			panic("fu.af: no MType, L338")
+			panic("fu.af: no MType, L345")
 		}
-
 		return pAnlRec, nil
 	}
 	// =====================
@@ -391,7 +396,7 @@ func AnalyseFile(sCont string, filext string) (*XU.AnalysisRecord, error) {
 	// pAnlRec.XmlInfo = *new(XU.XmlInfo)
 
 	// L.L.Info("fu.af: MType<%s> xcntp<%s> ditaFlav<%s> ditaCntp<%s> DT<%s>",
-	L.L.Info("fu.af: MType<%s> xcntp<%s> dita:TBS DcTp<%s>",
+	L.L.Info("fu.af: final: MType<%s> xcntp<%s> dita:TBS DcTpFlds<%s>",
 		pAnlRec.MType, pAnlRec.XmlContype, // pAnlRec.XmlPreambleFields,
 		// pAnlRec.DitaFlavor, pAnlRec.DitaContype,
 		pAnlRec.XmlDoctypeFields)
