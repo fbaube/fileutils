@@ -55,7 +55,7 @@ func AnalyseFile(sCont string, filext string) (*XU.AnalysisRecord, error) {
 	// ===================
 	// pAnlRec is AnalysisRecord is basicly all of our analysis results, incl. ContypingInfo
 	var pAnlRec *XU.AnalysisRecord
-	// pCntpg is ContypingInfo is all of: FileExt MimeType MType Doctype IsLwDita IsProcbl
+	// pCntpg is ContypingInfo is all of: FileExt MimeType MType Doctype IsLwDita // IsProcbl
 	var pCntpg *XU.ContypingInfo
 	pAnlRec = new(XU.AnalysisRecord)
 	// A trailing dot in the filename provides no filetype info.
@@ -68,7 +68,7 @@ func AnalyseFile(sCont string, filext string) (*XU.AnalysisRecord, error) {
 	//   Don't forget to set the content.
 	// (Omitting this caused a lot of bugs.)
 	// =====================================
-	pAnlRec.Raw = sCont
+	pAnlRec.ContentityStructure.Raw = sCont
 	// ========================
 	//  Try a coupla shortcuts
 	// ========================
@@ -188,8 +188,8 @@ func AnalyseFile(sCont string, filext string) (*XU.AnalysisRecord, error) {
 	//  supporting analysis by stdlib
 	// ===============================
 	gotRootElm := (peek.ContentityStructure.CheckXmlSections())
-	gotDoctype := (peek.Doctype != "")
-	gotPreambl := (peek.Preamble != "")
+	gotDoctype := (peek.RawDoctype != "")
+	gotPreambl := (peek.RawPreamble != "")
 	gotSomeXml := (gotRootElm || gotDoctype || gotPreambl)
 	// Note that stdlib assigns "text/html" to DITA maps :-/
 
@@ -238,7 +238,7 @@ func AnalyseFile(sCont string, filext string) (*XU.AnalysisRecord, error) {
 			pAnlRec.MetaProps = ps
 			L.L.Dbg("Got YAML metadata: " + s2)
 		}
-		s := SU.NormalizeWhitespace(pAnlRec.Raw)
+		s := SU.NormalizeWhitespace(pAnlRec.ContentityStructure.Raw)
 		s = SU.TruncateTo(s, 56)
 		L.L.Dbg("|RAW|" + s + "|END|")
 		return pAnlRec, nil
@@ -290,12 +290,12 @@ func AnalyseFile(sCont string, filext string) (*XU.AnalysisRecord, error) {
 	// pAnlRec.MType = ""
 	// var isLwDita bool
 
-	var pPRF *XU.XmlPreambleFields
+	var pPRF *XU.ParsedPreamble
 	if gotPreambl {
 		// println("preamble:", preamble)
-		pPRF, e = XU.NewXmlPreambleFields(peek.Preamble)
+		pPRF, e = XU.ParsePreamble(peek.RawPreamble)
 		if e != nil {
-			println("xm.peek: preamble failure in:", peek.Preamble)
+			println("xm.peek: preamble failure in:", peek.RawPreamble)
 			return nil, fmt.Errorf("xm<>>e<> preamble failure: %w", e)
 		}
 		// print("--> Parsed XML preamble: " + pPRF.String())
@@ -304,7 +304,7 @@ func AnalyseFile(sCont string, filext string) (*XU.AnalysisRecord, error) {
 	//  Time to do some heavy lifting.
 	// ================================
 	L.L.Progress("Now split the file")
-	if pAnlRec.Raw == "" {
+	if pAnlRec.ContentityStructure.Raw == "" {
 		L.L.Error("analyzeFile XML: nil Raw")
 	}
 	pAnlRec.ContentityStructure = peek.ContentityStructure
@@ -322,23 +322,23 @@ func AnalyseFile(sCont string, filext string) (*XU.AnalysisRecord, error) {
 	//  If we have DOCTYPE,
 	//  it is gospel (and we are done).
 	// =================================
-	if peek.Doctype != "" {
+	if peek.RawDoctype != "" {
 		// We are here if we got a DOCTYPE; we also have a file extension,
 		// and we should have a root tag (or else the DOCTYPE makes no sense !)
-		var pXDTF *XU.XmlDoctypeFields
+		var pPDT *XU.ParsedDoctype
 
-		pXDTF = pCntpg.AnalyzeXmlDoctype(peek.Doctype)
-		if pXDTF.HasError() {
-			panic("FIXME:" + pXDTF.Error())
+		pPDT = pCntpg.ParseDoctype(peek.RawDoctype)
+		if pPDT.HasError() {
+			panic("FIXME:" + pPDT.Error())
 		}
 		L.L.Dbg("gotDT: MType:     " + pCntpg.MType)
 		L.L.Dbg("gotDT: Contyping: " + pCntpg.String())
-		L.L.Dbg("gotDT: DTDfields: " + pXDTF.String())
+		L.L.Dbg("gotDT: DTDfields: " + pPDT.String())
 
 		if pCntpg.MType == "" {
 			panic("fu.af: no MType, L339")
 		}
-		pAnlRec.XmlDoctypeFields = pXDTF
+		pAnlRec.ParsedDoctype = pPDT
 
 		if pCntpg.MType == "" {
 			panic("fu.af: no MType, L345")
@@ -384,7 +384,7 @@ func AnalyseFile(sCont string, filext string) (*XU.AnalysisRecord, error) {
 	// pAnlRec.XmlDoctype = XU.XmlDoctype("DOCTYPE " + Peek.Doctype)
 	// ?? pAnlRec.DoctypeFields = pDF
 	if pPRF != nil {
-		pAnlRec.XmlPreambleFields = pPRF
+		pAnlRec.ParsedPreamble = pPRF
 	} else {
 		// SKIP
 		// pBA.XmlPreambleFields = XU.STD_PreambleFields
@@ -399,7 +399,7 @@ func AnalyseFile(sCont string, filext string) (*XU.AnalysisRecord, error) {
 	L.L.Info("fu.af: final: MType<%s> xcntp<%s> dita:TBS DcTpFlds<%s>",
 		pAnlRec.MType, pAnlRec.XmlContype, // pAnlRec.XmlPreambleFields,
 		// pAnlRec.DitaFlavor, pAnlRec.DitaContype,
-		pAnlRec.XmlDoctypeFields)
+		pAnlRec.ParsedDoctype)
 	// println("--> fu.af: MetaRaw:", pAnlRec.MetaRaw())
 	// println("--> fu.af: TextRaw:", pAnlRec.TextRaw())
 
