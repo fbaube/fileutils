@@ -89,12 +89,11 @@ func AnalyseFile(sCont string, filext string) (*XU.AnalysisRecord, error) {
 		L.L.Warning("Content type contains a semicolon")
 	}
 	// Authoritative MIME type string 
-	var sAuthtvMime string
-	if httpStdlibContype == mimeLibStrContype {
-		sAuthtvMime = httpStdlibContype
-	} else {
-		sAuthtvMime = httpStdlibContype + "|" + mimeLibStrContype
-		L.L.Warning("MIME type disagreement in libs: %s", sAuthtvMime)
+	var sAuthtvMime = mimeLibStrContype
+	if httpStdlibContype != mimeLibStrContype {
+		L.L.Warning("MIME type per libs: http<%s> mime<%s>", 
+			httpStdlibContype, mimeLibStrContype)
+		sAuthtvMime = mimeLibStrContype
 	}
 	L.L.Info("filext<%s> snift-MIME-type: %s", filext, sAuthtvMime)
 
@@ -188,9 +187,12 @@ func AnalyseFile(sCont string, filext string) (*XU.AnalysisRecord, error) {
 	if xmlParsingFailed && (hIsXml || mIsXml) {
 		L.L.Panic("XML confusion (case #1) in AnalyzeFile")
 	}
+	// Note that this next test dusnt always work for Markdown!
+	/*
 	if (!xmlParsingFailed) && (! (hIsXml || mIsXml)) {
 		L.L.Panic("XML confusion (case #2) in AnalyzeFile")
 	}
+	*/
 
 	/* Reminder: 
 	type ContypingInfo struct {
@@ -377,7 +379,6 @@ func AnalyseFile(sCont string, filext string) (*XU.AnalysisRecord, error) {
 	rutag := S.ToLower(peek.Root.TagName)
 	L.L.Info("XML without DOCTYPE: <%s> root<%s> MType<%s>",
 		filext, rutag, pAnlRec.MType)
-	// OBS // pCntpg.MType = pAnlRec.MType
 	// Do some easy cases
 	if rutag == "html" && (filext == ".html" || filext == ".htm") {
 		pAnlRec.MType = "html/cnt/html5"
@@ -418,7 +419,15 @@ func AnalyseFile(sCont string, filext string) (*XU.AnalysisRecord, error) {
 	// println("--> fu.af: MetaRaw:", pAnlRec.MetaRaw())
 	// println("--> fu.af: TextRaw:", pAnlRec.TextRaw())
 
-	// ## // ## // text/xml/image/svg + xml
+	if pAnlRec.MType == "" {
+		switch mimeLibStrContype {
+		case "image/svg+xml":
+			pAnlRec.MType = "xml/cnt/svg"
+		}
+		if pAnlRec.MType != "" {
+			L.L.Warning("Lamishly hacked the MType to: %s", pAnlRec.MType)
+		}
+	}
 
 	return pAnlRec, nil
 }
