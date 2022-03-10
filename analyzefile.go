@@ -56,7 +56,7 @@ func AnalyseFile(sCont string, filext string) (*XU.AnalysisRecord, error) {
 	if filext == "." {
 		filext = ""
 	}
-	L.L.Dbg("(AF) file: ext<%s> len<%d> beg<%s>", 
+	L.L.Dbg("(AF) filext<%s> len<%d> beg<%s>", 
 		filext, len(sCont), sCont[:5])
 
 	// ========================
@@ -96,7 +96,7 @@ func AnalyseFile(sCont string, filext string) (*XU.AnalysisRecord, error) {
 			httpStdlibContype, mimeLibStrContype)
 		sAuthtvMime = mimeLibStrContype
 	}
-	L.L.Info("(AF) for filext<%s> snift-MIME-type: %s", filext, sAuthtvMime)
+	L.L.Info("(AF) filext<%s> has snift-MIME-type: %s", filext, sAuthtvMime)
 
 	// =====================================
 	// pAnlRec is *xmlutils.AnalysisRecord is 
@@ -147,22 +147,22 @@ func AnalyseFile(sCont string, filext string) (*XU.AnalysisRecord, error) {
 	// So use two libraries to check for XML 
 	// based on MIME type. 
 	// ======================================
-	hIsXml, hMsg := HttpContypeIsXml("http-stdlib",
+	hIsXml, hMsg := HttpContypeIsXml("http",
 		httpStdlibContype, filext)
-	mIsXml, mMsg := HttpContypeIsXml("3p-mime-lib",
+	mIsXml, mMsg := HttpContypeIsXml("mime",
 		mimeLibStrContype, filext)
 	if hIsXml || mIsXml {
-		hS, mS := "is-", "is-"
+		var hS, mS string 
 		if !hIsXml {
-			hS = "not"
+			hS = "not "
 		}
 		if !mIsXml {
-			mS = "not"
+			mS = "not "
 		}
-		L.L.Info("(AF) (%sXML) %s", hS, hMsg)
-		L.L.Info("(AF) (%sXML) %s", mS, mMsg)
+		L.L.Info("(AF) (is-%sXML) %s", hS, hMsg)
+		L.L.Info("(AF) (is-%sXML) %s", mS, mMsg)
 	} else {
-		L.L.Info("(AF) XML not detected by MIME libraries")
+		L.L.Info("(AF) XML not detected by MIME libs")
 	}
 
 	// ===================================
@@ -315,7 +315,7 @@ func AnalyseFile(sCont string, filext string) (*XU.AnalysisRecord, error) {
 
 	var pPRF *XU.ParsedPreamble
 	if gotPreambl {
-		L.L.Dbg("(AF) Preamble: %s", peek.RawPreamble)
+		L.L.Dbg("(AF) got: %s", peek.RawPreamble)
 		pPRF, e = XU.ParsePreamble(peek.RawPreamble)
 		if e != nil {
 			// println("xm.peek: preamble failure in:", peek.RawPreamble)
@@ -331,7 +331,8 @@ func AnalyseFile(sCont string, filext string) (*XU.AnalysisRecord, error) {
 		L.L.Error("(AF) XML has nil Raw")
 	}
 	pAnlRec.ContentityStructure = peek.ContentityStructure
-	pAnlRec.MakeXmlContentitySections(sCont)
+	pAnlRec.ContentityStructure.Raw = sCont // naybe redundant ? 
+	pAnlRec.MakeXmlContentitySections()
 	/*
 		fmt.Printf("--> meta pos<%d>len<%d> text pos<%d>len<%d> \n",
 			pAnlRec.Meta.Beg.Pos, len(pAnlRec.MetaRaw()),
@@ -446,17 +447,16 @@ func CollectKeysOfNonNilMapValues(M map[string]*XU.FilePosition) []string {
 }
 
 func HttpContypeIsXml(src, sContype, filext string) (isXml bool, msg string) {
-	src += " contype-det'n "
-
+	src += " " 
 	if S.Contains(sContype, "xml") {
 		return true, src + "got XML (in MIME type)"
 	}
 	if sContype == "text/html" {
-		return true, src + "got XML (text/html, HDITA?)"
+		return true, src + "got XML (cos text/html: HDITA?)"
 	}
 	if S.HasPrefix(sContype, "text/") &&
 		(filext == ".dita" || filext == ".ditamap" || filext == ".map") {
-		return true, src + "got XML (text/dita-filext)"
+		return true, src + "got XML (cos text/dita-filext)"
 	}
 	if S.Contains(sContype, "ml") {
 		return true, src + "got <ml>"
