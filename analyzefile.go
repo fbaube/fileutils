@@ -75,14 +75,6 @@ func AnalyseFile(sCont string, filext string) (*XU.AnalysisRecord, error) {
 	httpStdlibContype = http.DetectContentType([]byte(sCont))
 	mimeLibDatContype = MT.Detect([]byte(sCont))
 	mimeLibStrContype = mimeLibDatContype.String()
-	// Binary ?
-	stdUtilIsBinary = !util.IsText([]byte(sCont))
-	mimeLibIsBinary = true
-	for mime := mimeLibDatContype; mime != nil; mime = mime.Parent() {
-		if mime.Is("text/plain") {
-			mimeLibIsBinary = false
-		}
-	}
 	httpStdlibContype = S.TrimSuffix(httpStdlibContype, "; charset=utf-8")
 	mimeLibStrContype = S.TrimSuffix(mimeLibStrContype, "; charset=utf-8")
 	if S.Contains(httpStdlibContype, ";") || 
@@ -115,6 +107,13 @@ func AnalyseFile(sCont string, filext string) (*XU.AnalysisRecord, error) {
 	// ===========================
 	//  Check for & handle BINARY
 	// ===========================
+	stdUtilIsBinary = !util.IsText([]byte(sCont))
+	mimeLibIsBinary = true
+	for mime := mimeLibDatContype; mime != nil; mime = mime.Parent() {
+		if mime.Is("text/plain") {
+			mimeLibIsBinary = false
+		}
+	}
 	isBinary = mimeLibIsBinary
 	if stdUtilIsBinary != mimeLibIsBinary {
 		L.L.Warning("(AF) libs re is-binary: "+
@@ -268,11 +267,11 @@ func AnalyseFile(sCont string, filext string) (*XU.AnalysisRecord, error) {
 
 			pAnlRec.MetaProps = ps
 			L.L.Dbg("(AF) Got YAML metadata: " + s2)
-			L.L.Okay("(AF) Success: detected non-XML") 
 		}
 		s := SU.NormalizeWhitespace(pAnlRec.ContentityStructure.Raw)
 		s = SU.TruncateTo(s, 56)
 		L.L.Dbg("|RAW|" + s + "|END|")
+		L.L.Okay("(AF) Success: detected non-XML") 
 		return pAnlRec, nil
 	}
 
