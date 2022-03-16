@@ -90,30 +90,44 @@ func (p *PathProps) IsOkaySymlink() bool {
 	return (!p.HasError()) && p.exists && !p.isFile && !p.isDir && p.isSymL
 }
 
+// IsOkayWhat is for use with functions from github.com/samber/lo 
+func (p *PathProps) IsOkayWhat() string {
+	if p.IsOkayFile() { return "FILE" }
+	if p.IsOkayDir() { return "DIR" }
+	if p.IsOkaySymlink() { return "SYMLINK" }
+	return "n/a" 
+}
+
 // ResolveSymlinks will follow links until it finds something else.
-func (pi *PathProps) ResolveSymlinks() *PathProps {
-	if pi.HasError() {
+func (pp *PathProps) ResolveSymlinks() *PathProps {
+	if pp.HasError() {
 		return nil
 	}
-	if !pi.IsOkaySymlink() {
+	if !pp.IsOkaySymlink() {
 		return nil
 	}
 	var newPath string
 	var e error
-	for pi.IsOkaySymlink() {
+	for pp.IsOkaySymlink() {
 		// func os.Readlink(pathname string) (string, error)
 		// func FP.EvalSymlinks(path string) (string, error)
-		newPath, e = FP.EvalSymlinks(pi.AbsFP.S())
+		newPath, e = FP.EvalSymlinks(pp.AbsFP.S())
 		if e != nil {
-			pi.SetError(fmt.Errorf("fu.RslvSymLx <%s>: %w", pi.AbsFP, e))
+			pp.SetError(fmt.Errorf("fu.RslvSymLx <%s>: %w", pp.AbsFP, e))
 			return nil
 		}
-		println("--> Symlink from:", pi.AbsFP)
+		println("--> Symlink from:", pp.AbsFP)
 		println("     resolved to:", newPath)
-		pi.AbsFP = AbsFilePath(newPath)
-		pi = NewPathProps(newPath)
+		pp.AbsFP = AbsFilePath(newPath)
+		var e error 
+		pp, e = NewPathProps(newPath)
+		if e != nil {
+			panic(e)
+			return nil 
+		}
+		// CHECK IT 
 	}
-	return pi
+	return pp
 }
 
 // GetContentBytes reads in the file (IFF it is a file).

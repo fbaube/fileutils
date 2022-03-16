@@ -36,17 +36,18 @@ func (p *FileSet) Size() int {
 }
 
 func NewOneFileSet(s string) *FileSet {
-	p := new(FileSet)
+	pfs := new(FileSet)
 	if s == "" {
-		return p
+		return pfs
 	}
-	p.DirSpec = *NewPathProps(s)
-	if !p.DirSpec.IsOkayFile() { // PathType() != "FILE" {
-		panic("fu.FileSet.NewOneFS: not a file: " + s)
+	pp, e := NewPathProps(s)
+	if e != nil || pp == nil || !pfs.DirSpec.IsOkayFile() { // PathType() != "FILE" {
+		panic("fu.FileSet.NewOneFS: bad file: " + s)
 	}
-	p.FilePaths = make([]string, 0, 1)
-	p.FilePaths = append(p.FilePaths, string(p.DirSpec.AbsFP))
-	p.CheckedFiles = make([]PathProps, 0, 1)
-	p.CheckedFiles = append(p.CheckedFiles, p.DirSpec)
-	return p
+	pfs.DirSpec = *pp
+	pfs.FilePaths = make([]string, 0, 1)
+	pfs.FilePaths = append(pfs.FilePaths, string(pfs.DirSpec.AbsFP))
+	pfs.CheckedFiles = make([]PathProps, 0, 1)
+	pfs.CheckedFiles = append(pfs.CheckedFiles, pfs.DirSpec)
+	return pfs
 }

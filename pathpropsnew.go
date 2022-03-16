@@ -1,70 +1,71 @@
 package fileutils
 
 import (
-	"fmt"
 	"os"
 	FP "path/filepath"
 )
 
 // NewPathProps requires an absolute or relative filpath, and analyzes it.
 // Note that a relative path is appended to the CWD, which may not be correct.
-// In such a case, use NewPatPhropsRelativeTo (below).
+// In such a case, use NewPathPropsRelativeTo (below).
 // This func does not load & analyse the content.
-func NewPathProps(fp string) *PathProps {
+func NewPathProps(fp string) (*PathProps, error) {
 	var e error
-	pi := new(PathProps)
+	pp := new(PathProps)
 	afp, e := FP.Abs(fp)
 	if e != nil {
-		panic("newPP: " + e.Error())
+		// (ermsg string, op string, pp *PathProps, srcLoc string) 
+		return nil, NewPathPropsError(
+			"FP.Abs(..) failed", "Abs(..)", nil, "fu.PPnew.L20")
 	}
-	pi.AbsFP = AbsFilePath(afp)
+	pp.AbsFP = AbsFilePath(afp)
 	var FI os.FileInfo
 	FI, e = os.Lstat(afp)
 	if e != nil {
-		// fmt.Println("fu.newPP: os.Lstat<%s> failed: %w", Tildotted(afp), e)
-		pi.SetError(fmt.Errorf("fu.newPP: os.Lstat<%s> failed: %w", Tildotted(afp), e))
+		// fmt.Println("fu.newPP: os.Lstat<%s> failed: %w", afp, e)
 		// The file or directory does not exist. DON'T PANIC.
 		// Just return before any flags are set, such as Exists.
-		return pi
+		return nil, NewPathPropsError(
+			"os.Lstat(..) failed", "Lstat(..)", pp, "fu.PPnew.L30")
 	}
-	pi.isDir = FI.IsDir()
-	pi.isFile = FI.Mode().IsRegular()
-	pi.isSymL = (0 != (FI.Mode() & os.ModeSymlink))
-	pi.exists = pi.isDir || pi.isFile || pi.isSymL
-	if pi.isFile {
-		pi.size = int(FI.Size())
+	pp.isDir = FI.IsDir()
+	pp.isFile = FI.Mode().IsRegular()
+	pp.isSymL = (0 != (FI.Mode() & os.ModeSymlink))
+	pp.exists = pp.isDir || pp.isFile || pp.isSymL
+	if pp.isFile {
+		pp.size = int(FI.Size())
 	}
 	// println("==> new fu.pathprops:", pi.String())
-	return pi
+	return pp, nil 
 }
 
 // NewPathPropsRelativeTo requires a relative filepath plus an absolute
 // filepath being referenced. This func does not load & analyse the content.
-func NewPathPropsRelativeTo(rfp, relTo string) *PathProps {
+func NewPathPropsRelativeTo(rfp, relTo string) (*PathProps, error) {
 	var e error
-	pi := new(PathProps)
+	pp := new(PathProps)
 	if !FP.IsAbs(relTo) {
 		panic("newPPrelTo: not an abs.FP: " + relTo)
 	}
-	pi.RelFP = rfp
+	pp.RelFP = rfp
 	afp := FP.Join(relTo, rfp)
-	pi.AbsFP = AbsFP(afp)
+	pp.AbsFP = AbsFP(afp)
 	var FI os.FileInfo
 	FI, e = os.Lstat(afp)
 	if e != nil {
 		// fmt.Println("fu.newPP: os.Lstat<%s> failed: %w", Tildotted(afp), e)
-		pi.SetError(fmt.Errorf("fu.newPP: os.Lstat<%s> failed: %w", Tildotted(afp), e))
 		// The file or directory does not exist. DON'T PANIC.
 		// Just return before any flags are set, such as Exists.
-		return pi
+		return pp, NewPathPropsError(
+			"os.Lstat(..) failed", "Lstat(..)", pp, "fu.PPnewrelto.L62")
 	}
-	pi.isDir = FI.IsDir()
-	pi.isFile = FI.Mode().IsRegular()
-	pi.isSymL = (0 != (FI.Mode() & os.ModeSymlink))
-	pi.exists = pi.isDir || pi.isFile || pi.isSymL
-	if pi.isFile {
-		pi.size = int(FI.Size())
+	pp.isDir = FI.IsDir()
+	pp.isFile = FI.Mode().IsRegular()
+	pp.isSymL = (0 != (FI.Mode() & os.ModeSymlink))
+	pp.exists = pp.isDir || pp.isFile || pp.isSymL
+	if pp.isFile {
+		pp.size = int(FI.Size())
 	}
 	// println("==>", SU.Gbg(" "+pi.String()+" "))
-	return pi
+	return pp, nil 
 }
