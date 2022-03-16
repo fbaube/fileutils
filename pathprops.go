@@ -45,9 +45,6 @@ func (pi *PathProps) String() (s string) {
 	} else {
 		s = "Not-OK "
 	}
-	if pi.HasError() {
-		s += "hasERROR  "
-	}
 	s += pi.AbsFP.Tildotted()
 	return s
 }
@@ -77,17 +74,17 @@ func (p *PathProps) Exists() bool {
 
 // IsOkayFile is a convenience function.
 func (p *PathProps) IsOkayFile() bool {
-	return (!p.HasError()) && p.exists && p.isFile && !p.isDir
+	return p.exists && p.isFile && !p.isDir
 }
 
 // IsOkayDir is a convenience function.
 func (p *PathProps) IsOkayDir() bool {
-	return (!p.HasError()) && p.exists && !p.isFile && p.isDir
+	return p.exists && !p.isFile && p.isDir
 }
 
 // IsOkaySymlink is a convenience function.
 func (p *PathProps) IsOkaySymlink() bool {
-	return (!p.HasError()) && p.exists && !p.isFile && !p.isDir && p.isSymL
+	return p.exists && !p.isFile && !p.isDir && p.isSymL
 }
 
 // IsOkayWhat is for use with functions from github.com/samber/lo 
@@ -100,9 +97,6 @@ func (p *PathProps) IsOkayWhat() string {
 
 // ResolveSymlinks will follow links until it finds something else.
 func (pp *PathProps) ResolveSymlinks() *PathProps {
-	if pp.HasError() {
-		return nil
-	}
 	if !pp.IsOkaySymlink() {
 		return nil
 	}
@@ -113,7 +107,8 @@ func (pp *PathProps) ResolveSymlinks() *PathProps {
 		// func FP.EvalSymlinks(path string) (string, error)
 		newPath, e = FP.EvalSymlinks(pp.AbsFP.S())
 		if e != nil {
-			pp.SetError(fmt.Errorf("fu.RslvSymLx <%s>: %w", pp.AbsFP, e))
+			L.L.Error("fu.RslvSymLx <%s>: %s", pp.AbsFP, e.Error())
+			// pp.SetError(fmt.Errorf("fu.RslvSymLx <%s>: %w", pp.AbsFP, e))
 			return nil
 		}
 		println("--> Symlink from:", pp.AbsFP)
@@ -136,12 +131,10 @@ func (pp *PathProps) ResolveSymlinks() *PathProps {
 // The func "os.Open(fp)" defaults to R/W, altho R/O
 // would probably suffice.
 func (pPI *PathProps) GetContentBytes() []byte {
-	if pPI.HasError() {
-		return nil
-	}
 	TheAbsFP := pPI.AbsFP.Tildotted()
 	if !pPI.IsOkayFile() {
-		pPI.SetError(errors.New("fu.BP.GetContentBytes: not a file: " + TheAbsFP))
+		L.L.Error("fu.BP.GetContentBytes: not a file: " + TheAbsFP)
+		// pPI.SetError(errors.New("fu.BP.GetContentBytes: not a file: " + TheAbsFP))
 		return nil
 	}
 	// Zero-length ?
@@ -156,8 +149,9 @@ func (pPI *PathProps) GetContentBytes() []byte {
 	}
 	// If it's too big, BARF!
 	if pPI.size > MAX_FILE_SIZE {
-		pPI.SetError(fmt.Errorf(
-			"fu.BP.GetContentBytes: file too large (%d): %s", pPI.size, TheAbsFP))
+		// pPI.SetError(fmt.Errorf(
+		// 	"fu.BP.GetContentBytes: file too large (%d): %s", pPI.size, TheAbsFP))
+		L.L.Error("fu.BP.GetContentBytes: file too large (%d): %s", pPI.size, TheAbsFP)
 		return nil
 	}
 	// Open it (and then immediately close it), just to check.
@@ -166,15 +160,17 @@ func (pPI *PathProps) GetContentBytes() []byte {
 	pF, e = os.Open(TheAbsFP)
 	defer pF.Close()
 	if e != nil {
-		pPI.SetError(errors.New(fmt.Sprintf(
-			"fu.BP.GetContentBytes.osOpen<%s>: %w", TheAbsFP, e)))
+		// pPI.SetError(errors.New(fmt.Sprintf(
+		// 	"fu.BP.GetContentBytes.osOpen<%s>: %w", TheAbsFP, e)))
+		L.L.Error("fu.BP.GetContentBytes.osOpen<%s>: %s", TheAbsFP, e.Error())
 		return nil
 	}
 	var bb []byte
 	bb, e = io.ReadAll(pF)
 	if e != nil {
-		pPI.SetError(errors.New(fmt.Sprintf(
-			"fu.BP.GetContentBytes.ioReadAll<%s>: %w", TheAbsFP, e)))
+		// pPI.SetError(errors.New(fmt.Sprintf(
+		// 	"fu.BP.GetContentBytes.ioReadAll<%s>: %w", TheAbsFP, e)))
+		L.L.Error("fu.BP.GetContentBytes.ioReadAll<%s>: %s", TheAbsFP, e.Error())
 	}
 	if len(bb) == 0 {
 		println("==> empty file?!:", TheAbsFP)
@@ -191,13 +187,16 @@ func (pPI *PathProps) FetchContent() (raw string, e error) {
 	}
 	var bb []byte
 	bb = pPI.GetContentBytes()
-	if pPI.HasError() {
-		return "", fmt.Errorf("fu.fetchcontent: PI.GetContentBytes<%s> failed: %w",
-			DispFP, pPI.GetError())
+	//  pPI.HasError() {
+	if bb == nil || len(bb) == 0 { 
+		return "", fmt.Errorf(
+			"fu.fetchcontent: PI.GetContentBytes<%s> failed", DispFP)
 	}
 	raw = S.TrimSpace(string(bb)) + "\n"
 	return raw, nil
 }
+
+/*
 
 // === Implement interface Errable
 
@@ -224,3 +223,5 @@ func (p *PathProps) Error() string {
 func (p *PathProps) SetError(e error) {
 	p.error = e
 }
+
+*/

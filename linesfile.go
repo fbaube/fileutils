@@ -24,9 +24,6 @@ type LinesFile struct {
 func (pPI *PathProps) NewLinesFile() (*LinesFile, error) {
 	var bb []byte
 	bb = pPI.GetContentBytes()
-	if pPI.HasError() {
-		return nil, fmt.Errorf("fu.NewLF<%s> failed: %w", pPI.AbsFP, pPI.GetError())
-	}
 	pLF := new(LinesFile)
 	pLF.Lines = make([]*FileLine, 0)
 	var scnr bufio.Scanner

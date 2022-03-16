@@ -28,6 +28,7 @@ func NewPathProps(fp string) (*PathProps, error) {
 				e, "does not exist (fu.PPnew.L30)", pp) 
 			}
 		if os.IsExist(e) {
+			pp.exists = true 
 			return nil, WrapAsPathPropsError(
 				e, "exists but !os.Lstat(..) (fu.PPnew.L35)", pp) 
 			}
