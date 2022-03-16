@@ -6,6 +6,17 @@ import (
 	"io/fs"
 )
 
+/* 
+Reference:
+type PathError struct {
+	Op   string
+	Path string
+	Err  error }
+*/
+// Err can contain %w but must be set by caller to NewPathPropsError(..),
+// and caller can also decide whether to set pkg.filename.methodname.Lnn 
+// e.g. PathError { Err: fmt.Errorf("Zork failed: %w (fu.zork.L22)", e) }
+
 // PathPropsError is
 // PathProps + SrcLoc (in source code) + 
 // PathError struct { Op, Path string; Err error }
@@ -17,15 +28,14 @@ import (
 //
 type PathPropsError struct {
 	PE     fs.PathError
-	SrcLoc string
 	*PathProps
 }
 
-func WrapAsPathPropsError(e error, op string, pp *PathProps, srcLoc string) PathPropsError {
+// WrapAsPathPropsError SHOULD USE %w 
+func WrapAsPathPropsError(e error, op string, pp *PathProps) PathPropsError {
 	ce := PathPropsError{}
 	ce.PE.Err = e
 	ce.PE.Op  = op
-	ce.SrcLoc = srcLoc 
 	if pp == nil {
 		ce.PE.Path = "(pathprops path not found!)"
 	} else {
@@ -34,11 +44,11 @@ func WrapAsPathPropsError(e error, op string, pp *PathProps, srcLoc string) Path
 	return ce
 }
 
-func NewPathPropsError(ermsg string, op string, pp *PathProps, srcLoc string) PathPropsError {
+// NewPathPropsError TBD. 
+func NewPathPropsError(ermsg string, op string, pp *PathProps) PathPropsError {
 	ce := PathPropsError{}
 	ce.PE.Err = errors.New(ermsg)
 	ce.PE.Op  = op
-	ce.SrcLoc = srcLoc
 	if pp == nil {
 		ce.PE.Path = "(pathprops path not found!)"
 	} else {
@@ -54,8 +64,5 @@ func (ce PathPropsError) Error() string {
 func (ce *PathPropsError) String() string {
 	var s string
 	s = fmt.Sprintf("%s(%s): %s", ce.PE.Op, ce.PE.Path, ce.PE.Err.Error())
-	if ce.SrcLoc != "" {
-		s += fmt.Sprintf(" (in %s)", ce.SrcLoc)
-	}
 	return s
 }

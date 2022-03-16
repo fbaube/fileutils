@@ -15,8 +15,8 @@ func NewPathProps(fp string) (*PathProps, error) {
 	afp, e := FP.Abs(fp)
 	if e != nil {
 		// (ermsg string, op string, pp *PathProps, srcLoc string) 
-		return nil, NewPathPropsError(
-			"FP.Abs(..) failed", "Abs(..)", nil, "fu.PPnew.L20")
+		return nil, WrapAsPathPropsError(
+			e, "FP.Abs(..) (fu.PPnew.L20)", nil)
 	}
 	pp.AbsFP = AbsFilePath(afp)
 	var FI os.FileInfo
@@ -25,8 +25,8 @@ func NewPathProps(fp string) (*PathProps, error) {
 		// fmt.Println("fu.newPP: os.Lstat<%s> failed: %w", afp, e)
 		// The file or directory does not exist. DON'T PANIC.
 		// Just return before any flags are set, such as Exists.
-		return nil, NewPathPropsError(
-			"os.Lstat(..) failed", "Lstat(..)", pp, "fu.PPnew.L30")
+		return nil, WrapAsPathPropsError(
+			e, "os.Lstat(..) (fu.PPnew.L30)", pp) 
 	}
 	pp.isDir = FI.IsDir()
 	pp.isFile = FI.Mode().IsRegular()
@@ -45,7 +45,9 @@ func NewPathPropsRelativeTo(rfp, relTo string) (*PathProps, error) {
 	var e error
 	pp := new(PathProps)
 	if !FP.IsAbs(relTo) {
-		panic("newPPrelTo: not an abs.FP: " + relTo)
+		return nil, NewPathPropsError(
+			"not an abs FP", "FP.IsAbs(..) (fu.PPnew.L50)", nil) 
+		// panic("newPPrelTo: not an abs.FP: " + relTo)
 	}
 	pp.RelFP = rfp
 	afp := FP.Join(relTo, rfp)
@@ -56,8 +58,8 @@ func NewPathPropsRelativeTo(rfp, relTo string) (*PathProps, error) {
 		// fmt.Println("fu.newPP: os.Lstat<%s> failed: %w", Tildotted(afp), e)
 		// The file or directory does not exist. DON'T PANIC.
 		// Just return before any flags are set, such as Exists.
-		return pp, NewPathPropsError(
-			"os.Lstat(..) failed", "Lstat(..)", pp, "fu.PPnewrelto.L62")
+		return pp, WrapAsPathPropsError(
+			e, "os.Lstat(..) (fu.PPnewrelto.L62)", pp) 
 	}
 	pp.isDir = FI.IsDir()
 	pp.isFile = FI.Mode().IsRegular()
