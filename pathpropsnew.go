@@ -14,7 +14,6 @@ func NewPathProps(fp string) (*PathProps, error) {
 	pp := new(PathProps)
 	afp, e := FP.Abs(fp)
 	if e != nil {
-		// (ermsg string, op string, pp *PathProps, srcLoc string) 
 		return nil, WrapAsPathPropsError(
 			e, "FP.Abs(..) (fu.PPnew.L20)", nil)
 	}
@@ -23,10 +22,16 @@ func NewPathProps(fp string) (*PathProps, error) {
 	FI, e = os.Lstat(afp)
 	if e != nil {
 		// fmt.Println("fu.newPP: os.Lstat<%s> failed: %w", afp, e)
-		// The file or directory does not exist. DON'T PANIC.
-		// Just return before any flags are set, such as Exists.
-		return nil, WrapAsPathPropsError(
-			e, "os.Lstat(..) (fu.PPnew.L30)", pp) 
+		if os.IsNotExist(e) {
+			// File or directory does not exist
+			return nil, WrapAsPathPropsError(
+				e, "does not exist (fu.PPnew.L30)", pp) 
+			}
+		if os.IsExist(e) {
+			return nil, WrapAsPathPropsError(
+				e, "exists but !os.Lstat(..) (fu.PPnew.L35)", pp) 
+			}
+		panic("exists+not in fu.newPP.L34")
 	}
 	pp.isDir = FI.IsDir()
 	pp.isFile = FI.Mode().IsRegular()
