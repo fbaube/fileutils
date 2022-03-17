@@ -5,10 +5,17 @@ import (
 	FP "path/filepath"
 )
 
-// NewPathProps requires an absolute or relative filpath, and analyzes it.
-// Note that a relative path is appended to the CWD, which may not be correct.
-// In such a case, use NewPathPropsRelativeTo (below).
-// This func does not load & analyse the content.
+// NewPathProps requires an absolute or relative filepath, and analyzes 
+// the object (if one exists) at the path. This func does not load and 
+// analyse the content.
+// 
+// Note that a relative path is appended to the CWD, which may not be the
+// desired behavior; in such a case, use NewPathPropsRelativeTo (below).
+// 
+// This func has been changed from a ptr return to value return because 
+// of a bug in Go 1.18 generics. Also, a value return can be considered 
+// a flag that this struct is mostly read-onlny after creation.
+// 
 func NewPathProps(fp string) (*PathProps, error) {
 	var e error
 	pp := new(PathProps)
