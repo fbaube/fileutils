@@ -32,7 +32,7 @@ func NewPathProps(fp string) (*PathProps, error) {
 		if os.IsNotExist(e) {
 			// File or directory does not exist
 			return nil, WrapAsPathPropsError(
-				e, "does not exist (fu.PPnew.L30)", pp) 
+				e, "does not exist", pp) 
 			}
 		if os.IsExist(e) {
 			pp.exists = true 

@@ -37,7 +37,7 @@ func WrapAsPathPropsError(e error, op string, pp *PathProps) PathPropsError {
 	ce.PE.Err = e
 	ce.PE.Op  = op
 	if pp == nil {
-		ce.PE.Path = "(pathprops path not found!)"
+		ce.PE.Path = "(path not provided)"
 	} else {
 		ce.PE.Path = pp.AbsFP.S()
 	}
@@ -50,7 +50,7 @@ func NewPathPropsError(ermsg string, op string, pp *PathProps) PathPropsError {
 	ce.PE.Err = errors.New(ermsg)
 	ce.PE.Op  = op
 	if pp == nil {
-		ce.PE.Path = "(pathprops path not found!)"
+		ce.PE.Path = "(path not provided)"
 	} else {
 		ce.PE.Path = pp.AbsFP.S()
 	}
