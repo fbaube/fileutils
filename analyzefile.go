@@ -19,23 +19,23 @@ import (
 // <!ELEMENT topicmeta (navtitle?, linktext?, data*) >
 
 // AnalyseFile is called only by dbutils.NewContentityRecord(..).
-// It has very different handling for XML content versus non-XML content. 
-// Most of the function is making several checks for the presence of XML. 
-// When a file is identified as XML, we have much more info available, 
+// It has very different handling for XML content versus non-XML content.
+// Most of the function is making several checks for the presence of XML.
+// When a file is identified as XML, we have much more info available,
 // so processing becomes both simpler and more complicated.
 //
 // Binary content is tagged as such and no further examination is done.
 // So, the basic top-level classificaton of content is:
 // (1) Binary
 // (2) XML (when a DOCTYPE is detected)
-// (3) Everything else (incl. plain text, 
+// (3) Everything else (incl. plain text,
 // Markdown, and XML/HTML that lacks DOCTYPE)
 //
 // The second argument "filext" can be any filepath; the Go stdlib is used
 // to split off the file extension. It can also be "", if (for example) the
 // content is entered interactively, without a file name or assigned MIME type.
 //
-// If the first argument "sCont" (the content) is less than six bytes, 
+// If the first argument "sCont" (the content) is less than six bytes,
 // return (nil, nil).
 //
 func AnalyseFile(sCont string, filext string) (*XU.AnalysisRecord, error) {
@@ -56,7 +56,7 @@ func AnalyseFile(sCont string, filext string) (*XU.AnalysisRecord, error) {
 	if filext == "." {
 		filext = ""
 	}
-	L.L.Dbg("(AF) filext<%s> len<%d> beg<%s>", 
+	L.L.Dbg("(AF) filext<%s> len<%d> beg<%s>",
 		filext, len(sCont), sCont[:5])
 
 	// ========================
@@ -77,22 +77,22 @@ func AnalyseFile(sCont string, filext string) (*XU.AnalysisRecord, error) {
 	mimeLibStrContype = mimeLibDatContype.String()
 	httpStdlibContype = S.TrimSuffix(httpStdlibContype, "; charset=utf-8")
 	mimeLibStrContype = S.TrimSuffix(mimeLibStrContype, "; charset=utf-8")
-	if S.Contains(httpStdlibContype, ";") || 
-	   S.Contains(mimeLibStrContype, ";") {
+	if S.Contains(httpStdlibContype, ";") ||
+		S.Contains(mimeLibStrContype, ";") {
 		L.L.Warning("Content type contains a semicolon")
 	}
-	// Authoritative MIME type string 
+	// Authoritative MIME type string
 	var sAuthtvMime = mimeLibStrContype
 	if httpStdlibContype != mimeLibStrContype {
-		L.L.Warning("(AF) MIME type per libs: http<%s> mime<%s>", 
+		L.L.Warning("(AF) MIME type per libs: http<%s> mime<%s>",
 			httpStdlibContype, mimeLibStrContype)
 		sAuthtvMime = mimeLibStrContype
 	}
 	L.L.Info("(AF) filext<%s> has snift-MIME-type: %s", filext, sAuthtvMime)
 
 	// =====================================
-	// pAnlRec is *xmlutils.AnalysisRecord is 
-	// basically all of our analysis results, 
+	// pAnlRec is *xmlutils.AnalysisRecord is
+	// basically all of our analysis results,
 	// including ContypingInfo
 	// Don't forget to set the content
 	// (omitting this caused a lot of bugs)
@@ -100,7 +100,7 @@ func AnalyseFile(sCont string, filext string) (*XU.AnalysisRecord, error) {
 	var pAnlRec *XU.AnalysisRecord
 	pAnlRec = new(XU.AnalysisRecord)
 	pAnlRec.ContentityStructure.Raw = sCont
-	pAnlRec.FileExt = filext 
+	pAnlRec.FileExt = filext
 	pAnlRec.MimeType = httpStdlibContype
 	pAnlRec.MimeTypeAsSnift = sAuthtvMime
 
@@ -124,8 +124,8 @@ func AnalyseFile(sCont string, filext string) (*XU.AnalysisRecord, error) {
 		if cheatYaml || cheatXml {
 			L.L.Panic("(AF) both binary & yaml/xml")
 		}
-		// For BINARY we won't ourselves do any more processing, 
-		// so we can basically trust that the sniffed MIME type 
+		// For BINARY we won't ourselves do any more processing,
+		// so we can basically trust that the sniffed MIME type
 		// is sufficient, and return.
 		pAnlRec.MimeType = sAuthtvMime
 		pAnlRec.MType = "bin/"
@@ -143,15 +143,15 @@ func AnalyseFile(sCont string, filext string) (*XU.AnalysisRecord, error) {
 	}
 	// ======================================
 	// We have text, but it might not be XML.
-	// So use two libraries to check for XML 
-	// based on MIME type. 
+	// So use two libraries to check for XML
+	// based on MIME type.
 	// ======================================
 	hIsXml, hMsg := HttpContypeIsXml("http",
 		httpStdlibContype, filext)
 	mIsXml, mMsg := HttpContypeIsXml("mime",
 		mimeLibStrContype, filext)
 	if hIsXml || mIsXml {
-		var hS, mS string 
+		var hS, mS string
 		if !hIsXml {
 			hS = "not "
 		}
@@ -172,7 +172,7 @@ func AnalyseFile(sCont string, filext string) (*XU.AnalysisRecord, error) {
 
 	var xmlParsingFailed bool
 	var peek *XU.XmlStructurePeek
-	var e error 
+	var e error
 
 	// Peek also sets KeyElms (Root,Meta,Text)
 	peek, e = XU.PeekAtStructure_xml(sCont)
@@ -189,12 +189,12 @@ func AnalyseFile(sCont string, filext string) (*XU.AnalysisRecord, error) {
 	}
 	// Note that this next test dusnt always work for Markdown!
 	/*
-	if (!xmlParsingFailed) && (! (hIsXml || mIsXml)) {
-		L.L.Panic("XML confusion (case #2) in AnalyzeFile")
-	}
+		if (!xmlParsingFailed) && (! (hIsXml || mIsXml)) {
+			L.L.Panic("XML confusion (case #2) in AnalyzeFile")
+		}
 	*/
 
-	/* Reminder: 
+	/* Reminder:
 	type ContypingInfo struct {
 	FileExt         string
 	MimeType        string
@@ -271,7 +271,7 @@ func AnalyseFile(sCont string, filext string) (*XU.AnalysisRecord, error) {
 		s := SU.NormalizeWhitespace(pAnlRec.ContentityStructure.Raw)
 		s = SU.TruncateTo(s, 56)
 		L.L.Dbg("|RAW|" + s + "|END|")
-		L.L.Okay("(AF) Success: detected non-XML") 
+		L.L.Okay("(AF) Success: detected non-XML")
 		return pAnlRec, nil
 	}
 
@@ -330,7 +330,7 @@ func AnalyseFile(sCont string, filext string) (*XU.AnalysisRecord, error) {
 		L.L.Error("(AF) XML has nil Raw")
 	}
 	pAnlRec.ContentityStructure = peek.ContentityStructure
-	pAnlRec.ContentityStructure.Raw = sCont // naybe redundant ? 
+	pAnlRec.ContentityStructure.Raw = sCont // naybe redundant ?
 	pAnlRec.MakeXmlContentitySections()
 	/*
 		fmt.Printf("--> meta pos<%d>len<%d> text pos<%d>len<%d> \n",
@@ -353,7 +353,7 @@ func AnalyseFile(sCont string, filext string) (*XU.AnalysisRecord, error) {
 		if pPDT.HasError() {
 			L.L.Panic("FIXME:" + pPDT.Error())
 		}
-		pAnlRec.ParsedDoctype = pPDT 
+		pAnlRec.ParsedDoctype = pPDT
 		L.L.Dbg("(AF) gotDT: MType: " + pAnlRec.MType)
 		L.L.Dbg("(AF) gotDT: AnalysisRecord: " + pAnlRec.String())
 		// L.L.Dbg("gotDT: DctpFlds: " + pPDT.String())
@@ -389,7 +389,7 @@ func AnalyseFile(sCont string, filext string) (*XU.AnalysisRecord, error) {
 		pAnlRec.MType = "html/cnt/xhtml"
 	} else if SU.IsInSliceIgnoreCase(rutag, XU.DITArootElms) &&
 		SU.IsInSliceIgnoreCase(filext, XU.DITAtypeFileExtensions) {
-			pAnlRec.MType = "xml/cnt/" + rutag
+		pAnlRec.MType = "xml/cnt/" + rutag
 		if rutag == "bookmap" && S.HasSuffix(filext, "map") {
 			pAnlRec.MType = "xml/map/" + rutag
 		}
@@ -446,7 +446,7 @@ func CollectKeysOfNonNilMapValues(M map[string]*XU.FilePosition) []string {
 }
 
 func HttpContypeIsXml(src, sContype, filext string) (isXml bool, msg string) {
-	src += " " 
+	src += " "
 	if S.Contains(sContype, "xml") {
 		return true, src + "got XML (in MIME type)"
 	}

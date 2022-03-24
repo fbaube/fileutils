@@ -22,13 +22,14 @@ const MAX_FILE_SIZE = 2000000
 // Note that RelFP and AbsFP must be exported to be persisted to the DB.
 //
 type PathProps struct {
-	error  error
-	RelFP  string
-	AbsFP  AbsFilePath
-	exists bool
-	isDir  bool
-	isFile bool
-	isSymL bool
+	error   error
+	RelFP   string
+	AbsFP   AbsFilePath
+	ShortFP string // expressed if possible using "~" or "."
+	exists  bool
+	isDir   bool
+	isFile  bool
+	isSymL  bool
 	// size is here and not elsewhere in some other struct
 	// because its value is already available to us when
 	// "os.FileInfo os.Lstat(..)" is called, below.
@@ -87,12 +88,21 @@ func (p *PathProps) IsOkaySymlink() bool {
 	return p.exists && !p.isFile && !p.isDir && p.isSymL
 }
 
-// IsOkayWhat is for use with functions from github.com/samber/lo 
+// IsOkayWhat is for use with functions from github.com/samber/lo
 func (p *PathProps) IsOkayWhat() string {
-	if p.IsOkayFile() { return "FILE" }
-	if p.IsOkayDir() { return "DIR" }
-	if p.IsOkaySymlink() { return "SYMLINK" }
-	return "n/a" 
+	if p.IsOkayFile() {
+		return "FILE"
+	}
+	if p.IsOkayDir() {
+		return "DIR"
+	}
+	if p.IsOkaySymlink() {
+		return "SYMLINK"
+	}
+	if p.Exists() {
+		return "UnknownType"
+	}
+	return "Non-existent"
 }
 
 // ResolveSymlinks will follow links until it finds something else.
@@ -114,13 +124,13 @@ func (pp *PathProps) ResolveSymlinks() *PathProps {
 		println("--> Symlink from:", pp.AbsFP)
 		println("     resolved to:", newPath)
 		pp.AbsFP = AbsFilePath(newPath)
-		var e error 
+		var e error
 		pp, e = NewPathProps(newPath)
 		if e != nil {
 			panic(e)
-			return nil 
+			return nil
 		}
-		// CHECK IT 
+		// CHECK IT
 	}
 	return pp
 }
@@ -188,7 +198,7 @@ func (pPI *PathProps) FetchContent() (raw string, e error) {
 	var bb []byte
 	bb = pPI.GetContentBytes()
 	//  pPI.HasError() {
-	if bb == nil || len(bb) == 0 { 
+	if bb == nil || len(bb) == 0 {
 		return "", fmt.Errorf(
 			"fu.fetchcontent: PI.GetContentBytes<%s> failed", DispFP)
 	}

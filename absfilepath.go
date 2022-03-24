@@ -1,8 +1,9 @@
 package fileutils
 
 import (
-	S  "strings"
+	SU "github.com/fbaube/stringutils"
 	FP "path/filepath"
+	S "strings"
 )
 
 // AbsFilePath is a new type, based on `string`. It serves three purposes:
@@ -27,14 +28,16 @@ func (afp AbsFilePath) S() string {
 		// panic("FU.types: AbsFP is not abs: " + s)
 		// FIXME? // println("==> fu.types: AbsFP not abs: " + s)
 		s, e := FP.Abs(s)
-		if e != nil { panic("su.afp.S") }
+		if e != nil {
+			panic("su.afp.S")
+		}
 		return s
 	}
 	return s
 }
 
 func (afp AbsFilePath) Tildotted() string {
-	return Tildotted(afp.S())
+	return SU.Tildotted(afp.S())
 }
 
 func (afp AbsFilePath) Enhomed() string {
