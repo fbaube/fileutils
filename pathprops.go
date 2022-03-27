@@ -59,15 +59,6 @@ func (p *PathProps) Size() int {
 	return p.size
 }
 
-/*
-func (p *PathProps) AbsFP() string {
-	return string(p.absFP)
-}
-func (p *PathProps) RelFP() string {
-	return string(p.relFP)
-}
-*/
-
 // Exists is a convenience function.
 func (p *PathProps) Exists() bool {
 	return p.exists
@@ -191,6 +182,10 @@ func (pPI *PathProps) GetContentBytes() []byte {
 // FetchContent reads in the file (IFF it is a file) and trims away
 // leading and trailing whitespace, but then adds a final newline.
 func (pPI *PathProps) FetchContent() (raw string, e error) {
+	if pPI.Size() == 0 {
+		L.L.Progress("FetchContent: Skipping for zero-length content")
+		return "", nil
+	}
 	DispFP := pPI.AbsFP.Tildotted()
 	if !pPI.IsOkayFile() {
 		return "", errors.New("fu.fetchcontent: not a readable file: " + DispFP)
@@ -205,33 +200,3 @@ func (pPI *PathProps) FetchContent() (raw string, e error) {
 	raw = S.TrimSpace(string(bb)) + "\n"
 	return raw, nil
 }
-
-/*
-
-// === Implement interface Errable
-
-func (p *PathProps) HasError() bool {
-	return p.error != nil && p.error.Error() != ""
-}
-
-// GetError is necessary cos "Error()"" dusnt tell you whether "error"
-// is "nil", which is the indication of no error. Therefore we need
-// this function, which can actually return the telltale "nil".
-func (p *PathProps) GetError() error {
-	return p.error
-}
-
-// Error satisfies interface "error", but the
-// weird thing is that "error" can be nil.
-func (p *PathProps) Error() string {
-	if p.error != nil {
-		return p.error.Error()
-	}
-	return ""
-}
-
-func (p *PathProps) SetError(e error) {
-	p.error = e
-}
-
-*/

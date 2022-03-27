@@ -1,7 +1,7 @@
 package fileutils
 
 import (
-	"errors"
+	// "errors"
 	"fmt"
 	"net/http"
 	FP "path/filepath"
@@ -40,21 +40,24 @@ import (
 //
 func AnalyseFile(sCont string, filext string) (*XU.AnalysisRecord, error) {
 
-	// ===========================
-	//  Handle pathological cases
-	// ===========================
-	if sCont == "" {
-		L.L.Warning("Cannot analyze zero-length content")
-		return nil, errors.New("cannot analyze zero-length content")
-	}
-	if len(sCont) < 6 {
-		L.L.Warning("Content is too short (%d bytes) to analyse", len(sCont))
-		return nil, errors.New(fmt.Sprintf("content is too short (%d bytes) to analyse", len(sCont)))
-	}
 	// A trailing dot in the filename provides no filetype info.
 	filext = FP.Ext(filext)
 	if filext == "." {
 		filext = ""
+	}
+	// ===========================
+	//  Handle pathological cases
+	// ===========================
+	if len(sCont) < 6 {
+		if sCont == "" {
+			L.L.Progress("AnalyseFile: skipping zero-length content")
+		} else {
+			L.L.Warning("AnalyseFile: content too short (%d bytes)", len(sCont))
+		}
+		p := new(XU.AnalysisRecord)
+		p.FileExt = filext
+		// return nil, errors.New(fmt.Sprintf("content is too short (%d bytes) to analyse", len(sCont)))
+		return p, nil
 	}
 	L.L.Dbg("(AF) filext<%s> len<%d> beg<%s>",
 		filext, len(sCont), sCont[:5])
@@ -349,9 +352,9 @@ func AnalyseFile(sCont string, filext string) (*XU.AnalysisRecord, error) {
 		// We are here if we got a DOCTYPE; we also have a file extension,
 		// and we should have a root tag (or else the DOCTYPE makes no sense !)
 		var pPDT *XU.ParsedDoctype
-		pPDT = pAnlRec.ContypingInfo.ParseDoctype(peek.RawDoctype)
-		if pPDT.HasError() {
-			L.L.Panic("FIXME:" + pPDT.Error())
+		pPDT, e = pAnlRec.ContypingInfo.ParseDoctype(peek.RawDoctype)
+		if e != nil {
+			L.L.Panic("FIXME:" + e.Error())
 		}
 		pAnlRec.ParsedDoctype = pPDT
 		L.L.Dbg("(AF) gotDT: MType: " + pAnlRec.MType)
