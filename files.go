@@ -178,3 +178,11 @@ func CopyFileFromTo(src, dst string) error {
 	}
 	return os.Chmod(dst, srcinfo.Mode())
 }
+
+func AppendToFileBaseName(name, toAppend string) string {
+	if name == "" || toAppend == "" {
+		return ""
+	}
+	ext := FP.Ext(name)
+	return S.TrimSuffix(name, ext) + toAppend + ext
+}
