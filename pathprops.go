@@ -20,7 +20,7 @@ const MAX_FILE_SIZE = 2000000
 // It can be nil, if e.g. its content was created on-the-fly.
 //
 // Note that RelFP and AbsFP must be exported to be persisted to the DB.
-//
+// .
 type PathProps struct {
 	error   error
 	RelFP   string

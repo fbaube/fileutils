@@ -18,7 +18,7 @@ import (
 // <!ELEMENT  map     (topicmeta?, (topicref | keydef)*)  >
 // <!ELEMENT topicmeta (navtitle?, linktext?, data*) >
 
-// AnalyseFile is called only by dbutils.NewContentityRecord(..).
+// Analysis is called only by dbutils.NewContentityRecord(..).
 // It has very different handling for XML content versus non-XML content.
 // Most of the function is making several checks for the presence of XML.
 // When a file is identified as XML, we have much more info available,
@@ -37,8 +37,8 @@ import (
 //
 // If the first argument "sCont" (the content) is less than six bytes,
 // return (nil, nil).
-//
-func AnalyseFile(sCont string, filext string) (*XU.AnalysisRecord, error) {
+// .
+func Analysis(sCont string, filext string) (*XU.AnalysisRecord, error) {
 
 	// A trailing dot in the filename provides no filetype info.
 	filext = FP.Ext(filext)
@@ -119,8 +119,8 @@ func AnalyseFile(sCont string, filext string) (*XU.AnalysisRecord, error) {
 	}
 	isBinary = mimeLibIsBinary
 	if stdUtilIsBinary != mimeLibIsBinary {
-		L.L.Warning("(AF) libs re is-binary: "+
-			"http-stdlib<%t> mime-lib<%t>",
+		L.L.Warning("(AF) is-binary: "+
+			"use mime-lib <%t> not http-stdlib <%t> ",
 			stdUtilIsBinary, mimeLibIsBinary)
 	}
 	if isBinary {
@@ -235,7 +235,7 @@ func AnalyseFile(sCont string, filext string) (*XU.AnalysisRecord, error) {
 		}
 		pAnlRec.ContypingInfo = *DoContypingInfo_non_xml(
 			httpStdlibContype, sCont, filext)
-		L.L.Okay("(AF) Non-XML: " + pAnlRec.ContypingInfo.String())
+		L.L.Okay("(AF) Non-XML: " + pAnlRec.ContypingInfo.MultilineString())
 		// Check for YAML metadata
 		iEnd, e := SU.YamlMetadataHeaderRange(sCont)
 		// if there is an error, it will mess up parsing the file, so just exit.
@@ -370,6 +370,16 @@ func AnalyseFile(sCont string, filext string) (*XU.AnalysisRecord, error) {
 			L.L.Panic("(AF) no MType, L367")
 		}
 		L.L.Okay("(AF) Success: XML with DOCTYPE")
+		// HACK ALERT
+		if S.HasSuffix(pAnlRec.MType, "---") {
+			rutag := S.ToLower(peek.Root.TagName)
+			if pAnlRec.MType == "xml/map/---" {
+				pAnlRec.MType = "xml/map/" + rutag
+				L.L.Okay("(AF) Patched MType to: " + pAnlRec.MType)
+			} else {
+				panic("MType ending in \"---\" not fixed")
+			}
+		}
 		return pAnlRec, nil
 	}
 	// =====================
