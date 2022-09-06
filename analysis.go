@@ -198,7 +198,7 @@ func Analysis(sCont string, filext string) (*XU.AnalysisRecord, error) {
 	*/
 
 	/* Reminder:
-	type ContypingInfo struct {
+	type ContypingInfo is {
 	FileExt         string
 	MimeType        string
 	MimeTypeAsSnift string
@@ -233,7 +233,7 @@ func Analysis(sCont string, filext string) (*XU.AnalysisRecord, error) {
 		if cheatXml {
 			L.L.Panic("(AF) both non-xml & xml")
 		}
-		pAnlRec.ContypingInfo = *DoContypingInfo_non_xml(
+		pAnlRec.ContypingInfo = * /* XU. */ DoContypingInfo_non_xml(
 			httpStdlibContype, sCont, filext)
 		L.L.Okay("(AF) Non-XML: " + pAnlRec.ContypingInfo.MultilineString())
 		// Check for YAML metadata
