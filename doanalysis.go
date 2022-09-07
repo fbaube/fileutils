@@ -7,7 +7,7 @@ import (
 	FP "path/filepath"
 	S "strings"
 
-	MT "github.com/gabriel-vasile/mimetype"
+	"github.com/gabriel-vasile/mimetype"
 	"golang.org/x/tools/godoc/util"
 
 	L "github.com/fbaube/mlog"
@@ -18,7 +18,7 @@ import (
 // <!ELEMENT  map     (topicmeta?, (topicref | keydef)*)  >
 // <!ELEMENT topicmeta (navtitle?, linktext?, data*) >
 
-// Analysis is called only by dbutils.NewContentityRecord(..).
+// DoAnalysis is called only by NewContentityRecord(..).
 // It has very different handling for XML content versus non-XML content.
 // Most of the function is making several checks for the presence of XML.
 // When a file is identified as XML, we have much more info available,
@@ -38,7 +38,7 @@ import (
 // If the first argument "sCont" (the content) is less than six bytes,
 // return (nil, nil).
 // .
-func Analysis(sCont string, filext string) (*XU.AnalysisRecord, error) {
+func DoAnalysis(sCont string, filext string) (*XU.AnalysisRecord, error) {
 
 	// A trailing dot in the filename provides no filetype info.
 	filext = FP.Ext(filext)
@@ -46,7 +46,8 @@ func Analysis(sCont string, filext string) (*XU.AnalysisRecord, error) {
 		filext = ""
 	}
 	// ===========================
-	//  Handle pathological cases
+	//  Handle pathological cases:
+	//  Too short or non-existent
 	// ===========================
 	if len(sCont) < 6 {
 		if sCont == "" {
@@ -68,76 +69,88 @@ func Analysis(sCont string, filext string) (*XU.AnalysisRecord, error) {
 	cheatYaml := S.HasPrefix(sCont, "---\n")
 	cheatXml := S.HasPrefix(sCont, "<?xml")
 	// ========================
-	//  Content type detection
+	//  Content type detection:
+	//   "h_" = http stdlib
+	//   (unreliable!)
 	// ========================
-	var httpStdlibContype string
-	var mimeLibDatContype *MT.MIME
-	var mimeLibStrContype string // *mimetype.MIME
-	var mimeLibIsBinary, stdUtilIsBinary, isBinary bool
+	var h_contype string
+	h_contype = http.DetectContentType([]byte(sCont))
+	h_contype = S.TrimSuffix(h_contype, "; charset=utf-8")
+	if S.Contains(h_contype, ";") {
+		L.L.Warning("Content type from http stdlib " +
+			"has a semicolon: " + h_contype)
+	}
+	// ========================
+	//  Content type detection:
+	//   "m_" = 3p library
+	//   (AUTHORITATIVE!)
+	// ========================
+	var m_contypeData *mimetype.MIME
+	var m_contype string // *mimetype.MIME
 	// MIME type ?
-	httpStdlibContype = http.DetectContentType([]byte(sCont))
-	mimeLibDatContype = MT.Detect([]byte(sCont))
-	mimeLibStrContype = mimeLibDatContype.String()
-	httpStdlibContype = S.TrimSuffix(httpStdlibContype, "; charset=utf-8")
-	mimeLibStrContype = S.TrimSuffix(mimeLibStrContype, "; charset=utf-8")
-	if S.Contains(httpStdlibContype, ";") ||
-		S.Contains(mimeLibStrContype, ";") {
-		L.L.Warning("Content type contains a semicolon")
+	m_contypeData = mimetype.Detect([]byte(sCont))
+	m_contype = m_contypeData.String()
+	m_contype = S.TrimSuffix(m_contype, "; charset=utf-8")
+	if S.Contains(m_contype, ";") {
+		L.L.Warning("Content type from 3P " +
+			"lib has a semicolon: " + m_contype)
 	}
 	// Authoritative MIME type string
-	var sAuthtvMime = mimeLibStrContype
-	if httpStdlibContype != mimeLibStrContype {
-		L.L.Warning("(AF) MIME type per libs: http<%s> mime<%s>",
-			httpStdlibContype, mimeLibStrContype)
-		sAuthtvMime = mimeLibStrContype
+	// var sAuthtvMime = m_contype
+	if h_contype != m_contype {
+		L.L.Warning("(AF) MIME type per libs: "+
+			"OK-3P-mime<%s> barfy-stdlib-http<%s>",
+			m_contype, h_contype)
 	}
-	L.L.Info("(AF) filext<%s> has snift-MIME-type: %s", filext, sAuthtvMime)
+	L.L.Info("(AF) filext<%s> has 3P-snift-MIME-type: %s", filext, m_contype)
 
 	// =====================================
 	// pAnlRec is *xmlutils.AnalysisRecord is
 	// basically all of our analysis results,
-	// including ContypingInfo
-	// Don't forget to set the content
+	// including ContypingInfo.
+	// Don't forget to set the content!
 	// (omitting this caused a lot of bugs)
 	// =====================================
 	var pAnlRec *XU.AnalysisRecord
 	pAnlRec = new(XU.AnalysisRecord)
 	pAnlRec.ContentityStructure.Raw = sCont
 	pAnlRec.FileExt = filext
-	pAnlRec.MimeType = httpStdlibContype
-	pAnlRec.MimeTypeAsSnift = sAuthtvMime
+	pAnlRec.MimeType = h_contype // Junk this ?
+	pAnlRec.MimeTypeAsSnift = m_contype
 
 	// ===========================
 	//  Check for & handle BINARY
 	// ===========================
-	stdUtilIsBinary = !util.IsText([]byte(sCont))
-	mimeLibIsBinary = true
-	for mime := mimeLibDatContype; mime != nil; mime = mime.Parent() {
+	var h_isBinary bool // Unreliable!
+	h_isBinary = !util.IsText([]byte(sCont))
+	var m_isBinary bool // Authoritative!
+	m_isBinary = true
+	for mime := m_contypeData; mime != nil; mime = mime.Parent() {
 		if mime.Is("text/plain") {
-			mimeLibIsBinary = false
+			m_isBinary = false
 		}
+		// FIXME If "text/" here, is an error to sort out
 	}
-	isBinary = mimeLibIsBinary
-	if stdUtilIsBinary != mimeLibIsBinary {
+	if h_isBinary != m_isBinary {
 		L.L.Warning("(AF) is-binary: "+
-			"use mime-lib <%t> not http-stdlib <%t> ",
-			stdUtilIsBinary, mimeLibIsBinary)
+			"using OK-3P-mime-lib <%t> and not barfy-http-stdlib <%t> ",
+			m_isBinary, h_isBinary)
 	}
-	if isBinary {
+	if m_isBinary {
 		if cheatYaml || cheatXml {
 			L.L.Panic("(AF) both binary & yaml/xml")
 		}
 		// For BINARY we won't ourselves do any more processing,
 		// so we can basically trust that the sniffed MIME type
 		// is sufficient, and return.
-		pAnlRec.MimeType = sAuthtvMime
+		pAnlRec.MimeType = m_contype
 		pAnlRec.MType = "bin/"
-		if S.HasPrefix(sAuthtvMime, "image/") {
-			hasEPS := S.Contains(sAuthtvMime, "eps")
-			hasTXT := S.Contains(sAuthtvMime, "text") || S.Contains(sAuthtvMime, "txt")
+		if S.HasPrefix(m_contype, "image/") {
+			hasEPS := S.Contains(m_contype, "eps")
+			hasTXT := S.Contains(m_contype, "text") || S.Contains(m_contype, "txt")
 			if hasTXT || hasEPS {
 				// TODO
-				L.L.Warning("(AF) EPS/TXT confusion for MIME type: " + sAuthtvMime)
+				L.L.Warning("(AF) EPS/TXT confusion for MIME type: " + m_contype)
 				pAnlRec.MType = "txt/img/??!"
 			}
 		}
@@ -149,10 +162,8 @@ func Analysis(sCont string, filext string) (*XU.AnalysisRecord, error) {
 	// So use two libraries to check for XML
 	// based on MIME type.
 	// ======================================
-	hIsXml, hMsg := HttpContypeIsXml("http",
-		httpStdlibContype, filext)
-	mIsXml, mMsg := HttpContypeIsXml("mime",
-		mimeLibStrContype, filext)
+	hIsXml, hMsg := HttpContypeIsXml("http", h_contype, filext)
+	mIsXml, mMsg := HttpContypeIsXml("mime", m_contype, filext)
 	if hIsXml || mIsXml {
 		var hS, mS string
 		if !hIsXml {
@@ -234,7 +245,7 @@ func Analysis(sCont string, filext string) (*XU.AnalysisRecord, error) {
 			L.L.Panic("(AF) both non-xml & xml")
 		}
 		pAnlRec.ContypingInfo = * /* XU. */ DoContypingInfo_non_xml(
-			httpStdlibContype, sCont, filext)
+			h_contype, sCont, filext)
 		L.L.Okay("(AF) Non-XML: " + pAnlRec.ContypingInfo.MultilineString())
 		// Check for YAML metadata
 		iEnd, e := SU.YamlMetadataHeaderRange(sCont)
@@ -436,7 +447,7 @@ func Analysis(sCont string, filext string) (*XU.AnalysisRecord, error) {
 	// println("--> fu.af: TextRaw:", pAnlRec.TextRaw())
 
 	if pAnlRec.MType == "" {
-		switch mimeLibStrContype {
+		switch m_contype {
 		case "image/svg+xml":
 			pAnlRec.MType = "xml/cnt/svg"
 		}
