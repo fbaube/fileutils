@@ -8,7 +8,7 @@ import (
 	S "strings"
 
 	"github.com/gabriel-vasile/mimetype"
-	"golang.org/x/tools/godoc/util"
+	"golang.org/x/tools/godoc/util" // used once, L125
 
 	L "github.com/fbaube/mlog"
 	SU "github.com/fbaube/stringutils"
@@ -51,9 +51,9 @@ func DoAnalysis(sCont string, filext string) (*XU.AnalysisRecord, error) {
 	// ===========================
 	if len(sCont) < 6 {
 		if sCont == "" {
-			L.L.Progress("AnalyseFile: skipping zero-length content")
+			L.L.Progress("DoAnalysis: skipping zero-length content")
 		} else {
-			L.L.Warning("AnalyseFile: content too short (%d bytes)", len(sCont))
+			L.L.Warning("DoAnalysis: content too short (%d bytes)", len(sCont))
 		}
 		p := new(XU.AnalysisRecord)
 		p.FileExt = filext
@@ -105,6 +105,7 @@ func DoAnalysis(sCont string, filext string) (*XU.AnalysisRecord, error) {
 	L.L.Info("(AF) filext<%s> has 3P-snift-MIME-type: %s", filext, m_contype)
 
 	// =====================================
+	// INITIALIZE ANALYSIS RECORD:
 	// pAnlRec is *xmlutils.AnalysisRecord is
 	// basically all of our analysis results,
 	// including ContypingInfo.
@@ -122,8 +123,8 @@ func DoAnalysis(sCont string, filext string) (*XU.AnalysisRecord, error) {
 	//  Check for & handle BINARY
 	// ===========================
 	var h_isBinary bool // Unreliable!
-	h_isBinary = !util.IsText([]byte(sCont))
 	var m_isBinary bool // Authoritative!
+	h_isBinary = !util.IsText([]byte(sCont))
 	m_isBinary = true
 	for mime := m_contypeData; mime != nil; mime = mime.Parent() {
 		if mime.Is("text/plain") {
@@ -140,22 +141,7 @@ func DoAnalysis(sCont string, filext string) (*XU.AnalysisRecord, error) {
 		if cheatYaml || cheatXml {
 			L.L.Panic("(AF) both binary & yaml/xml")
 		}
-		// For BINARY we won't ourselves do any more processing,
-		// so we can basically trust that the sniffed MIME type
-		// is sufficient, and return.
-		pAnlRec.MimeType = m_contype
-		pAnlRec.MType = "bin/"
-		if S.HasPrefix(m_contype, "image/") {
-			hasEPS := S.Contains(m_contype, "eps")
-			hasTXT := S.Contains(m_contype, "text") || S.Contains(m_contype, "txt")
-			if hasTXT || hasEPS {
-				// TODO
-				L.L.Warning("(AF) EPS/TXT confusion for MIME type: " + m_contype)
-				pAnlRec.MType = "txt/img/??!"
-			}
-		}
-		L.L.Okay("(AF) Success: detected BINARY")
-		return pAnlRec, nil
+		return DoAnalysis_bin(pAnlRec)
 	}
 	// ======================================
 	// We have text, but it might not be XML.
@@ -208,15 +194,6 @@ func DoAnalysis(sCont string, filext string) (*XU.AnalysisRecord, error) {
 		}
 	*/
 
-	/* Reminder:
-	type ContypingInfo is {
-	FileExt         string
-	MimeType        string
-	MimeTypeAsSnift string
-	MType           string
-	IsLwDita        bool
-	*/
-
 	// ===============================
 	//  If it's DTD stuff, we're done
 	// ===============================
@@ -244,49 +221,7 @@ func DoAnalysis(sCont string, filext string) (*XU.AnalysisRecord, error) {
 		if cheatXml {
 			L.L.Panic("(AF) both non-xml & xml")
 		}
-		pAnlRec.ContypingInfo = * /* XU. */ DoContypingInfo_non_xml(
-			h_contype, sCont, filext)
-		L.L.Okay("(AF) Non-XML: " + pAnlRec.ContypingInfo.MultilineString())
-		// Check for YAML metadata
-		iEnd, e := SU.YamlMetadataHeaderRange(sCont)
-		// if there is an error, it will mess up parsing the file, so just exit.
-		if e != nil {
-			L.L.Error("(AF) Metadata header YAML error: " + e.Error())
-			return pAnlRec, fmt.Errorf("(AF) metadata header YAML error: %w", e)
-		}
-		// Default: no YAML metadata found
-		pAnlRec.Text.Beg = *XU.NewFilePosition(0)
-		pAnlRec.Text.End = *XU.NewFilePosition(len(sCont))
-		pAnlRec.Meta.Beg = *XU.NewFilePosition(0)
-		pAnlRec.Meta.End = *XU.NewFilePosition(0)
-		// No YAML metadata found ?
-		if iEnd <= 0 {
-			pAnlRec.Meta.Beg = *XU.NewFilePosition(0)
-			pAnlRec.Meta.End = *XU.NewFilePosition(0)
-			pAnlRec.Text.Beg = *XU.NewFilePosition(0)
-			pAnlRec.Text.End = *XU.NewFilePosition(len(sCont))
-		} else {
-			// Found YAML metadata
-			s2 := SU.TrimYamlMetadataDelimiters(sCont[:iEnd])
-			ps, e := SU.GetYamlMetadataAsPropSet(s2)
-			if e != nil {
-				L.L.Error("(AF) loading YAML: " + e.Error())
-				return pAnlRec, fmt.Errorf("loading YAML: %w", e)
-			}
-			// SUCCESS! Set ranges.
-			pAnlRec.Meta.Beg = *XU.NewFilePosition(0)
-			pAnlRec.Meta.End = *XU.NewFilePosition(iEnd)
-			pAnlRec.Text.Beg = *XU.NewFilePosition(iEnd)
-			pAnlRec.Text.End = *XU.NewFilePosition(len(sCont))
-
-			pAnlRec.MetaProps = ps
-			L.L.Dbg("(AF) Got YAML metadata: " + s2)
-		}
-		s := SU.NormalizeWhitespace(pAnlRec.ContentityStructure.Raw)
-		s = SU.TruncateTo(s, 56)
-		L.L.Dbg("|RAW|" + s + "|END|")
-		L.L.Okay("(AF) Success: detected non-XML")
-		return pAnlRec, nil
+		return DoAnalysis_txt(pAnlRec)
 	}
 
 	// =====================================
