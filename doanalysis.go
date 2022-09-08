@@ -31,12 +31,14 @@ import (
 // (3) Everything else (incl. plain text,
 // Markdown, and XML/HTML that lacks DOCTYPE)
 //
-// The second argument "filext" can be any filepath; the Go stdlib is used
-// to split off the file extension. It can also be "", if (for example) the
-// content is entered interactively, without a file name or assigned MIME type.
+// The second argument "filext" can be any filepath; the Go stdlib
+// is used to split off the file extension. It can also be "", if
+// (for example) the content is entered interactively, without a
+// file name or already-determined MIME type.
 //
 // If the first argument "sCont" (the content) is less than six bytes,
-// return (nil, nil).
+// return (nil, nil) to indicate that there is not enough content to
+// work with.
 // .
 func DoAnalysis(sCont string, filext string) (*XU.AnalysisRecord, error) {
 
@@ -46,7 +48,7 @@ func DoAnalysis(sCont string, filext string) (*XU.AnalysisRecord, error) {
 		filext = ""
 	}
 	// ===========================
-	//  Handle pathological cases:
+	//  Handle pathological case:
 	//  Too short or non-existent
 	// ===========================
 	if len(sCont) < 6 {
@@ -67,7 +69,7 @@ func DoAnalysis(sCont string, filext string) (*XU.AnalysisRecord, error) {
 	//  Try a coupla shortcuts
 	// ========================
 	cheatYaml := S.HasPrefix(sCont, "---\n")
-	cheatXml := S.HasPrefix(sCont, "<?xml")
+	cheatXml := S.HasPrefix(sCont, "<?xml ")
 	// ========================
 	//  Content type detection:
 	//   "h_" = http stdlib
@@ -78,12 +80,12 @@ func DoAnalysis(sCont string, filext string) (*XU.AnalysisRecord, error) {
 	h_contype = S.TrimSuffix(h_contype, "; charset=utf-8")
 	if S.Contains(h_contype, ";") {
 		L.L.Warning("Content type from http stdlib " +
-			"has a semicolon: " + h_contype)
+			"(still) has a semicolon: " + h_contype)
 	}
 	// ========================
 	//  Content type detection:
-	//   "m_" = 3p library
-	//   (AUTHORITATIVE!)
+	//  "m_" = 3rd party library
+	//  (AUTHORITATIVE!)
 	// ========================
 	var m_contypeData *mimetype.MIME
 	var m_contype string // *mimetype.MIME
@@ -92,14 +94,14 @@ func DoAnalysis(sCont string, filext string) (*XU.AnalysisRecord, error) {
 	m_contype = m_contypeData.String()
 	m_contype = S.TrimSuffix(m_contype, "; charset=utf-8")
 	if S.Contains(m_contype, ";") {
-		L.L.Warning("Content type from 3P " +
-			"lib has a semicolon: " + m_contype)
+		L.L.Warning("Content type from 3P lib " +
+			"(still) has a semicolon: " + m_contype)
 	}
-	// Authoritative MIME type string
+	// Authoritative MIME type string:
 	// var sAuthtvMime = m_contype
 	if h_contype != m_contype {
 		L.L.Warning("(AF) MIME type per libs: "+
-			"OK-3P-mime<%s> barfy-stdlib-http<%s>",
+			"OK-3P-mime<%s> v barfy-stdlib-http<%s>",
 			m_contype, h_contype)
 	}
 	L.L.Info("(AF) filext<%s> has 3P-snift-MIME-type: %s", filext, m_contype)
@@ -148,8 +150,8 @@ func DoAnalysis(sCont string, filext string) (*XU.AnalysisRecord, error) {
 	// So use two libraries to check for XML
 	// based on MIME type.
 	// ======================================
-	hIsXml, hMsg := HttpContypeIsXml("http", h_contype, filext)
-	mIsXml, mMsg := HttpContypeIsXml("mime", m_contype, filext)
+	hIsXml, hMsg := contypeIsXml("http", h_contype, filext)
+	mIsXml, mMsg := contypeIsXml("mime", m_contype, filext)
 	if hIsXml || mIsXml {
 		var hS, mS string
 		if !hIsXml {
@@ -158,8 +160,8 @@ func DoAnalysis(sCont string, filext string) (*XU.AnalysisRecord, error) {
 		if !mIsXml {
 			mS = "not "
 		}
-		L.L.Info("(AF) (is-%sXML) %s", hS, hMsg)
-		L.L.Info("(AF) (is-%sXML) %s", mS, mMsg)
+		L.L.Info("(AF) 3P (is-%sXML) %s ; stdlib (is-%sXML) %s",
+			mS, mMsg, hS, hMsg)
 	} else {
 		L.L.Info("(AF) XML not detected by MIME libs")
 	}
@@ -178,14 +180,14 @@ func DoAnalysis(sCont string, filext string) (*XU.AnalysisRecord, error) {
 	peek, e = XU.PeekAtStructure_xml(sCont)
 	// NOTE! An error from peeking might be from, for
 	// example, applying XML parsing to a Markdown file.
-	// So, an error should not be fatal.
+	// So, an error should NOT be fatal.
 	if e != nil {
 		L.L.Info("(AF) XML parsing got error: " + e.Error())
 		xmlParsingFailed = true
 	}
 	// pathological
 	if xmlParsingFailed && (hIsXml || mIsXml) {
-		L.L.Panic("(AF) XML confusion (case #1) in AnalyzeFile")
+		L.L.Panic("(AF) XML confusion (case #1) in DoAnalysis")
 	}
 	// Note that this next test dusnt always work for Markdown!
 	/*
@@ -197,12 +199,9 @@ func DoAnalysis(sCont string, filext string) (*XU.AnalysisRecord, error) {
 	// ===============================
 	//  If it's DTD stuff, we're done
 	// ===============================
-	if peek.HasDTDstuff && SU.IsInSliceIgnoreCase(filext, XU.DTDtypeFileExtensions) {
-		L.L.Okay("(AF) Success: DTD content detected (filext<%s>)", filext)
-		pAnlRec.MimeType = "application/xml-dtd"
-		pAnlRec.MType = "xml/sch/" + S.ToLower(filext[1:])
-		L.L.Warning("(AF) DTD stuff: should allocate and fill fields")
-		return pAnlRec, nil
+	if peek.HasDTDstuff && SU.IsInSliceIgnoreCase(
+		filext, XU.DTDtypeFileExtensions) {
+		return DoAnalysis_sch(pAnlRec)
 	}
 	// ===============================
 	//  Set bool variables, including
@@ -404,17 +403,17 @@ func CollectKeysOfNonNilMapValues(M map[string]*XU.FilePosition) []string {
 	return ss
 }
 
-func HttpContypeIsXml(src, sContype, filext string) (isXml bool, msg string) {
+func contypeIsXml(src, sContype, filext string) (isXml bool, msg string) {
 	src += " "
 	if S.Contains(sContype, "xml") {
 		return true, src + "got XML (in MIME type)"
 	}
 	if sContype == "text/html" {
-		return true, src + "got XML (cos text/html: HDITA?)"
+		return true, src + "got XML (cos is text/html)"
 	}
 	if S.HasPrefix(sContype, "text/") &&
 		(filext == ".dita" || filext == ".ditamap" || filext == ".map") {
-		return true, src + "got XML (cos text/dita-filext)"
+		return true, src + "got DITA XML (cos of text/dita-filext)"
 	}
 	if S.Contains(sContype, "ml") {
 		return true, src + "got <ml>"
