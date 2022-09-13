@@ -1,8 +1,6 @@
 package fileutils
 
 import (
-	// "errors"
-	"fmt"
 	"net/http"
 	FP "path/filepath"
 	S "strings"
@@ -40,7 +38,11 @@ import (
 // return (nil, nil) to indicate that there is not enough content to
 // work with.
 // .
-func DoAnalysis(sCont string, filext string) (*XU.AnalysisRecord, error) {
+// func DoAnalysis(sCont string, filext string) (*PathAnalysis, error) {
+func NewPathAnalysis(pPP *PathProps) /* sCont string, filext string) */ (*PathAnalysis, error) {
+
+	sCont := pPP.Raw
+	filext := FP.Ext(pPP.AbsFP.S())
 
 	// A trailing dot in the filename provides no filetype info.
 	filext = FP.Ext(filext)
@@ -57,7 +59,7 @@ func DoAnalysis(sCont string, filext string) (*XU.AnalysisRecord, error) {
 		} else {
 			L.L.Warning("DoAnalysis: content too short (%d bytes)", len(sCont))
 		}
-		p := new(XU.AnalysisRecord)
+		p := new(PathAnalysis)
 		p.FileExt = filext
 		// return nil, errors.New(fmt.Sprintf("content is too short (%d bytes) to analyse", len(sCont)))
 		return p, nil
@@ -70,41 +72,40 @@ func DoAnalysis(sCont string, filext string) (*XU.AnalysisRecord, error) {
 	// ========================
 	cheatYaml := S.HasPrefix(sCont, "---\n")
 	cheatXml := S.HasPrefix(sCont, "<?xml ")
-	// ========================
-	//  Content type detection:
-	//   "h_" = http stdlib
-	//   (unreliable!)
-	// ========================
-	var h_contype string
-	h_contype = http.DetectContentType([]byte(sCont))
-	h_contype = S.TrimSuffix(h_contype, "; charset=utf-8")
-	if S.Contains(h_contype, ";") {
-		L.L.Warning("Content type from http stdlib " +
-			"(still) has a semicolon: " + h_contype)
+	// ==============================
+	//  Content type detection using
+	//   http stdlib (unreliable!)
+	// ==============================
+	var stdlib_contype string
+	stdlib_contype = http.DetectContentType([]byte(sCont))
+	stdlib_contype = S.TrimSuffix(stdlib_contype, "; charset=utf-8")
+	if S.Contains(stdlib_contype, ";") {
+		L.L.Warning("Content type from stdlib " +
+			"(still) has a semicolon: " + stdlib_contype)
 	}
 	// ========================
-	//  Content type detection:
-	//  "m_" = 3rd party library
+	//  Content type detection
+	//  using 3rd party library
 	//  (AUTHORITATIVE!)
 	// ========================
-	var m_contypeData *mimetype.MIME
-	var m_contype string // *mimetype.MIME
+	var lib_3p_contypeData *mimetype.MIME
+	var lib_3p_contype string // *mimetype.MIME
 	// MIME type ?
-	m_contypeData = mimetype.Detect([]byte(sCont))
-	m_contype = m_contypeData.String()
-	m_contype = S.TrimSuffix(m_contype, "; charset=utf-8")
-	if S.Contains(m_contype, ";") {
-		L.L.Warning("Content type from 3P lib " +
-			"(still) has a semicolon: " + m_contype)
+	lib_3p_contypeData = mimetype.Detect([]byte(sCont))
+	lib_3p_contype = lib_3p_contypeData.String()
+	lib_3p_contype = S.TrimSuffix(lib_3p_contype, "; charset=utf-8")
+	if S.Contains(lib_3p_contype, ";") {
+		L.L.Warning("Content type from lib_3p " +
+			"(still) has a semicolon: " + lib_3p_contype)
 	}
 	// Authoritative MIME type string:
-	// var sAuthtvMime = m_contype
-	if h_contype != m_contype {
-		L.L.Warning("(AF) MIME type per libs: "+
-			"OK-3P-mime<%s> v barfy-stdlib-http<%s>",
-			m_contype, h_contype)
+	// var sAuthtvMime = lib_3p_contype
+	if stdlib_contype != lib_3p_contype {
+		L.L.Warning("(AF) MIME type: lib_3p<%s> stdlib<%s>",
+			lib_3p_contype, stdlib_contype)
 	}
-	L.L.Info("(AF) filext<%s> has 3P-snift-MIME-type: %s", filext, m_contype)
+	L.L.Info("(AF) filext<%s> has 3P-snift-MIME-type: %s",
+		filext, lib_3p_contype)
 
 	// =====================================
 	// INITIALIZE ANALYSIS RECORD:
@@ -114,44 +115,44 @@ func DoAnalysis(sCont string, filext string) (*XU.AnalysisRecord, error) {
 	// Don't forget to set the content!
 	// (omitting this caused a lot of bugs)
 	// =====================================
-	var pAnlRec *XU.AnalysisRecord
-	pAnlRec = new(XU.AnalysisRecord)
-	pAnlRec.ContentityStructure.Raw = sCont
+	var pAnlRec *PathAnalysis
+	pAnlRec = new(PathAnalysis)
+	pAnlRec.PathProps = new(PathProps)
+	pAnlRec.PathProps.Raw = sCont
 	pAnlRec.FileExt = filext
-	pAnlRec.MimeType = h_contype // Junk this ?
-	pAnlRec.MimeTypeAsSnift = m_contype
+	pAnlRec.MimeType = stdlib_contype // Junk this ?
+	pAnlRec.MimeTypeAsSnift = lib_3p_contype
 
 	// ===========================
 	//  Check for & handle BINARY
 	// ===========================
-	var h_isBinary bool // Unreliable!
-	var m_isBinary bool // Authoritative!
-	h_isBinary = !util.IsText([]byte(sCont))
-	m_isBinary = true
-	for mime := m_contypeData; mime != nil; mime = mime.Parent() {
+	var stdlib_isBinary bool // Unreliable!
+	var lib_3p_isBinary bool // Authoritative!
+	stdlib_isBinary = !util.IsText([]byte(sCont))
+	lib_3p_isBinary = true
+	for mime := lib_3p_contypeData; mime != nil; mime = mime.Parent() {
 		if mime.Is("text/plain") {
-			m_isBinary = false
+			lib_3p_isBinary = false
 		}
 		// FIXME If "text/" here, is an error to sort out
 	}
-	if h_isBinary != m_isBinary {
-		L.L.Warning("(AF) is-binary: "+
-			"using OK-3P-mime-lib <%t> and not barfy-http-stdlib <%t> ",
-			m_isBinary, h_isBinary)
+	if stdlib_isBinary != lib_3p_isBinary {
+		L.L.Warning("(AF) is-binary: using lib_3p <%t> not stdlib <%t> ",
+			lib_3p_isBinary, stdlib_isBinary)
 	}
-	if m_isBinary {
+	if lib_3p_isBinary {
 		if cheatYaml || cheatXml {
 			L.L.Panic("(AF) both binary & yaml/xml")
 		}
-		return DoAnalysis_bin(pAnlRec)
+		return pAnlRec, pAnlRec.DoAnalysis_bin()
 	}
 	// ======================================
 	// We have text, but it might not be XML.
-	// So use two libraries to check for XML
-	// based on MIME type.
+	// So process the MIME types returned by
+	// the two libraries.
 	// ======================================
-	hIsXml, hMsg := contypeIsXml("http", h_contype, filext)
-	mIsXml, mMsg := contypeIsXml("mime", m_contype, filext)
+	hIsXml, hMsg := contypeIsXml("stdlib", stdlib_contype, filext)
+	mIsXml, mMsg := contypeIsXml("lib_3p", lib_3p_contype, filext)
 	if hIsXml || mIsXml {
 		var hS, mS string
 		if !hIsXml {
@@ -160,32 +161,51 @@ func DoAnalysis(sCont string, filext string) (*XU.AnalysisRecord, error) {
 		if !mIsXml {
 			mS = "not "
 		}
-		L.L.Info("(AF) 3P (is-%sXML) %s ; stdlib (is-%sXML) %s",
+		L.L.Info("(AF) lib_3p (is-%sXML) %s \n\t\t stdlib (is-%sXML) %s",
 			mS, mMsg, hS, hMsg)
 	} else {
-		L.L.Info("(AF) XML not detected by MIME libs")
+		L.L.Info("(AF) XML not detected by either MIME lib")
 	}
-
 	// ===================================
 	//  MAIN XML PRELIMINARY ANALYSIS:
 	//  Peek into file to look for root
 	//  tag and other top-level XML stuff
 	// ===================================
-
 	var xmlParsingFailed bool
-	var peek *XU.XmlStructurePeek
+	var pPeek *XU.XmlPeek
 	var e error
 
-	// Peek also sets KeyElms (Root,Meta,Text)
-	peek, e = XU.PeekAtStructure_xml(sCont)
-	// NOTE! An error from peeking might be from, for
-	// example, applying XML parsing to a Markdown file.
-	// So, an error should NOT be fatal.
+	// ==============================
+	//  Peek for XML; this also sets
+	//  KeyElms (Root,Meta,Text)
+	// ==============================
+	pPeek, e = XU.Peek_xml(sCont)
+	/*
+		if pPeek.Raw == "" {
+			panic("nil Raw")
+		}
+		if pAnlRec.PathProps.Raw != pPeek.Raw {
+			panic("MISMATCH-1")
+		}
+	*/
+	// NOTE! An error from peeking might be caused
+	// by, for example, applying XML parsing to a
+	// Markdown file. So, an error is NOT fatal.
 	if e != nil {
 		L.L.Info("(AF) XML parsing got error: " + e.Error())
 		xmlParsingFailed = true
 	}
-	// pathological
+	// ===============================
+	//  If it's DTD stuff, we're done
+	// ===============================
+	if pPeek.HasDTDstuff && SU.IsInSliceIgnoreCase(
+		filext, XU.DTDtypeFileExtensions) {
+		return pAnlRec, pAnlRec.DoAnalysis_sch()
+	}
+	// Check for pathological cases
+	var gotSomeXml bool
+	gotSomeXml = pPeek.ContentityBasics.HasRootTag() ||
+		(pPeek.RawDoctype != "") || (pPeek.RawPreamble != "")
 	if xmlParsingFailed && (hIsXml || mIsXml) {
 		L.L.Panic("(AF) XML confusion (case #1) in DoAnalysis")
 	}
@@ -195,21 +215,29 @@ func DoAnalysis(sCont string, filext string) (*XU.AnalysisRecord, error) {
 			L.L.Panic("XML confusion (case #2) in AnalyzeFile")
 		}
 	*/
-
-	// ===============================
-	//  If it's DTD stuff, we're done
-	// ===============================
-	if peek.HasDTDstuff && SU.IsInSliceIgnoreCase(
-		filext, XU.DTDtypeFileExtensions) {
-		return DoAnalysis_sch(pAnlRec)
+	// =============================
+	//  If it's not XML, we're done
+	// =============================
+	if xmlParsingFailed || !gotSomeXml {
+		if cheatXml {
+			L.L.Panic("(AF) both non-xml & xml")
+		}
+		return pAnlRec, pAnlRec.DoAnalysis_txt()
 	}
+	// ===========================================
+	//  It's XML, so crank thru it and we're done
+	// ===========================================
+	return pAnlRec, pAnlRec.DoAnalysis_xml(pPeek)
+}
+
+/*
 	// ===============================
 	//  Set bool variables, including
 	//  supporting analysis by stdlib
 	// ===============================
-	gotRootElm := (peek.ContentityStructure.CheckXmlSections())
-	gotDoctype := (peek.RawDoctype != "")
-	gotPreambl := (peek.RawPreamble != "")
+	gotRootElm := (pPeek.ContentityTopLevelStructure.HasRootTag())
+	gotDoctype := (pPeek.RawDoctype != "")
+	gotPreambl := (pPeek.RawPreamble != "")
 	gotSomeXml := (gotRootElm || gotDoctype || gotPreambl)
 	// Note that stdlib assigns "text/html" to DITA maps :-/
 
@@ -250,20 +278,20 @@ func DoAnalysis(sCont string, filext string) (*XU.AnalysisRecord, error) {
 		sD = "<DOCTYPE..> "
 	}
 	if gotRootElm {
-		sR = "root<" + peek.Root.TagName + "> "
+		sR = "root<" + pPeek.Root.TagName + "> "
 	}
-	if peek.HasDTDstuff {
+	if pPeek.HasDTDstuff {
 		sDtd = "<DTD stuff> "
 	}
 	L.L.Progress("Is XML: found: %s%s%s%s", sP, sD, sR, sDtd)
-	if !(gotRootElm || peek.HasDTDstuff) {
+	if !(gotRootElm || pPeek.HasDTDstuff) {
 		L.L.Warning("(AF) XML file has no root tag (and is not DTD)")
 	}
 
 	var pPRF *XU.ParsedPreamble
 	if gotPreambl {
-		L.L.Dbg("(AF) got: %s", peek.RawPreamble)
-		pPRF, e = XU.ParsePreamble(peek.RawPreamble)
+		L.L.Dbg("(AF) got: %s", pPeek.RawPreamble)
+		pPRF, e = XU.ParsePreamble(pPeek.RawPreamble)
 		if e != nil {
 			// println("xm.peek: preamble failure in:", peek.RawPreamble)
 			return nil, fmt.Errorf("(AF) preamble failure: %w", e)
@@ -274,11 +302,11 @@ func DoAnalysis(sCont string, filext string) (*XU.AnalysisRecord, error) {
 	//  Time to do some heavy lifting.
 	// ================================
 	L.L.Progress("(AF) Now split the file")
-	if pAnlRec.ContentityStructure.Raw == "" {
+	if pAnlRec.ContentityTopLevelStructure.Raw == "" {
 		L.L.Error("(AF) XML has nil Raw")
 	}
-	pAnlRec.ContentityStructure = peek.ContentityStructure
-	pAnlRec.ContentityStructure.Raw = sCont // naybe redundant ?
+	pAnlRec.ContentityTopLevelStructure = pPeek.ContentityTopLevelStructure
+	pAnlRec.ContentityTopLevelStructure.Raw = sCont // naybe redundant ?
 	pAnlRec.MakeXmlContentitySections()
 	/*
 		fmt.Printf("--> meta pos<%d>len<%d> text pos<%d>len<%d> \n",
@@ -288,16 +316,16 @@ func DoAnalysis(sCont string, filext string) (*XU.AnalysisRecord, error) {
 			if !peek.IsSplittable() {
 				println("--> Can't split into meta and text")
 			}
-	*/
+	* /
 	// =================================
 	//  If we have DOCTYPE,
 	//  it is gospel (and we are done).
 	// =================================
-	if peek.RawDoctype != "" {
+	if gotDoctype {
 		// We are here if we got a DOCTYPE; we also have a file extension,
 		// and we should have a root tag (or else the DOCTYPE makes no sense !)
 		var pPDT *XU.ParsedDoctype
-		pPDT, e = pAnlRec.ContypingInfo.ParseDoctype(peek.RawDoctype)
+		pPDT, e = pAnlRec.ContypingInfo.ParseDoctype(pPeek.RawDoctype)
 		if e != nil {
 			L.L.Panic("FIXME:" + e.Error())
 		}
@@ -317,7 +345,7 @@ func DoAnalysis(sCont string, filext string) (*XU.AnalysisRecord, error) {
 		L.L.Okay("(AF) Success: XML with DOCTYPE")
 		// HACK ALERT
 		if S.HasSuffix(pAnlRec.MType, "---") {
-			rutag := S.ToLower(peek.Root.TagName)
+			rutag := S.ToLower(pPeek.Root.TagName)
 			if pAnlRec.MType == "xml/map/---" {
 				pAnlRec.MType = "xml/map/" + rutag
 				L.L.Okay("(AF) Patched MType to: " + pAnlRec.MType)
@@ -337,7 +365,7 @@ func DoAnalysis(sCont string, filext string) (*XU.AnalysisRecord, error) {
 	//  Let's at least try to set the MType.
 	//  We have a root tag and a file extension.
 	// ==========================================
-	rutag := S.ToLower(peek.Root.TagName)
+	rutag := S.ToLower(pPeek.Root.TagName)
 	L.L.Progress("(AF) XML without DOCTYPE: <%s> root<%s> MType<%s>",
 		filext, rutag, pAnlRec.MType)
 	// Do some easy cases
@@ -381,7 +409,7 @@ func DoAnalysis(sCont string, filext string) (*XU.AnalysisRecord, error) {
 	// println("--> fu.af: TextRaw:", pAnlRec.TextRaw())
 
 	if pAnlRec.MType == "" {
-		switch m_contype {
+		switch lib_3p_contype {
 		case "image/svg+xml":
 			pAnlRec.MType = "xml/cnt/svg"
 		}
@@ -392,6 +420,7 @@ func DoAnalysis(sCont string, filext string) (*XU.AnalysisRecord, error) {
 	L.L.Okay("(AF) Success: XML without DOCTYPE")
 	return pAnlRec, nil
 }
+*/
 
 func CollectKeysOfNonNilMapValues(M map[string]*XU.FilePosition) []string {
 	var ss []string

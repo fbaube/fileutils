@@ -8,36 +8,37 @@ import (
 	S "strings"
 )
 
-func DoAnalysis_xml(pAR *XU.AnalysisRecord, pXP *XU.XmlStructurePeek) (*XU.AnalysisRecord, error) {
+func (pAR *PathAnalysis) DoAnalysis_xml(pXP *XU.XmlPeek) error {
 	var filext string
 	filext = pAR.FileExt
 	// ===============================
 	//  Set bool variables, including
 	//  supporting analysis by stdlib
 	// ===============================
-	gotRootElm := (pXP.ContentityStructure.CheckXmlSections())
+	gotRootElm := (pXP.ContentityBasics.HasRootTag())
 	gotDoctype := (pXP.RawDoctype != "")
 	gotPreambl := (pXP.RawPreamble != "")
 	// gotSomeXml := (gotRootElm || gotDoctype || gotPreambl)
-	var sP, sD, sR, sDtd string
-	if gotPreambl {
-		sP = "<?xml..> "
+	// Write a progress string
+	if true {
+		var sP, sD, sR, sDtd string
+		if gotPreambl {
+			sP = "<?xml..> "
+		}
+		if gotDoctype {
+			sD = "<DOCTYPE..> "
+		}
+		if gotRootElm {
+			sR = "root<" + pXP.Root.TagName + "> "
+		}
+		if pXP.HasDTDstuff {
+			sDtd = "<DTD stuff> "
+		}
+		L.L.Progress("Is XML: found: %s%s%s%s", sP, sD, sR, sDtd)
 	}
-	if gotDoctype {
-		sD = "<DOCTYPE..> "
-	}
-	if gotRootElm {
-		sR = "root<" + pXP.Root.TagName + "> "
-	}
-	if pXP.HasDTDstuff {
-		sDtd = "<DTD stuff> "
-	}
-	L.L.Progress("Is XML: found: %s%s%s%s", sP, sD, sR, sDtd)
-
 	if !(gotRootElm || pXP.HasDTDstuff) {
 		L.L.Warning("(AF) XML file has no root tag (and is not DTD)")
 	}
-
 	var pPRF *XU.ParsedPreamble
 	var e error
 	if gotPreambl {
@@ -45,7 +46,7 @@ func DoAnalysis_xml(pAR *XU.AnalysisRecord, pXP *XU.XmlStructurePeek) (*XU.Analy
 		pPRF, e = XU.ParsePreamble(pXP.RawPreamble)
 		if e != nil {
 			// println("xm.peek: preamble failure in:", peek.RawPreamble)
-			return nil, fmt.Errorf("(AF) preamble failure: %w", e)
+			return fmt.Errorf("(AF) preamble failure: %w", e)
 		}
 		// print("--> Parsed XML preamble: " + pPRF.String())
 	}
@@ -53,12 +54,13 @@ func DoAnalysis_xml(pAR *XU.AnalysisRecord, pXP *XU.XmlStructurePeek) (*XU.Analy
 	//  Time to do some heavy lifting.
 	// ================================
 	L.L.Progress("(AF) Now split the file")
-	if pAR.ContentityStructure.Raw == "" {
+	if pAR.PathProps.Raw == "" {
 		L.L.Error("(AF) XML has nil Raw")
 	}
-	pAR.ContentityStructure = pXP.ContentityStructure
-	// pAR.ContentityStructure.Raw = sCont // naybe redundant ?
-	pAR.MakeXmlContentitySections()
+	pAR.ContentityBasics = pXP.ContentityBasics
+	// pAR.ContentityBasics.Raw = sCont // naybe redundant ?
+	L.L.Warning("SKIPPING call to pAR.MakeXmlContentitySections")
+	// pAR.MakeXmlContentitySections()
 	/*
 		fmt.Printf("--> meta pos<%d>len<%d> text pos<%d>len<%d> \n",
 			pAnlRec.Meta.Beg.Pos, len(pAnlRec.MetaRaw()),
@@ -72,7 +74,7 @@ func DoAnalysis_xml(pAR *XU.AnalysisRecord, pXP *XU.XmlStructurePeek) (*XU.Analy
 	//  If we have DOCTYPE,
 	//  it is gospel (and we are done).
 	// =================================
-	if pXP.RawDoctype != "" {
+	if gotDoctype {
 		// We are here if we got a DOCTYPE; we also have a file extension,
 		// and we should have a root tag (or else the DOCTYPE makes no sense !)
 		var pPDT *XU.ParsedDoctype
@@ -104,13 +106,13 @@ func DoAnalysis_xml(pAR *XU.AnalysisRecord, pXP *XU.XmlStructurePeek) (*XU.Analy
 				panic("MType ending in \"---\" not fixed")
 			}
 		}
-		return pAR, nil
+		return nil
 	}
 	// =====================
 	//  No DOCTYPE. Bummer.
 	// =====================
 	if !gotRootElm {
-		return pAR, fmt.Errorf("(AF) Got no XML root tag in file with ext <%s>", filext)
+		return fmt.Errorf("(AF) Got no XML root tag in file with ext <%s>", filext)
 	}
 	// ==========================================
 	//  Let's at least try to set the MType.
@@ -170,5 +172,5 @@ func DoAnalysis_xml(pAR *XU.AnalysisRecord, pXP *XU.XmlStructurePeek) (*XU.Analy
 		}
 	}
 	L.L.Okay("(AF) Success: XML without DOCTYPE")
-	return pAR, nil
+	return nil
 }

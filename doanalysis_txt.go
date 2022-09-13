@@ -11,8 +11,8 @@ import (
 // DoAnalysis_txt is called when the content is identified
 // as non-XML. It does not expect to see binary content.
 // .
-func DoAnalysis_txt(pAR *XU.AnalysisRecord) (*XU.AnalysisRecord, error) {
-	sCont := pAR.ContentityStructure.Raw
+func (pAR *PathAnalysis) DoAnalysis_txt() error {
+	sCont := pAR.PathProps.Raw
 	/*
 		// ===================================
 		// pAR.ContypingInfo = *DoContypingInfo_non_xml(h_contype, sCont, filext)
@@ -46,7 +46,7 @@ func DoAnalysis_txt(pAR *XU.AnalysisRecord) (*XU.AnalysisRecord, error) {
 	// if there is an error, it will mess up parsing the file, so just exit.
 	if e != nil {
 		L.L.Error("(AF) Metadata header YAML error: " + e.Error())
-		return pAR, fmt.Errorf("(AF) metadata header YAML error: %w", e)
+		return fmt.Errorf("(AF) metadata header YAML error: %w", e)
 	}
 	// Default: no YAML metadata found
 	pAR.Text.Beg = *XU.NewFilePosition(0)
@@ -65,7 +65,7 @@ func DoAnalysis_txt(pAR *XU.AnalysisRecord) (*XU.AnalysisRecord, error) {
 		ps, e := SU.GetYamlMetadataAsPropSet(s2)
 		if e != nil {
 			L.L.Error("(AF) loading YAML: " + e.Error())
-			return pAR, fmt.Errorf("loading YAML: %w", e)
+			return fmt.Errorf("loading YAML: %w", e)
 		}
 		// SUCCESS! Set ranges.
 		pAR.Meta.Beg = *XU.NewFilePosition(0)
@@ -76,9 +76,9 @@ func DoAnalysis_txt(pAR *XU.AnalysisRecord) (*XU.AnalysisRecord, error) {
 		pAR.MetaProps = ps
 		L.L.Dbg("(AF) Got YAML metadata: " + s2)
 	}
-	s := SU.NormalizeWhitespace(pAR.ContentityStructure.Raw)
+	s := SU.NormalizeWhitespace(pAR.PathProps.Raw)
 	s = SU.TruncateTo(s, 56)
 	L.L.Dbg("|RAW|" + s + "|END|")
 	// L.L.Okay("(AF) Success: detected non-XML")
-	return pAR, nil
+	return nil
 }

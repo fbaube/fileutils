@@ -22,12 +22,14 @@ type LinesFile struct {
 
 // NewLinesFile is pretty self-explanatory.
 func (pPI *PathProps) NewLinesFile() (*LinesFile, error) {
-	var bb []byte
-	bb = pPI.GetContentBytes()
+	e := pPI.getContentBytes()
+	if e != nil {
+		panic(e)
+	}
 	pLF := new(LinesFile)
 	pLF.Lines = make([]*FileLine, 0)
 	var scnr bufio.Scanner
-	scnr = *bufio.NewScanner(S.NewReader(string(bb)))
+	scnr = *bufio.NewScanner(S.NewReader(pPI.Raw))
 	// Not actually needed since it’s a default split function.
 	scnr.Split(bufio.ScanLines)
 	var token string

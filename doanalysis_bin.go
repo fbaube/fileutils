@@ -2,14 +2,13 @@ package fileutils
 
 import (
 	L "github.com/fbaube/mlog"
-	XU "github.com/fbaube/xmlutils"
 	S "strings"
 )
 
 // DoAnalysis_bin doesn't do any further processing for binary, cos we
 // basically trust that the sniffed MIME type is sufficient, and return.
 // .
-func DoAnalysis_bin(pAR *XU.AnalysisRecord) (*XU.AnalysisRecord, error) {
+func (pAR *PathAnalysis) DoAnalysis_bin() error {
 	// pAnlRec.MimeType = m_contype
 	pAR.MType = "bin/"
 	m_contype := pAR.ContypingInfo.MimeTypeAsSnift
@@ -34,5 +33,5 @@ func DoAnalysis_bin(pAR *XU.AnalysisRecord) (*XU.AnalysisRecord, error) {
 			pAR.MimeTypeAsSnift, pAR.FileExt)
 	}
 	// L.L.Okay("(AF) Success: detected BINARY")
-	return pAR, nil
+	return nil
 }
