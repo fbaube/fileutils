@@ -214,5 +214,6 @@ func (pPI *PathProps) FetchRaw() error {
 			"fetchRaw: PI.GetContentBytes<%s> got zilch", DispFP)
 	}
 	pPI.Raw = S.TrimSpace(pPI.Raw) + "\n"
+	pPI.size = len(pPI.Raw)
 	return nil
 }

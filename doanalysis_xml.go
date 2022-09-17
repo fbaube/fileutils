@@ -15,7 +15,7 @@ func (pAR *PathAnalysis) DoAnalysis_xml(pXP *XU.XmlPeek) error {
 	//  Set bool variables, including
 	//  supporting analysis by stdlib
 	// ===============================
-	gotRootElm := (pXP.ContentityBasics.HasRootTag())
+	gotRootElm, rootMsg := (pXP.ContentityBasics.HasRootTag())
 	gotDoctype := (pXP.RawDoctype != "")
 	gotPreambl := (pXP.RawPreamble != "")
 	// gotSomeXml := (gotRootElm || gotDoctype || gotPreambl)
@@ -35,6 +35,9 @@ func (pAR *PathAnalysis) DoAnalysis_xml(pXP *XU.XmlPeek) error {
 			sDtd = "<DTD stuff> "
 		}
 		L.L.Progress("Is XML: found: %s%s%s%s", sP, sD, sR, sDtd)
+		if rootMsg != "" {
+			L.L.Warning("Is XML: " + rootMsg)
+		}
 	}
 	if !(gotRootElm || pXP.HasDTDstuff) {
 		L.L.Warning("(AF) XML file has no root tag (and is not DTD)")
@@ -58,8 +61,7 @@ func (pAR *PathAnalysis) DoAnalysis_xml(pXP *XU.XmlPeek) error {
 		L.L.Error("(AF) XML has nil Raw")
 	}
 	pAR.ContentityBasics = pXP.ContentityBasics
-	// pAR.ContentityBasics.Raw = sCont // naybe redundant ?
-	L.L.Warning("SKIPPING call to pAR.MakeXmlContentitySections")
+	// L.L.Warning("SKIPPING call to pAR.MakeXmlContentitySections")
 	// pAR.MakeXmlContentitySections()
 	/*
 		fmt.Printf("--> meta pos<%d>len<%d> text pos<%d>len<%d> \n",
@@ -165,7 +167,7 @@ func (pAR *PathAnalysis) DoAnalysis_xml(pXP *XU.XmlPeek) error {
 	if pAR.MType == "" {
 		switch pAR.ContypingInfo.MimeTypeAsSnift { // m_contype {
 		case "image/svg+xml":
-			pAR.MType = "xml/cnt/svg"
+			pAR.MType = "xml/img/svg"
 		}
 		if pAR.MType != "" {
 			L.L.Warning("(AF) Lamishly hacked the MType to: %s", pAR.MType)
