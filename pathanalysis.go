@@ -103,7 +103,7 @@ func (p PathAnalysis) FileType() string {
 	if p.MType == "" {
 		return "OOPS_NO_MType"
 	}
-	i := S.Index(p.MType, "/")
+	i := S.Index(p.MType, "/") // not S.Cut(..)
 	if i == -1 {
 		return "OOPS_NO_/_IN_MType:" + p.MType
 	}
