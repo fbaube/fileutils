@@ -47,7 +47,7 @@ func (pi *PathProps) String() (s string) {
 	} else if pi.IsOkaySymlink() {
 		s = "OK-SymL "
 	} else {
-		s = "Not-OK "
+		s = "Not-OK (PathProps uninitialized?)"
 	}
 	s += pi.AbsFP.Tildotted()
 	return s

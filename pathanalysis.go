@@ -1,6 +1,7 @@
 package fileutils
 
 import (
+	SU "github.com/fbaube/stringutils"
 	XU "github.com/fbaube/xmlutils"
 	"strings"
 	S "strings"
@@ -45,8 +46,8 @@ type PathAnalysis struct { // this has has Raw
 
 // IsXML is true for all XML, including all HTML.
 func (p PathAnalysis) IsXML() bool {
-	s := p.FileType()
-	return s == "XML" || s == "HTML"
+	s := p.MarkupType()
+	return s == SU.MU_type_XML || s == SU.MU_type_HTML
 }
 
 func (p *PathAnalysis) String() string {
@@ -88,24 +89,27 @@ func (p *PathAnalysis) String() string {
 	return sb.String()
 }
 
-// FileType returns "XML", "MKDN", "HTML", or future stuff TBD.
-func (p PathAnalysis) FileType() string {
+// MarkupType returns an enum with values of "XML",
+// "MKDN", "HTML", "UNK", or future stuff TBD.
+// .
+func (p PathAnalysis) MarkupType() SU.MarkupType {
 	// HTML is an exceptional case
 	if S.HasPrefix(p.MType, "xml/html/") {
-		return "HTML"
+		return SU.MU_type_HTML
 	}
 	if S.HasPrefix(p.MimeType, "text/html") {
-		return "HTML"
+		return SU.MU_type_HTML
 	}
 	// Normal case
 	// return S.ToUpper(MTypeSub(p.MType, 0))
 	// Cut & Paste
 	if p.MType == "" {
-		return "OOPS_NO_MType"
+		return SU.MU_type_UNK
 	}
+	sUnk := string(SU.MU_type_UNK)
 	i := S.Index(p.MType, "/") // not S.Cut(..)
 	if i == -1 {
-		return "OOPS_NO_/_IN_MType:" + p.MType
+		return SU.MarkupType(sUnk + ":" + p.MType)
 	}
-	return S.ToUpper(p.MType[:i])
+	return SU.MarkupType(sUnk + S.ToUpper(p.MType[:i]))
 }
