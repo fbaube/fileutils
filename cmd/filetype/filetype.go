@@ -34,11 +34,9 @@ func main() {
 	fileinfo := FU.NewPathProps(filename)
 	println("File info:", fileinfo.String())
 	chkdcont := db.NewContentityRecord(fileinfo)
-	/*
-		if chkdcont.GetError() != nil {
-			println("Error encountered:", "TBS")
-		}
-	*/
+	// if chkdcont.GetError() != nil {
+	//    println("Error encountered:", "TBS")
+	// }
 	fmt.Printf("%s \n", chkdcont)
 	os.Exit(0)
 }

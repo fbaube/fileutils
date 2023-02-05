@@ -12,19 +12,6 @@ import (
 // as non-XML. It does not expect to see binary content.
 // .
 func (pAR *PathAnalysis) DoAnalysis_txt(sCont string) error {
-	// sCont := pAR.PathProps.Raw
-	/*
-		// ===================================
-		// pAR.ContypingInfo = *DoContypingInfo_non_xml(h_contype, sCont, filext)
-		// func DoContypingInfo_non_xml(sniftMT, sCont, filext string) *XU.ContypingInfo {
-		sniftMT := pAR.MimeTypeAsSnift
-		filext := pAR.ContypingInfo.FileExt
-
-		// theFileExt includes a leading "."
-		var ret = new(XU.ContypingInfo)
-		ret.FileExt = filext
-		ret.MType = sniftMT
-	*/
 	// Markdown is a tough case, because it's basically a text file.
 	// There is no string that definitively declares "This is Markdown",
 	// and there might not be YAML metadata at the start of the file, and

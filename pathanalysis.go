@@ -29,7 +29,7 @@ type PathAnalysis struct { // this has has Raw
 	// ContentitySections is: Text_raw, Meta_raw, MetaFormat; MetaProps SU.PropSet
 	// ContentityRawSections
 	// XmlInfo is: XmlPreambleFields, XmlDoctype, XmlDoctypeFields, ENTITY stuff
-	/* XmlInfo */
+	// ** XmlInfo **
 	// XmlContype is an enum: "Unknown", "DTD", "DTDmod", "DTDent",
 	// "RootTagData", "RootTagMixedContent", "MultipleRootTags", "INVALID"}
 	XmlContype string
@@ -51,32 +51,6 @@ func (p PathAnalysis) IsXML() bool {
 }
 
 func (p *PathAnalysis) String() string {
-	/*
-		// ContypingInfo is simple fields:
-		// FileExt MimeType MType Doctype IsLwDita
-		ContypingInfo
-		MarkdownFlavor string
-		// ContentityStructure includes Raw (the entire input content)
-		ContentityStructure
-		// KeyElms is: (Root,Meta,Text)ElmExtent
-		// KeyElmsWithRanges
-		// ContentitySections is: Text_raw, Meta_raw, MetaFormat; MetaProps SU.PropSet
-		// ContentityRawSections
-		// XmlInfo is: XmlPreambleFields, XmlDoctype, XmlDoctypeFields, ENTITY stuff
-		/* XmlInfo * /
-		// XmlContype is an enum: "Unknown", "DTD", "DTDmod", "DTDent",
-		// "RootTagData", "RootTagMixedContent", "MultipleRootTags", "INVALID"}
-		XmlContype string
-		// XmlPreambleFields is nil if no preamble - it can always
-		// default to xmlutils.STD_PreambleFields (from stdlib)
-		*XmlPreambleFields
-		// XmlDoctypeFields is a ptr - nil if ContypingInfo.Doctype
-		// is "", i.e. if there is no DOCTYPE declaration
-		*XmlDoctypeFields
-		// DitaInfo
-		DitaFlavor  string
-		DitaContype string
-	*/
 	var sb strings.Builder
 	var sPDT string
 	if p.ParsedDoctype != nil {
@@ -118,21 +92,3 @@ func (p PathAnalysis) MarkupType() SU.MarkupType {
 	}
 	return SU.MU_type_UNK
 }
-
-// XML, HTML, BIN, TXT, MD/MKDN
-
-/*
-	// Normal case
-	// return S.ToUpper(MTypeSub(p.MType, 0))
-	// Cut & Paste
-	if p.MType == "" {
-		return SU.MU_type_UNK
-	}
-	sUnk := string(SU.MU_type_UNK)
-	i := S.Index(p.MType, "/") // not S.Cut(..)
-	if i == -1 {
-		return SU.MarkupType(sUnk + ":" + p.MType)
-	}
-	return SU.MarkupType(sUnk + S.ToUpper(p.MType[:i]))
-}
-*/

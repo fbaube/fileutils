@@ -63,14 +63,13 @@ func (pAR *PathAnalysis) DoAnalysis_xml(pXP *XU.XmlPeek, sCont string) error {
 	pAR.ContentityBasics = pXP.ContentityBasics
 	// L.L.Warning("SKIPPING call to pAR.MakeXmlContentitySections")
 	// pAR.MakeXmlContentitySections()
-	/*
-		fmt.Printf("--> meta pos<%d>len<%d> text pos<%d>len<%d> \n",
-			pAnlRec.Meta.Beg.Pos, len(pAnlRec.MetaRaw()),
-			pAnlRec.Text.Beg.Pos, len(pAnlRec.TextRaw()))
-		/*
-			if !peek.IsSplittable() {
-				println("--> Can't split into meta and text")
-			}
+	/* more debugging
+	fmt.Printf("--> meta pos<%d>len<%d> text pos<%d>len<%d> \n",
+		pAnlRec.Meta.Beg.Pos, len(pAnlRec.MetaRaw()),
+		pAnlRec.Text.Beg.Pos, len(pAnlRec.TextRaw()))
+	if !peek.IsSplittable() {
+		println("--> Can't split into meta and text")
+	}
 	*/
 	// =================================
 	//  If we have DOCTYPE,

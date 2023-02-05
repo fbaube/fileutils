@@ -1,6 +1,6 @@
 package fileutils
 
-/*
+/* OpenFile flags etc.
 // Flags to OpenFile wrapping those of the underlying system.
 // Not all flags may be implemented on a given system.
 const (
@@ -15,9 +15,7 @@ const (
     O_SYNC   int = syscall.O_SYNC   // open for synchronous I/O.
     O_TRUNC  int = syscall.O_TRUNC  // truncate regular writable file after open.
 )
-*/
 
-/*
 when file already exists, either truncate it or fail:
 
 openOpts := os.O_RDWR|os.O_CREATE
@@ -30,7 +28,7 @@ f, err := os.OpenFile(filePath, openOpts, 0644)
 // ... do stuff
 */
 
-/*
+/* OS errors
 https://pkg.go.dev/os
 var (
 	// ErrInvalid indicates an invalid argument.
@@ -88,7 +86,6 @@ import (
 // path/filepath do not handle "~" (home directory)
 // well. If an error occurs (for whatever reason),
 // we punt: simply return the original input argument.
-//
 func ResolvePath(s string) string {
 	// ABSOLUTE FILEPATH
 	if FP.IsAbs(s) {
@@ -124,14 +121,14 @@ func ResolvePath(s string) string {
 // (not dir, symlnk, pipe), and also returns permissions.
 //
 // Return values:
-//  - (true, permissions:0nnn, nil) if a regular file exists
-//  - (false, fs.FileMode, nil) if something else exists (incl. dir)
-//  - (false, 0, nil) if nothing at all exists
-//  - (false, 0, anError) if some unusual error was returned (failing disk?)
-// Notes & caveats:
-//  - File emptiness (i.e. length 0) is not checked
-//  - "~" for user home dir is not expanded and will fail
+//   - (true, permissions:0nnn, nil) if a regular file exists
+//   - (false, fs.FileMode, nil) if something else exists (incl. dir)
+//   - (false, 0, nil) if nothing at all exists
+//   - (false, 0, anError) if some unusual error was returned (failing disk?)
 //
+// Notes & caveats:
+//   - File emptiness (i.e. length 0) is not checked
+//   - "~" for user home dir is not expanded and will fail
 func FileAtPath(aPath string) (bool, fs.FileMode, error) {
 	aPath = ResolvePath(aPath)
 	// If nothing exists at the filepath,

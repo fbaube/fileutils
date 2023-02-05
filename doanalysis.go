@@ -39,7 +39,7 @@ import (
 // work with.
 // .
 // func DoAnalysis(sCont string, filext string) (*PathAnalysis, error) {
-func NewPathAnalysis(pPP *PathProps) /* sCont string, filext string) */ (*PathAnalysis, error) {
+func NewPathAnalysis(pPP *PathProps) (*PathAnalysis, error) {
 
 	sCont := pPP.Raw
 	filext := FP.Ext(pPP.AbsFP.S())
@@ -180,14 +180,7 @@ func NewPathAnalysis(pPP *PathProps) /* sCont string, filext string) */ (*PathAn
 	//  KeyElms (Root,Meta,Text)
 	// ==============================
 	pPeek, e = XU.Peek_xml(sCont)
-	/*
-		if pPeek.Raw == "" {
-			panic("nil Raw")
-		}
-		if pAnlRec.PathProps.Raw != pPeek.Raw {
-			panic("MISMATCH-1")
-		}
-	*/
+
 	// NOTE! An error from peeking might be caused
 	// by, for example, applying XML parsing to a
 	// Markdown file. So, an error is NOT fatal.

@@ -60,7 +60,7 @@ func WriteAtomic(dest string, write func(w io.Writer) error) (err error) {
 	return os.Rename(f.Name(), dest)
 }
 
-/*
+/* dummy main()
 func main() {
     if err := writeAtomically("demo.txt", func(w io.Writer) error {
         _, err := w.Write([]byte("demo"))

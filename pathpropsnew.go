@@ -18,7 +18,6 @@ import (
 // return because of a bug (I assume) in Go 1.18 generics.
 // Also, a value return can be considered a flag that this
 // struct is mostly read-onlny after creation.
-//
 func NewPathProps(fp string) (*PathProps, error) {
 	var e error
 	pp := new(PathProps)
@@ -69,25 +68,4 @@ func NewPathPropsRelativeTo(rfp, relTo string) (*PathProps, error) {
 	// pp.RelFP = rfp // this looks pretty dodgy
 	afp := FP.Join(relTo, rfp)
 	return NewPathProps(afp)
-	/*
-		pp.AbsFP = AbsFP(afp)
-		var FI os.FileInfo
-		FI, e = os.Lstat(afp)
-		if e != nil {
-			// fmt.Println("fu.newPP: os.Lstat<%s> failed: %w", Tildotted(afp), e)
-			// The file or directory does not exist. DON'T PANIC.
-			// Just return before any flags are set, such as Exists.
-			return pp, WrapAsPathPropsError(
-				e, "os.Lstat(..) (fu.PPnewrelto.L62)", pp)
-		}
-		pp.isDir = FI.IsDir()
-		pp.isFile = FI.Mode().IsRegular()
-		pp.isSymL = (0 != (FI.Mode() & os.ModeSymlink))
-		pp.exists = pp.isDir || pp.isFile || pp.isSymL
-		if pp.isFile {
-			pp.size = int(FI.Size())
-		}
-		// println("==>", SU.Gbg(" "+pi.String()+" "))
-		return pp, nil
-	*/
 }
