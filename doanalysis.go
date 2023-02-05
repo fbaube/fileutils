@@ -116,8 +116,9 @@ func NewPathAnalysis(pPP *PathProps) /* sCont string, filext string) */ (*PathAn
 	// =====================================
 	var pAnlRec *PathAnalysis
 	pAnlRec = new(PathAnalysis)
-	pAnlRec.PathProps = new(PathProps)
-	pAnlRec.PathProps.Raw = sCont
+	// 2023.02 take struct PathProps out of struct PathAnalysis
+	// pAnlRec.PathProps = new(PathProps)
+	// pAnlRec.PathProps.Raw = sCont
 	pAnlRec.FileExt = filext
 	pAnlRec.MimeType = stdlib_contype // Junk this ?
 	pAnlRec.MimeTypeAsSnift = contype
@@ -220,12 +221,12 @@ func NewPathAnalysis(pPP *PathProps) /* sCont string, filext string) */ (*PathAn
 		if cheatXml {
 			L.L.Panic("(AF) both non-xml & xml")
 		}
-		return pAnlRec, pAnlRec.DoAnalysis_txt()
+		return pAnlRec, pAnlRec.DoAnalysis_txt(sCont)
 	}
 	// ===========================================
 	//  It's XML, so crank thru it and we're done
 	// ===========================================
-	return pAnlRec, pAnlRec.DoAnalysis_xml(pPeek)
+	return pAnlRec, pAnlRec.DoAnalysis_xml(pPeek, sCont)
 }
 
 func CollectKeysOfNonNilMapValues(M map[string]*XU.FilePosition) []string {

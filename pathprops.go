@@ -130,6 +130,8 @@ func (pp *PathProps) ResolveSymlinks() *PathProps {
 }
 
 // getContentBytes reads in the file (IFF it is a file) into the field [Raw].
+// It assumes that Stat has been called, and so the size of the file is known.
+//
 // It is tolerant about non-files and empty files, returning nil for error.
 // The func "os.Open(fp)" defaults to R/W, altho R/O would probably suffice.
 // .
@@ -189,12 +191,14 @@ func (pPI *PathProps) getContentBytes() error {
 	return nil
 }
 
-// FetchRaw reads in the file (IFF it is a file) and trims away
-// leading and trailing whitespace, but then adds a final newline
-// (which might be kinda dumb if it's a binary file).
+// FetchRaw calls getContentBytes to read in the file (IFF it is a
+// file) and then trims away leading and trailing whitespace, but
+// also adds a final newline (which might be dumb for a binary file).
+//
+// For zero length, it does not return an error.
 // .
 func (pPI *PathProps) FetchRaw() error {
-	if pPI.Size() == 0 {
+	if pPI.size == 0 {
 		L.L.Progress("fetchRaw: Skipping for zero-length content")
 		return nil
 	}
@@ -210,8 +214,8 @@ func (pPI *PathProps) FetchRaw() error {
 			"PI.GetContentBytes<%s> failed: %w", DispFP, e)
 	}
 	if len(pPI.Raw) == 0 {
-		return fmt.Errorf(
-			"fetchRaw: PI.GetContentBytes<%s> got zilch", DispFP)
+		return nil // fmt.Errorf(
+		// "fetchRaw: PI.GetContentBytes<%s> got zilch", DispFP)
 	}
 	pPI.Raw = S.TrimSpace(pPI.Raw) + "\n"
 	pPI.size = len(pPI.Raw)

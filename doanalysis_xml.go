@@ -8,7 +8,7 @@ import (
 	S "strings"
 )
 
-func (pAR *PathAnalysis) DoAnalysis_xml(pXP *XU.XmlPeek) error {
+func (pAR *PathAnalysis) DoAnalysis_xml(pXP *XU.XmlPeek, sCont string) error {
 	var filext string
 	filext = pAR.FileExt
 	// ===============================
@@ -57,7 +57,7 @@ func (pAR *PathAnalysis) DoAnalysis_xml(pXP *XU.XmlPeek) error {
 	//  Time to do some heavy lifting.
 	// ================================
 	L.L.Progress("(AF) Now split the file")
-	if pAR.PathProps.Raw == "" {
+	if sCont == "" { // pAR.PathProps.Raw == "" {
 		L.L.Error("(AF) XML has nil Raw")
 	}
 	pAR.ContentityBasics = pXP.ContentityBasics
@@ -97,7 +97,7 @@ func (pAR *PathAnalysis) DoAnalysis_xml(pXP *XU.XmlPeek) error {
 		if pAR.MType == "" {
 			L.L.Panic("(AF) no MType, L367")
 		}
-		L.L.Okay("(AF) Success: XML with DOCTYPE")
+		L.L.Okay("(AF) Success: got XML with DOCTYPE")
 		// HACK ALERT
 		if S.HasSuffix(pAR.MType, "---") {
 			rutag := S.ToLower(pXP.Root.TagName)
@@ -173,6 +173,6 @@ func (pAR *PathAnalysis) DoAnalysis_xml(pXP *XU.XmlPeek) error {
 			L.L.Warning("(AF) Lamishly hacked the MType to: %s", pAR.MType)
 		}
 	}
-	L.L.Okay("(AF) Success: XML without DOCTYPE")
+	L.L.Okay("(AF) Success: got XML without DOCTYPE")
 	return nil
 }

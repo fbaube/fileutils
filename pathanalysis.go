@@ -16,7 +16,7 @@ type MimeType string
 type PathAnalysis struct { // this has has Raw
 	// PathProps is a ptr, so that we get a
 	// NPE if it is not initialized properly.
-	*PathProps // this has Raw
+	// WRONG WRONG WRONG *PathProps // this has Raw
 	// ContypingInfo is simple fields:
 	// FileExt MType MimeType's
 	XU.ContypingInfo
@@ -100,6 +100,28 @@ func (p PathAnalysis) MarkupType() SU.MarkupType {
 	if S.HasPrefix(p.MimeType, "text/html") {
 		return SU.MU_type_HTML
 	}
+	if S.HasPrefix(p.MimeType, "html/") {
+		return SU.MU_type_HTML
+	}
+
+	if S.HasPrefix(p.MType, "xml/") {
+		return SU.MU_type_XML
+	}
+	if S.HasPrefix(p.MType, "text/") ||
+		S.HasPrefix(p.MType, "txt/") ||
+		S.HasPrefix(p.MType, "md/") ||
+		S.HasPrefix(p.MType, "mkdn/") {
+		return SU.MU_type_MKDN
+	}
+	if S.HasPrefix(p.MType, "bin/") {
+		return SU.MU_type_UNK // No BIN !!
+	}
+	return SU.MU_type_UNK
+}
+
+// XML, HTML, BIN, TXT, MD/MKDN
+
+/*
 	// Normal case
 	// return S.ToUpper(MTypeSub(p.MType, 0))
 	// Cut & Paste
@@ -113,3 +135,4 @@ func (p PathAnalysis) MarkupType() SU.MarkupType {
 	}
 	return SU.MarkupType(sUnk + S.ToUpper(p.MType[:i]))
 }
+*/

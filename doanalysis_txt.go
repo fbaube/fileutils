@@ -11,8 +11,8 @@ import (
 // DoAnalysis_txt is called when the content is identified
 // as non-XML. It does not expect to see binary content.
 // .
-func (pAR *PathAnalysis) DoAnalysis_txt() error {
-	sCont := pAR.PathProps.Raw
+func (pAR *PathAnalysis) DoAnalysis_txt(sCont string) error {
+	// sCont := pAR.PathProps.Raw
 	/*
 		// ===================================
 		// pAR.ContypingInfo = *DoContypingInfo_non_xml(h_contype, sCont, filext)
@@ -76,9 +76,9 @@ func (pAR *PathAnalysis) DoAnalysis_txt() error {
 		pAR.MetaProps = ps
 		L.L.Dbg("(AF) Got YAML metadata: " + s2)
 	}
-	s := SU.NormalizeWhitespace(pAR.PathProps.Raw)
-	s = SU.TruncateTo(s, 56)
-	L.L.Dbg("|RAW|" + s + "|END|")
+	// s := SU.NormalizeWhitespace(sCont) // pAR.PathProps.Raw)
+	// s = SU.TruncateTo(s, 56)
+	L.L.Dbg("|RAW|%.40s ...|END|", sCont)
 	// L.L.Okay("(AF) Success: detected non-XML")
 	return nil
 }
