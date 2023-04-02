@@ -9,7 +9,7 @@ import (
 
 // FileLine is a record (i.e. a line) in a LinesFile.
 type FileLine struct {
-	Raw       string
+	Raw           // string
 	RawLineNr int // source file line number
 	error         // hey, why not an error per line ?
 }
@@ -37,7 +37,7 @@ func (pPI *PathProps) NewLinesFile() (*LinesFile, error) {
 	for scnr.Scan() {
 		token = scnr.Text()
 		p := new(FileLine)
-		p.Raw = S.TrimSpace(token)
+		p.Raw = Raw(S.TrimSpace(token))
 		p.RawLineNr = linumber
 		pLF.Lines = append(pLF.Lines, p)
 		fmt.Printf("L%02d<%s> \n", p.RawLineNr, p.Raw)

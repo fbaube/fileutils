@@ -1,18 +1,16 @@
 package fileutils
 
 import (
-	"errors"
 	"fmt"
 	L "github.com/fbaube/mlog"
 	SU "github.com/fbaube/stringutils"
 	"io"
 	"os"
 	FP "path/filepath"
-	S "strings"
 )
 
-// MAX_FILE_SIZE is set (arbitrarily) to 2 megabytes
-const MAX_FILE_SIZE = 2000000
+// MAX_FILE_SIZE is set (arbitrarily) to 4 megabytes
+const MAX_FILE_SIZE = 4000000
 
 // PathProps describes a filepath we have redd, will read, or will create.
 // It might also be a directory or symlink, either of which requires
@@ -21,29 +19,29 @@ const MAX_FILE_SIZE = 2000000
 //
 // PathProps is embedded in ContentityRecord. (FIXME)
 //
+// It might seem odd to include a [TypedRaw] rather than a plain [Raw].
+// But in general when we are working with serializing and deserializing
+// content ASTs, it is important to know what we are working with, cos
+// sometimes we can - or want to - have to - do things like include
+// HTML in Markdown, or permit HTML tags in LwDITA.
+//
 // Note that RelFP and AbsFP must be exported to be persisted to the DB.
 // .
-type PathProps struct { // this has Raw
-	Raw     string
-	error   error
-	RelFP   string
-	AbsFP   AbsFilePath
-	ShortFP string // expressed if possible using "~" or "."
-	exists  bool
-	isDir   bool
-	isFile  bool
-	isSymL  bool
-	// size is here and not elsewhere in some other struct
-	// because its value is already available to us when
-	// "os.FileInfo os.Lstat(..)" is called, below.
-	size int
+type PathProps struct { // this has (Typed) Raw
+	TypedRaw // was: string
+	RelFP    string
+	AbsFP    AbsFilePath
+	// ShortFP is for display use, and is
+	// expressed if possible using "~" or "."
+	ShortFP string
+	BasicMeta
 }
 
 func (pi *PathProps) String() (s string) {
 	if pi.IsOkayFile() {
-		s = fmt.Sprintf("OK-File (len:%d) ", pi.size)
+		s = fmt.Sprintf("OK-File (len:%d) ", pi.Size())
 	} else if pi.IsOkayDir() {
-		s = "OK-Dirr "
+		s = fmt.Sprintf("OK-Dirr (len:%d) ", pi.Size())
 	} else if pi.IsOkaySymlink() {
 		s = "OK-SymL "
 	} else {
@@ -56,30 +54,6 @@ func (pi *PathProps) String() (s string) {
 // Echo implements Markupper.
 func (p PathProps) Echo() string {
 	return p.AbsFP.S()
-}
-
-func (p *PathProps) Size() int {
-	return p.size
-}
-
-// Exists is a convenience function.
-func (p *PathProps) Exists() bool {
-	return p.exists
-}
-
-// IsOkayFile is a convenience function.
-func (p *PathProps) IsOkayFile() bool {
-	return p.exists && p.isFile && !p.isDir
-}
-
-// IsOkayDir is a convenience function.
-func (p *PathProps) IsOkayDir() bool {
-	return p.exists && !p.isFile && p.isDir
-}
-
-// IsOkaySymlink is a convenience function.
-func (p *PathProps) IsOkaySymlink() bool {
-	return p.exists && !p.isFile && !p.isDir && p.isSymL
 }
 
 // IsOkayWhat is for use with functions from github.com/samber/lo
@@ -129,95 +103,80 @@ func (pp *PathProps) ResolveSymlinks() *PathProps {
 	return pp
 }
 
-// getContentBytes reads in the file (IFF it is a file) into the field [Raw].
-// It assumes that Stat has been called, and so the size of the file is known.
+// GoGetFileContents reads in the file (assuming it is a file)
+// into the field [Raw] and does a quick check for XML and HTML5
+// declarations.
 //
-// It is tolerant about non-files and empty files, returning nil for error.
-// The func "os.Open(fp)" defaults to R/W, altho R/O would probably suffice.
+// It assumes that [LStat] has been called, and that the size
+// of the file is known. Therefore this func is a no-op if func
+// [BasicInfo.Size] returns 0, its zero value. Therefore do not
+// call this if the argument's [BasicInfo] is uninitialized.
+//
+// It is tolerant about non-files and empty files,
+// returning nil for error.
+//
+// The call it makes to [os.Open] defaults to R/W mode,
+// altho R/O would probably suffice.
 // .
-func (pPI *PathProps) getContentBytes() error {
-	if pPI.Raw != "" {
-		L.L.Warning("pp.GetContentBytes: overwriting[%d]", len(pPI.Raw))
-		pPI.Raw = ""
-	}
-	pPI.Raw = ""
-	var shortAbsFP string
-	shortAbsFP = SU.ElideHomeDir(pPI.AbsFP.S())
-	if !pPI.IsOkayFile() {
-		s := "Not a file: " + shortAbsFP
-		L.L.Warning(s)
+func (p *PathProps) GoGetFileContents() error {
+	if p.Size() == 0 {
+		// No-op
 		return nil
 	}
-	// Zero-length ?
-	if pPI.size == 0 {
-		L.L.Warning("Zero-length file: " + shortAbsFP)
+	if !p.IsOkayFile() {
+		// No-op
+		return nil
+	}
+	var shortAbsFP string
+	shortAbsFP = SU.ElideHomeDir(p.AbsFP.S())
+
+	if p.Raw != "" {
+		// No-op with warning
+		L.L.Warning("pp.GoGetFileContents: already "+
+			"loaded [%d]: %s", len(p.Raw), shortAbsFP)
 		return nil
 	}
 	// Suspiciously tiny ?
-	if pPI.size < 6 {
-		L.L.Warning("pp.GetContentBytes: tiny file [%d]: "+
-			shortAbsFP, pPI.size)
+	if p.Size() < 6 {
+		L.L.Warning("pp.GoGetFileContents: tiny "+
+			"file [%d]: %s", p.Size(), shortAbsFP)
 	}
 	// If it's too big, BARF!
-	if pPI.size > MAX_FILE_SIZE {
-		// L.L.Error("pp.GetContentBytes: file too large [%d]: %s",
-		//	pPI.size, shortAbsFP)
-		return fmt.Errorf("pp.getContentBytes: "+
-			"file too large [%d]: %s", pPI.size, shortAbsFP)
+	if p.Size() > MAX_FILE_SIZE {
+		return fmt.Errorf("pp.GoGetFileContents: file "+
+			"too large [%d]: %s", p.Size(), shortAbsFP)
 	}
-	// Open it (and then immediately close it), just to check.
+	// Open it, just to check (and then immediately close it)
 	var pF *os.File
 	var e error
-	pF, e = os.Open(pPI.AbsFP.S())
+	pF, e = os.Open(p.AbsFP.S())
+	// Note that this defer'd Close() (i.e. file is left open)
+	// is not a problem for the call to io.Readall].
 	defer pF.Close()
 	if e != nil {
-		// L.L.Error("fu.BP.GetContentBytes.osOpen<%s>: %s",
-		//       shortAbsFP, e.Error())
-		return fmt.Errorf("ppgetContentBytes.osOpen<%s>: %w",
+		// We could check for file non-existence here.
+		// And we could panic if it happens, altho a race
+		// for a just-deleted file is also conceivable.
+		return fmt.Errorf("pp.GoGetFileContents.osOpen<%s>: %w",
 			shortAbsFP, e)
 	}
 	var bb []byte
 	bb, e = io.ReadAll(pF)
 	if e != nil {
-		// L.L.Error("pp.getContentBytes.ioReadAll<%s>: %s",
-		//      shortAbsFP, e.Error())
-		return fmt.Errorf("pp.getContentBytes.ioReadAll<%s>: %w",
+		return fmt.Errorf("pp.GoGetFileContents.ioReadAll<%s>: %w",
 			shortAbsFP, e)
 	}
+	// NOTE: 2023.03 Trimming leading whitespace and ensuring
+	// that there is a trailing newline are probably unnecessary
+	// AND unhelpful - they violate the Principle of Least Surprise.
+	// pPI.Raw = S.TrimSpace(pPI.TypedRaw.S() + "\n")
+	// pPI.size = len(pPI.Raw)
+
+	// This is not supposed to happen,
+	// cos we checked for Size()==0 at entry
 	if len(bb) == 0 {
 		panic("==> empty file?!: " + shortAbsFP)
 	}
-	pPI.Raw = string(bb)
-	return nil
-}
-
-// FetchRaw calls getContentBytes to read in the file (IFF it is a
-// file) and then trims away leading and trailing whitespace, but
-// also adds a final newline (which might be dumb for a binary file).
-//
-// For zero length, it does not return an error.
-// .
-func (pPI *PathProps) FetchRaw() error {
-	if pPI.size == 0 {
-		L.L.Progress("fetchRaw: Skipping for zero-length content")
-		return nil
-	}
-	DispFP := pPI.AbsFP.Tildotted()
-	if !pPI.IsOkayFile() {
-		errors.New("fetchRaw: not a readable file: " + DispFP)
-	}
-	var e error
-	e = pPI.getContentBytes()
-	//  pPI.HasError() {
-	if e != nil {
-		return fmt.Errorf("fetchRaw: "+
-			"PI.GetContentBytes<%s> failed: %w", DispFP, e)
-	}
-	if len(pPI.Raw) == 0 {
-		return nil // fmt.Errorf(
-		// "fetchRaw: PI.GetContentBytes<%s> got zilch", DispFP)
-	}
-	pPI.Raw = S.TrimSpace(pPI.Raw) + "\n"
-	pPI.size = len(pPI.Raw)
+	p.Raw = Raw(string(bb))
 	return nil
 }

@@ -40,8 +40,8 @@ import (
 // .
 // func DoAnalysis(sCont string, filext string) (*PathAnalysis, error) {
 func NewPathAnalysis(pPP *PathProps) (*PathAnalysis, error) {
-
-	sCont := pPP.Raw
+	var sCont string
+	sCont = string(pPP.Raw)
 	filext := FP.Ext(pPP.AbsFP.S())
 
 	// A trailing dot in the filename provides no filetype info.
@@ -71,6 +71,7 @@ func NewPathAnalysis(pPP *PathProps) (*PathAnalysis, error) {
 	//  Try a coupla shortcuts
 	// ========================
 	cheatYaml := S.HasPrefix(sCont, "---\n")
+	cheatHtml := S.HasPrefix(sCont, "<DOCTYPE html")
 	cheatXml := S.HasPrefix(sCont, "<?xml ")
 	// =========================
 	//  Content type detection
@@ -141,7 +142,7 @@ func NewPathAnalysis(pPP *PathProps) (*PathAnalysis, error) {
 			isBinary, stdlib_isBinary)
 	}
 	if isBinary {
-		if cheatYaml || cheatXml {
+		if cheatYaml || cheatXml || cheatHtml {
 			L.L.Panic("(AF) both binary & yaml/xml")
 		}
 		return pAnlRec, pAnlRec.DoAnalysis_bin()
