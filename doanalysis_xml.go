@@ -16,11 +16,12 @@ func (pAR *PathAnalysis) DoAnalysis_xml(pXP *XU.XmlPeek, sCont string) error {
 	//  supporting analysis by stdlib
 	// ===============================
 	gotRootElm, rootMsg := (pXP.ContentityBasics.HasRootTag())
-	gotDoctype := (pXP.RawDoctype != "")
-	gotPreambl := (pXP.RawPreamble != "")
+	gotDoctype := (pXP.DoctypeRaw != "")
+	gotPreambl := (pXP.PreambleRaw != "")
 	// gotSomeXml := (gotRootElm || gotDoctype || gotPreambl)
 	// Write a progress string
-	if true {
+	/* if true */
+	{
 		var sP, sD, sR, sDtd string
 		if gotPreambl {
 			sP = "<?xml..> "
@@ -29,12 +30,13 @@ func (pAR *PathAnalysis) DoAnalysis_xml(pXP *XU.XmlPeek, sCont string) error {
 			sD = "<DOCTYPE..> "
 		}
 		if gotRootElm {
-			sR = "root<" + pXP.Root.TagName + "> "
+			sR = "root<" + pXP.XmlRoot.TagName + "> "
 		}
 		if pXP.HasDTDstuff {
 			sDtd = "<DTD stuff> "
 		}
 		L.L.Progress("Is XML: found: %s%s%s%s", sP, sD, sR, sDtd)
+		//fmt.Printf("Is XML: found: %s%s%s%s \n", sP, sD, sR, sDtd)
 		if rootMsg != "" {
 			L.L.Warning("Is XML: " + rootMsg)
 		}
@@ -42,16 +44,16 @@ func (pAR *PathAnalysis) DoAnalysis_xml(pXP *XU.XmlPeek, sCont string) error {
 	if !(gotRootElm || pXP.HasDTDstuff) {
 		L.L.Warning("(AF) XML file has no root tag (and is not DTD)")
 	}
-	var pPRF *XU.ParsedPreamble
+	var pParstPrmbl *XU.ParsedPreamble
 	var e error
 	if gotPreambl {
-		L.L.Dbg("(AF) got: %s", pXP.RawPreamble)
-		pPRF, e = XU.ParsePreamble(pXP.RawPreamble)
+		L.L.Dbg("(AF) got: %s", pXP.PreambleRaw)
+		pParstPrmbl, e = XU.ParsePreamble(pXP.PreambleRaw)
 		if e != nil {
 			// println("xm.peek: preamble failure in:", peek.RawPreamble)
 			return fmt.Errorf("(AF) preamble failure: %w", e)
 		}
-		// print("--> Parsed XML preamble: " + pPRF.String())
+		// print("--> Parsed XML preamble: " + pParstPrmbl.String())
 	}
 	// ================================
 	//  Time to do some heavy lifting.
@@ -78,28 +80,32 @@ func (pAR *PathAnalysis) DoAnalysis_xml(pXP *XU.XmlPeek, sCont string) error {
 	if gotDoctype {
 		// We are here if we got a DOCTYPE; we also have a file extension,
 		// and we should have a root tag (or else the DOCTYPE makes no sense !)
-		var pPDT *XU.ParsedDoctype
-		pPDT, e = pAR.ContypingInfo.ParseDoctype(pXP.RawDoctype)
+		var pParstDoctp *XU.ParsedDoctype
+		pParstDoctp, e = pAR.ContypingInfo.ParseDoctype(pXP.DoctypeRaw)
 		if e != nil {
 			L.L.Panic("FIXME:" + e.Error())
 		}
-		pAR.ParsedDoctype = pPDT
+		pAR.ParsedDoctype = pParstDoctp
 		L.L.Dbg("(AF) gotDT: MType: " + pAR.MType)
 		L.L.Dbg("(AF) gotDT: AnalysisRecord: " + pAR.String())
-		// L.L.Dbg("gotDT: DctpFlds: " + pPDT.String())
-
+		// L.L.Dbg("gotDT: DctpFlds: " + pParstDoctp.String())
+		/* DBG
+		L.L.Warning("====")
+		L.L.Warning("Raw: %s", pXP.DoctypeRaw)
+		L.L.Warning("MTp: " + pAR.MType)
+		L.L.Warning("ARc: " + pAR.String())
+		L.L.Warning("====")
+		*/
 		if pAR.MType == "" {
 			L.L.Panic("(AF) no MType, L362")
 		}
-		pAR.ParsedDoctype = pPDT
-
 		if pAR.MType == "" {
 			L.L.Panic("(AF) no MType, L367")
 		}
 		L.L.Okay("(AF) Success: got XML with DOCTYPE")
 		// HACK ALERT
 		if S.HasSuffix(pAR.MType, "---") {
-			rutag := S.ToLower(pXP.Root.TagName)
+			rutag := S.ToLower(pXP.XmlRoot.TagName)
 			if pAR.MType == "xml/map/---" {
 				pAR.MType = "xml/map/" + rutag
 				L.L.Okay("(AF) Patched MType to: " + pAR.MType)
@@ -119,7 +125,7 @@ func (pAR *PathAnalysis) DoAnalysis_xml(pXP *XU.XmlPeek, sCont string) error {
 	//  Let's at least try to set the MType.
 	//  We have a root tag and a file extension.
 	// ==========================================
-	rutag := S.ToLower(pXP.Root.TagName)
+	rutag := S.ToLower(pXP.XmlRoot.TagName)
 	L.L.Progress("(AF) XML without DOCTYPE: <%s> root<%s> MType<%s>",
 		filext, rutag, pAR.MType)
 	// Do some easy cases
@@ -144,8 +150,8 @@ func (pAR *PathAnalysis) DoAnalysis_xml(pXP *XU.XmlPeek, sCont string) error {
 	// Now we should fill in all the detail fields.
 	pAR.XmlContype = "RootTagData"
 
-	if pPRF != nil {
-		pAR.ParsedPreamble = pPRF
+	if pParstPrmbl != nil {
+		pAR.ParsedPreamble = pParstPrmbl
 	} else {
 		// SKIP
 		// pBA.XmlPreambleFields = XU.STD_PreambleFields

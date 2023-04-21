@@ -2,6 +2,7 @@ package fileutils
 
 import (
 	"fmt"
+	CT "github.com/fbaube/ctoken"
 	L "github.com/fbaube/mlog"
 	SU "github.com/fbaube/stringutils"
 	"io"
@@ -28,9 +29,9 @@ const MAX_FILE_SIZE = 4000000
 // Note that RelFP and AbsFP must be exported to be persisted to the DB.
 // .
 type PathProps struct { // this has (Typed) Raw
-	TypedRaw // was: string
-	RelFP    string
-	AbsFP    AbsFilePath
+	CT.TypedRaw // was: string
+	RelFP       string
+	AbsFP       AbsFilePath
 	// ShortFP is for display use, and is
 	// expressed if possible using "~" or "."
 	ShortFP string
@@ -177,6 +178,6 @@ func (p *PathProps) GoGetFileContents() error {
 	if len(bb) == 0 {
 		panic("==> empty file?!: " + shortAbsFP)
 	}
-	p.Raw = Raw(string(bb))
+	p.Raw = CT.Raw(string(bb))
 	return nil
 }

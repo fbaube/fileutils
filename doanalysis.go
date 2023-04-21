@@ -1,6 +1,7 @@
 package fileutils
 
 import (
+	"fmt"
 	"net/http"
 	FP "path/filepath"
 	S "strings"
@@ -8,6 +9,7 @@ import (
 	"github.com/gabriel-vasile/mimetype"
 	"golang.org/x/tools/godoc/util" // used once, L125
 
+	CT "github.com/fbaube/ctoken"
 	L "github.com/fbaube/mlog"
 	SU "github.com/fbaube/stringutils"
 	XU "github.com/fbaube/xmlutils"
@@ -206,14 +208,16 @@ func NewPathAnalysis(pPP *PathProps) (*PathAnalysis, error) {
 	// }
 	var hasRootTag, gotSomeXml bool
 	hasRootTag, _ = pPeek.ContentityBasics.HasRootTag()
-	gotSomeXml = hasRootTag || (pPeek.RawDoctype != "") ||
-		(pPeek.RawPreamble != "")
+	gotSomeXml = hasRootTag || (pPeek.DoctypeRaw != "") ||
+		(pPeek.PreambleRaw != "")
 	// =============================
 	//  If it's not XML, we're done
 	// =============================
 	if xmlParsingFailed || !gotSomeXml {
 		if cheatXml {
-			L.L.Panic("(AF) both non-xml & xml")
+			// L.L.Panic("(AF) both non-xml & xml")
+			L.L.Panic(fmt.Sprintf("WHOOPS xmlParsingFailed<%t> gotSomeXml<%t> \n",
+				xmlParsingFailed, gotSomeXml))
 		}
 		return pAnlRec, pAnlRec.DoAnalysis_txt(sCont)
 	}
@@ -223,7 +227,7 @@ func NewPathAnalysis(pPP *PathProps) (*PathAnalysis, error) {
 	return pAnlRec, pAnlRec.DoAnalysis_xml(pPeek, sCont)
 }
 
-func CollectKeysOfNonNilMapValues(M map[string]*XU.FilePosition) []string {
+func CollectKeysOfNonNilMapValues(M map[string]*CT.FilePosition) []string {
 	var ss []string
 	for K, V := range M {
 		if V != nil {

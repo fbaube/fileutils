@@ -2,6 +2,7 @@ package fileutils
 
 import (
 	"fmt"
+	CT "github.com/fbaube/ctoken"
 	L "github.com/fbaube/mlog"
 	SU "github.com/fbaube/stringutils"
 	XU "github.com/fbaube/xmlutils"
@@ -36,16 +37,16 @@ func (pAR *PathAnalysis) DoAnalysis_txt(sCont string) error {
 		return fmt.Errorf("(AF) metadata header YAML error: %w", e)
 	}
 	// Default: no YAML metadata found
-	pAR.Text.Beg = *XU.NewFilePosition(0)
-	pAR.Text.End = *XU.NewFilePosition(len(sCont))
-	pAR.Meta.Beg = *XU.NewFilePosition(0)
-	pAR.Meta.End = *XU.NewFilePosition(0)
+	pAR.Text.Beg = *CT.NewFilePosition(0)
+	pAR.Text.End = *CT.NewFilePosition(len(sCont))
+	pAR.Meta.Beg = *CT.NewFilePosition(0)
+	pAR.Meta.End = *CT.NewFilePosition(0)
 	// No YAML metadata found ?
 	if iEnd <= 0 {
-		pAR.Meta.Beg = *XU.NewFilePosition(0)
-		pAR.Meta.End = *XU.NewFilePosition(0)
-		pAR.Text.Beg = *XU.NewFilePosition(0)
-		pAR.Text.End = *XU.NewFilePosition(len(sCont))
+		pAR.Meta.Beg = *CT.NewFilePosition(0)
+		pAR.Meta.End = *CT.NewFilePosition(0)
+		pAR.Text.Beg = *CT.NewFilePosition(0)
+		pAR.Text.End = *CT.NewFilePosition(len(sCont))
 	} else {
 		// Found YAML metadata
 		s2 := SU.TrimYamlMetadataDelimiters(sCont[:iEnd])
@@ -55,10 +56,10 @@ func (pAR *PathAnalysis) DoAnalysis_txt(sCont string) error {
 			return fmt.Errorf("loading YAML: %w", e)
 		}
 		// SUCCESS! Set ranges.
-		pAR.Meta.Beg = *XU.NewFilePosition(0)
-		pAR.Meta.End = *XU.NewFilePosition(iEnd)
-		pAR.Text.Beg = *XU.NewFilePosition(iEnd)
-		pAR.Text.End = *XU.NewFilePosition(len(sCont))
+		pAR.Meta.Beg = *CT.NewFilePosition(0)
+		pAR.Meta.End = *CT.NewFilePosition(iEnd)
+		pAR.Text.Beg = *CT.NewFilePosition(iEnd)
+		pAR.Text.End = *CT.NewFilePosition(len(sCont))
 
 		pAR.MetaProps = ps
 		L.L.Dbg("(AF) Got YAML metadata: " + s2)
