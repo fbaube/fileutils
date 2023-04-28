@@ -39,11 +39,11 @@ type PathProps struct { // this has (Typed) Raw
 }
 
 func (pi *PathProps) String() (s string) {
-	if pi.IsOkayFile() {
+	if pi.IsFile() {
 		s = fmt.Sprintf("OK-File (len:%d) ", pi.Size())
-	} else if pi.IsOkayDir() {
+	} else if pi.IsDir() {
 		s = fmt.Sprintf("OK-Dirr (len:%d) ", pi.Size())
-	} else if pi.IsOkaySymlink() {
+	} else if pi.IsSymlink() {
 		s = "OK-SymL "
 	} else {
 		s = "Not-OK (PathProps uninitialized?)"
@@ -52,36 +52,37 @@ func (pi *PathProps) String() (s string) {
 	return s
 }
 
-// Echo implements Markupper.
+// Echo implements [Stringser].
 func (p PathProps) Echo() string {
 	return p.AbsFP.S()
 }
 
-// IsOkayWhat is for use with functions from github.com/samber/lo
-func (p *PathProps) IsOkayWhat() string {
-	if p.IsOkayFile() {
+// IsWhat is for use with functions from github.com/samber/lo .
+// If the item does not exists, it returns "".
+func (p *PathProps) IsWhat() string {
+	if p.IsFile() {
 		return "FILE"
 	}
-	if p.IsOkayDir() {
+	if p.IsDir() {
 		return "DIR"
 	}
-	if p.IsOkaySymlink() {
+	if p.IsSymlink() {
 		return "SYMLINK"
 	}
 	if p.Exists() {
 		return "UnknownType"
 	}
-	return "Non-existent"
+	return "" // "Non-existent"
 }
 
 // ResolveSymlinks will follow links until it finds something else.
 func (pp *PathProps) ResolveSymlinks() *PathProps {
-	if !pp.IsOkaySymlink() {
+	if !pp.IsSymlink() {
 		return nil
 	}
 	var newPath string
 	var e error
-	for pp.IsOkaySymlink() {
+	for pp.IsSymlink() {
 		// func os.Readlink(pathname string) (string, error)
 		// func FP.EvalSymlinks(path string) (string, error)
 		newPath, e = FP.EvalSymlinks(pp.AbsFP.S())
@@ -124,7 +125,7 @@ func (p *PathProps) GoGetFileContents() error {
 		// No-op
 		return nil
 	}
-	if !p.IsOkayFile() {
+	if !p.IsFile() {
 		// No-op
 		return nil
 	}

@@ -9,7 +9,6 @@ import (
 	"github.com/gabriel-vasile/mimetype"
 	"golang.org/x/tools/godoc/util" // used once, L125
 
-	CT "github.com/fbaube/ctoken"
 	L "github.com/fbaube/mlog"
 	SU "github.com/fbaube/stringutils"
 	XU "github.com/fbaube/xmlutils"
@@ -18,7 +17,7 @@ import (
 // <!ELEMENT  map     (topicmeta?, (topicref | keydef)*)  >
 // <!ELEMENT topicmeta (navtitle?, linktext?, data*) >
 
-// DoAnalysis is called only by NewContentityRecord(..).
+// NewPathAnalysis is called only by NewContentityRecord(..).
 // It has very different handling for XML content versus non-XML content.
 // Most of the function is making several checks for the presence of XML.
 // When a file is identified as XML, we have much more info available,
@@ -225,35 +224,4 @@ func NewPathAnalysis(pPP *PathProps) (*PathAnalysis, error) {
 	//  It's XML, so crank thru it and we're done
 	// ===========================================
 	return pAnlRec, pAnlRec.DoAnalysis_xml(pPeek, sCont)
-}
-
-func CollectKeysOfNonNilMapValues(M map[string]*CT.FilePosition) []string {
-	var ss []string
-	for K, V := range M {
-		if V != nil {
-			ss = append(ss, K)
-		}
-	}
-	return ss
-}
-
-func contypeIsXml(src, sContype, filext string) (isXml bool, msg string) {
-	src += " "
-	if S.Contains(sContype, "xml") {
-		return true, src + "got XML (in MIME type)"
-	}
-	if sContype == "text/html" {
-		return true, src + "got XML (cos is text/html)"
-	}
-	if S.HasPrefix(sContype, "text/") &&
-		(filext == ".dita" || filext == ".ditamap" || filext == ".map") {
-		return true, src + "got DITA XML (cos of text/dita-filext)"
-	}
-	if S.Contains(sContype, "ml") {
-		return true, src + "got <ml>"
-	}
-	if S.Contains(sContype, "svg") {
-		return true, src + "got <svg>"
-	}
-	return false, ""
 }
