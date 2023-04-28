@@ -3,10 +3,7 @@ package fileutils
 import (
 	// SU "github.com/fbaube/stringutils"
 	MU "github.com/fbaube/miscutils"
-	// "io"
 	"os"
-	// FP "path/filepath"
-	// S "strings"
 )
 
 /* REF: os.FileInfo
@@ -36,8 +33,12 @@ ModeIrregular  // ?: non-regular file; nothing else is known
 // the results of a call to [os.Stat] (or the contents
 // of a record in sqlar), lightly parsed.
 //
+// This should be applicable to nodes in other hierarchical
+// structures.
+//
 // IsDir() is pass-thru.
-// Size() is pass-thru, and/but might need mods for directories.
+// Size() is pass-thru, and/but might need mods for directories,
+// and ight be overridden when file content is available (and modifiable).
 // .
 type BasicMeta struct {
 	os.FileInfo
@@ -64,7 +65,8 @@ func NewBasicMeta(path string) *BasicMeta {
 	if e == nil || !os.IsNotExist(e) {
 		p.exists = true
 		// Is this necessary ?
-		p.exists = p.IsDir() || p.isFile() || p.isSymL()
+		p.exists = p.IsDir() || p.isFile() || p.isSymlink()
+		// Make sure
 		p.ClearError()
 	}
 	return p
@@ -75,30 +77,41 @@ func (p *BasicMeta) Exists() bool {
 	return p.exists
 }
 
-// IsEmpty is a convenience function.
+// IsEmpty is a convenience function
+// for files (and directories too?).
+// It can be overwritten when the file
+// contents are loaded (and modifiable).
+// .
 func (p *BasicMeta) IsEmpty() bool {
 	return p.Size() == 0
 }
 
-// IsOkayFile is a convenience function.
-func (p *BasicMeta) IsOkayFile() bool {
-	return p.exists && p.isFile() && !p.IsDir() && !p.isSymL()
+// HasContents is the opposite of [IsEmpty].
+func (p *BasicMeta) HasContents() bool {
+	return p.Size() != 0
 }
 
-// IsOkayDir is a convenience function.
+// IsFile is a (somewhat foolproofed) convenience function.
+func (p *BasicMeta) IsFile() bool {
+	return p.exists && p.isFile() && !p.IsDir() && !p.isSymlink()
+}
+
+/*
+// IsOkayDir is a (somewhat foolproofed) convenience function.
 func (p *BasicMeta) IsOkayDir() bool {
 	return p.exists && !p.isFile() && p.IsDir() && !p.isSymL()
 }
+*/
 
-// IsOkaySymlink is a convenience function.
-func (p *BasicMeta) IsOkaySymlink() bool {
-	return p.exists && !p.isFile() && !p.IsDir() && p.isSymL()
+// IsSymlink is a (somewhat foolproofed) convenience function.
+func (p *BasicMeta) IsSymlink() bool {
+	return p.exists && !p.isFile() && !p.IsDir() && p.isSymlink()
 }
 
 func (p *BasicMeta) isFile() bool {
 	return p.Mode().IsRegular() && !p.IsDir()
 }
 
-func (p *BasicMeta) isSymL() bool {
+func (p *BasicMeta) isSymlink() bool {
 	return (0 != (p.Mode() & os.ModeSymlink))
 }

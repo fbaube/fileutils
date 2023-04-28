@@ -9,7 +9,6 @@ package fileutils
 // In the pathological case that this was called on a file not
 // a directory, all data refer to the file path, rather than
 // (say) just the directory portion.
-//
 type FileSet struct {
 	// RelFilePath is a "short" argument such as supplied on the
 	// command line; its absolute resolution is in the next field.
@@ -41,7 +40,7 @@ func NewOneFileSet(s string) *FileSet {
 		return pfs
 	}
 	pp, e := NewPathProps(s)
-	if e != nil || pp == nil || !pfs.DirSpec.IsOkayFile() { // PathType() != "FILE" {
+	if e != nil || pp == nil || !pfs.DirSpec.IsFile() { // PathType() != "FILE" {
 		panic("fu.FileSet.NewOneFS: bad file: " + s)
 	}
 	pfs.DirSpec = *pp
