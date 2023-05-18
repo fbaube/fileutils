@@ -15,6 +15,7 @@ func CollectKeysOfNonNilMapValues(M map[string]*CT.FilePosition) []string {
 	return ss
 }
 
+// contypeIsXml returns true for HTML too.
 func contypeIsXml(src, sContype, filext string) (isXml bool, msg string) {
 	src += " "
 	if S.Contains(sContype, "xml") {

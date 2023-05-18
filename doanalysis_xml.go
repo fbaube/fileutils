@@ -18,6 +18,8 @@ func (pAR *PathAnalysis) DoAnalysis_xml(pXP *XU.XmlPeek, sCont string) error {
 	gotRootElm, rootMsg := (pXP.ContentityBasics.HasRootTag())
 	gotDoctype := (pXP.DoctypeRaw != "")
 	gotPreambl := (pXP.PreambleRaw != "")
+	L.L.Dbg("DoAnalysis_xml: DT<%s> Prmbl<%s>",
+		pXP.DoctypeRaw, pXP.PreambleRaw)
 	// gotSomeXml := (gotRootElm || gotDoctype || gotPreambl)
 	// Write a progress string
 	/* if true */
@@ -38,20 +40,20 @@ func (pAR *PathAnalysis) DoAnalysis_xml(pXP *XU.XmlPeek, sCont string) error {
 		L.L.Progress("Is XML: found: %s%s%s%s", sP, sD, sR, sDtd)
 		//fmt.Printf("Is XML: found: %s%s%s%s \n", sP, sD, sR, sDtd)
 		if rootMsg != "" {
-			L.L.Warning("Is XML: " + rootMsg)
+			L.L.Warning("Is XML (rootMsg): " + rootMsg)
 		}
 	}
 	if !(gotRootElm || pXP.HasDTDstuff) {
-		L.L.Warning("(AF) XML file has no root tag (and is not DTD)")
+		L.L.Warning("(An.X) XML file has no root tag (and is not DTD)")
 	}
 	var pParstPrmbl *XU.ParsedPreamble
 	var e error
 	if gotPreambl {
-		L.L.Dbg("(AF) got: %s", pXP.PreambleRaw)
+		L.L.Dbg("(An.X) got: %s", pXP.PreambleRaw)
 		pParstPrmbl, e = XU.ParsePreamble(pXP.PreambleRaw)
 		if e != nil {
 			// println("xm.peek: preamble failure in:", peek.RawPreamble)
-			return fmt.Errorf("(AF) preamble failure: %w", e)
+			return fmt.Errorf("(An.X) preamble failure: %w", e)
 		}
 		// print("--> Parsed XML preamble: " + pParstPrmbl.String())
 	}

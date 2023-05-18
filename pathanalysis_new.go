@@ -25,10 +25,10 @@ import (
 //
 // Binary content is tagged as such and no further examination is done.
 // So, the basic top-level classificaton of content is:
-// (1) Binary
-// (2) XML (when a DOCTYPE is detected)
-// (3) Everything else (incl. plain text,
-// Markdown, and XML/HTML that lacks DOCTYPE)
+//   - Binary
+//   - XML (when a DOCTYPE is detected)
+//   - Everything else (incl. plain text,
+//     Markdown, and XML/HTML that lacks DOCTYPE)
 //
 // The second argument "filext" can be any filepath; the Go stdlib
 // is used to split off the file extension. It can also be "", if
@@ -37,9 +37,8 @@ import (
 //
 // If the first argument "sCont" (the content) is less than six bytes,
 // return (nil, nil) to indicate that there is not enough content to
-// work with.
+// do anything informative with.
 // .
-// func DoAnalysis(sCont string, filext string) (*PathAnalysis, error) {
 func NewPathAnalysis(pPP *PathProps) (*PathAnalysis, error) {
 	var sCont string
 	sCont = string(pPP.Raw)
@@ -72,8 +71,10 @@ func NewPathAnalysis(pPP *PathProps) (*PathAnalysis, error) {
 	//  Try a coupla shortcuts
 	// ========================
 	cheatYaml := S.HasPrefix(sCont, "---\n")
+	// FIXME cheatHtml should also permit a preceding XML prolog
 	cheatHtml := S.HasPrefix(sCont, "<DOCTYPE html")
-	cheatXml := S.HasPrefix(sCont, "<?xml ")
+	cheatXml := S.HasPrefix(sCont, "<?xml ") || S.HasPrefix(sCont, "<DOCTYPE ")
+	cheatXml = cheatXml && !cheatHtml
 	// =========================
 	//  Content type detection
 	//  using 3rd party library
@@ -100,31 +101,30 @@ func NewPathAnalysis(pPP *PathProps) (*PathAnalysis, error) {
 		L.L.Warning("Content type from stdlib " +
 			"(still) has a semicolon: " + stdlib_contype)
 	}
-	// ================================
-	//  Authoritative MIME type string
-	// ================================
+	// ===========================
+	//  Warn if they do not agree
+	// ===========================
 	if stdlib_contype != contype {
 		L.L.Warning("(AF) MIME type: lib_3p<%s> v stdlib<%s>",
 			contype, stdlib_contype)
 	}
-	L.L.Info("(AF) <%s> snift-as: %s", filext, contype)
+	L.L.Info("(NPA) <%s> snift-as: %s", filext, contype)
 	// =====================================
 	// INITIALIZE ANALYSIS RECORD:
-	// pAnlRec is *xmlutils.AnalysisRecord is
-	// basically all of our analysis results,
-	// including ContypingInfo.
+	// pAnlRec is *xmlutils.PathAnalysis
+	// is basically all of our analysis
+	// results, including ContypingInfo.
 	// Don't forget to set the content!
 	// (omitting this caused a lot of bugs)
 	// =====================================
-	var pAnlRec *PathAnalysis
-	pAnlRec = new(PathAnalysis)
+	var pPA *PathAnalysis
+	pPA = new(PathAnalysis)
 	// 2023.02 take struct PathProps out of struct PathAnalysis
 	// pAnlRec.PathProps = new(PathProps)
 	// pAnlRec.PathProps.Raw = sCont
-	pAnlRec.FileExt = filext
-	pAnlRec.MimeType = stdlib_contype // Junk this ?
-	pAnlRec.MimeTypeAsSnift = contype
-
+	pPA.FileExt = filext
+	pPA.MimeType = stdlib_contype // Junk this ?
+	pPA.MimeTypeAsSnift = contype
 	// ===========================
 	//  Check for & handle BINARY
 	// ===========================
@@ -138,15 +138,16 @@ func NewPathAnalysis(pPP *PathProps) (*PathAnalysis, error) {
 		}
 		// FIXME If "text/" here, is an error to sort out
 	}
+	// Warn if they disagree
 	if stdlib_isBinary != isBinary {
-		L.L.Warning("(AF) is-binary: using lib_3p <%t> not stdlib <%t> ",
+		L.L.Warning("(NPA) is-binary: lib_3p <%t> v stdlib <%t> ",
 			isBinary, stdlib_isBinary)
 	}
 	if isBinary {
 		if cheatYaml || cheatXml || cheatHtml {
-			L.L.Panic("(AF) both binary & yaml/xml")
+			L.L.Panic("(NPA) both is-Binary & is-Yaml/Xml")
 		}
-		return pAnlRec, pAnlRec.DoAnalysis_bin()
+		return pPA, pPA.DoAnalysis_bin()
 	}
 	// ======================================
 	// We have text, but it might not be XML.
@@ -161,12 +162,12 @@ func NewPathAnalysis(pPP *PathProps) (*PathAnalysis, error) {
 		//	hS = "not "
 		// }
 		if !mIsXml {
-			mS = "not "
+			mS = "Not-"
 		}
-		L.L.Info("(AF) lib_3p (is-%sXML) %s", // \n\t\t stdlib (is-%sXML) %s",
+		L.L.Info("(NPA) lib_3p (is-%sXML) %s", // \n\t\t stdlib (is-%sXML) %s",
 			mS, mMsg) // , hS, hMsg)
 	} else {
-		L.L.Info("(AF) XML not detected by either MIME lib")
+		L.L.Info("(NPA) XML not detected by either MIME lib")
 	}
 	// ===================================
 	//  MAIN XML PRELIMINARY ANALYSIS:
@@ -187,7 +188,7 @@ func NewPathAnalysis(pPP *PathProps) (*PathAnalysis, error) {
 	// by, for example, applying XML parsing to a
 	// Markdown file. So, an error is NOT fatal.
 	if e != nil {
-		L.L.Info("(AF) XML parsing got error: " + e.Error())
+		L.L.Info("(NPA) XML parsing got error: " + e.Error())
 		xmlParsingFailed = true
 	}
 	// ===============================
@@ -195,11 +196,11 @@ func NewPathAnalysis(pPP *PathProps) (*PathAnalysis, error) {
 	// ===============================
 	if pPeek.HasDTDstuff && SU.IsInSliceIgnoreCase(
 		filext, XU.DTDtypeFileExtensions) {
-		return pAnlRec, pAnlRec.DoAnalysis_sch()
+		return pPA, pPA.DoAnalysis_sch()
 	}
 	// Check for pathological cases
 	if xmlParsingFailed && mIsXml { // (hIsXml || mIsXml) {
-		L.L.Panic("(AF) XML confusion (case #1) in DoAnalysis")
+		L.L.Panic("(NPA) XML confusion (case #1) in DoAnalysis")
 	}
 	// Note that this next test dusnt always work for Markdown!
 	// if (!xmlParsingFailed) && (! (hIsXml || mIsXml)) {
@@ -218,10 +219,10 @@ func NewPathAnalysis(pPP *PathProps) (*PathAnalysis, error) {
 			L.L.Panic(fmt.Sprintf("WHOOPS xmlParsingFailed<%t> gotSomeXml<%t> \n",
 				xmlParsingFailed, gotSomeXml))
 		}
-		return pAnlRec, pAnlRec.DoAnalysis_txt(sCont)
+		return pPA, pPA.DoAnalysis_txt(sCont)
 	}
 	// ===========================================
 	//  It's XML, so crank thru it and we're done
 	// ===========================================
-	return pAnlRec, pAnlRec.DoAnalysis_xml(pPeek, sCont)
+	return pPA, pPA.DoAnalysis_xml(pPeek, sCont)
 }
