@@ -75,7 +75,7 @@ os.Readdirnames, os.Seek, os.Truncate
 import (
 	"errors"
 	"fmt"
-	_ "github.com/mattn/go-sqlite3" // to get init()
+	// _ "github.com/mattn/go-sqlite3" // to get init()
 	"io/fs"
 	"os"
 	FP "path/filepath"
