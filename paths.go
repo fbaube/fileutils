@@ -76,7 +76,7 @@ import (
 	"errors"
 	"fmt"
 	// _ "github.com/mattn/go-sqlite3" // to get init()
-	"io/fs"
+	// "io/fs"
 	"os"
 	FP "path/filepath"
 	S "strings"
@@ -117,40 +117,43 @@ func ResolvePath(s string) string {
 	return FP.Join(homedir, s[2:])
 }
 
-// FileAtPath checks that the file exists AND that it is "regular"
-// (not dir, symlnk, pipe), and also returns permissions.
+// IsFileAtPath checks that the file exists AND that it is
+// "regular" (not dir, symlink, pipe), and also returns size
+// and permissions in *os.FileInfo
 //
 // Return values:
-//   - (true, permissions:0nnn, nil) if a regular file exists
-//   - (false, fs.FileMode, nil) if something else exists (incl. dir)
-//   - (false, 0, nil) if nothing at all exists
-//   - (false, 0, anError) if some unusual error was returned (failing disk?)
+//   - (true,  *FileInfo, nil) if a regular file exists (but can be 0-len!)
+//   - (false, *FileInfo, nil) if something else exists (incl. dir)
+//   - (false, nil, nil) if nothing at all exists
+//   - (false, nil, anError) if some unusual error was returned (failing disk?)
 //
 // Notes & caveats:
 //   - File emptiness (i.e. length 0) is not checked
 //   - "~" for user home dir is not expanded and will fail
-func FileAtPath(aPath string) (bool, fs.FileMode, error) {
+//
+// .
+func IsFileAtPath(aPath string) (bool, os.FileInfo, error) {
+	var fi os.FileInfo
+	var e error
 	aPath = ResolvePath(aPath)
 	// If nothing exists at the filepath,
 	// Stat returns os.ErrNotExist
-	fi, e := os.Stat(aPath)
+	fi, e = os.Stat(aPath)
 	// fi.IsRegular() excludes directories, pipes, symlinks,
 	// append-only, exclusive-access, and other detritus.
 	if e == nil {
-		// Something exists !
-		// (fi should never be nil)
-		if fi.Mode().IsRegular() {
-			return true, fi.Mode().Perm(), nil
-		}
-		// Non-regular, incl. dirs, symlinks, pipes.
+		// Something exists ! (fi should never be nil.)
+		// Not-IsRegular includes dirs, symlinks, pipes.
 		// The exact type is indicated in the FileMode.
-		return false, fi.Mode(), nil
+		return fi.Mode().IsRegular(), fi, nil
 	}
 	if errors.Is(e, os.ErrNotExist) {
 		// Nothing exists !
-		return false, 0, nil
+		return false, nil, nil
 	}
 	// Something WEIRD happened.
 	// Maybe this should panic instead.
-	return false, 0, e
+	// Probably not tho, cos network
+	// file ops can do strange stuff.
+	return false, nil, e
 }

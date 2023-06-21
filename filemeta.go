@@ -29,26 +29,28 @@ ModeSticky     // t: sticky
 ModeIrregular  // ?: non-regular file; nothing else is known
 */
 
-// BasicMeta is the most basic level of system metadata:
-// the results of a call to [os.Stat] (or the contents
-// of a record in sqlar), lightly parsed.
+// FileMeta is the most basic level of file system
+// metadata: the results of a call to [os.Stat] (or
+// the contents of a record in sqlar), lightly parsed.
 //
-// This should be applicable to nodes in other hierarchical
-// structures.
+// This is "mostly" applicable to contentful nodes
+// in other hierarchical structures. For example,
+// for non-files it still has size (& permissions).
 //
 // IsDir() is pass-thru.
-// Size() is pass-thru, and/but might need mods for directories,
-// and ight be overridden when file content is available (and modifiable).
+// Size() is pass-thru, and/but might need mods
+// for directories, and might be overridden when
+// file content is available (and modifiable).
 // .
-type BasicMeta struct {
+type FileMeta struct {
 	os.FileInfo
 	exists bool
 	// error
 	MU.Errer
 }
 
-// NewBasicMeta replaces a call to [os.LStat]. This is necessary because
-// a call of the form NewBasicMeta(FileInfo) won't work because an error
+// NewFileMeta replaces a call to [os.LStat]. This is necessary because
+// a call of the form NewFileMeta(FileInfo) won't work because an error
 // return from [os.LStat] indicates whether the file or dir (or symlink)
 // exists. However no further analysis of the path is performed in this
 // func, because that is more properly done by the caller.
@@ -56,10 +58,10 @@ type BasicMeta struct {
 // Note that if the file/dir does not exist, [exists] is false and/but
 // no error is indicated (i.e. [error] is nil).
 // .
-func NewBasicMeta(path string) *BasicMeta {
-	var p *BasicMeta
+func NewFileMeta(path string) *FileMeta {
+	var p *FileMeta
 	var e error
-	p = new(BasicMeta)
+	p = new(FileMeta)
 	p.FileInfo, e = os.Lstat(path)
 	p.SetError(e)
 	if e == nil || !os.IsNotExist(e) {
@@ -73,7 +75,7 @@ func NewBasicMeta(path string) *BasicMeta {
 }
 
 // Exists is a convenience function.
-func (p *BasicMeta) Exists() bool {
+func (p *FileMeta) Exists() bool {
 	return p.exists
 }
 
@@ -82,36 +84,36 @@ func (p *BasicMeta) Exists() bool {
 // It can be overwritten when the file
 // contents are loaded (and modifiable).
 // .
-func (p *BasicMeta) IsEmpty() bool {
+func (p *FileMeta) IsEmpty() bool {
 	return p.Size() == 0
 }
 
 // HasContents is the opposite of [IsEmpty].
-func (p *BasicMeta) HasContents() bool {
+func (p *FileMeta) HasContents() bool {
 	return p.Size() != 0
 }
 
 // IsFile is a (somewhat foolproofed) convenience function.
-func (p *BasicMeta) IsFile() bool {
+func (p *FileMeta) IsFile() bool {
 	return p.exists && p.isFile() && !p.IsDir() && !p.isSymlink()
 }
 
 /*
 // IsOkayDir is a (somewhat foolproofed) convenience function.
-func (p *BasicMeta) IsOkayDir() bool {
+func (p *FileMeta) IsOkayDir() bool {
 	return p.exists && !p.isFile() && p.IsDir() && !p.isSymL()
 }
 */
 
 // IsSymlink is a (somewhat foolproofed) convenience function.
-func (p *BasicMeta) IsSymlink() bool {
+func (p *FileMeta) IsSymlink() bool {
 	return p.exists && !p.isFile() && !p.IsDir() && p.isSymlink()
 }
 
-func (p *BasicMeta) isFile() bool {
+func (p *FileMeta) isFile() bool {
 	return p.Mode().IsRegular() && !p.IsDir()
 }
 
-func (p *BasicMeta) isSymlink() bool {
+func (p *FileMeta) isSymlink() bool {
 	return (0 != (p.Mode() & os.ModeSymlink))
 }

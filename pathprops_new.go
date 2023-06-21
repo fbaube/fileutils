@@ -48,7 +48,7 @@ func NewPathProps(fp string) (*PathProps, error) {
 		return pp, WrapAsPathPropsError(
 			e, "FP.Abs(..) (fu.PPnew.L32)", nil)
 	}
-	pp.BasicMeta = *NewBasicMeta(afp)
+	pp.FileMeta = *NewFileMeta(afp)
 	return pp, pp.GetError()
 }
 

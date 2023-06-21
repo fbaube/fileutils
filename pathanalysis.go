@@ -19,7 +19,6 @@ type PathAnalysis struct { // this has has Raw
 	// ContypingInfo is simple fields:
 	// FileExt MType MimeType's
 	XU.ContypingInfo
-	MarkdownFlavor string
 	// ContentityBasics includes Raw
 	// (the entire input content)
 	XU.ContentityBasics // has Raw

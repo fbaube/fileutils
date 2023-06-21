@@ -35,7 +35,7 @@ type PathProps struct { // this has (Typed) Raw
 	// ShortFP is for display use, and is
 	// expressed if possible using "~" or "."
 	ShortFP string
-	BasicMeta
+	FileMeta
 }
 
 func (pi *PathProps) String() (s string) {
