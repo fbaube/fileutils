@@ -7,6 +7,7 @@ import (
 
 	"github.com/fbaube/db"
 	FU "github.com/fbaube/fileutils"
+	"github.com/fbaube/repo/sqlite"
 )
 
 var myAppName = "filetype"
@@ -33,7 +34,7 @@ func main() {
 	filename := os.Args[1]
 	fileinfo := FU.NewPathProps(filename)
 	println("File info:", fileinfo.String())
-	chkdcont := db.NewContentityRecord(fileinfo)
+	chkdcont := sqlite.NewContentityRecord(fileinfo)
 	// if chkdcont.GetError() != nil {
 	//    println("Error encountered:", "TBS")
 	// }
