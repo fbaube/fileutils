@@ -1,6 +1,7 @@
 package fileutils
 
 import (
+	"fmt"
 	SU "github.com/fbaube/stringutils"
 	XU "github.com/fbaube/xmlutils"
 	S "strings"
@@ -62,7 +63,9 @@ func (p PathAnalysis) MarkupType() SU.MarkupType {
 	if S.HasPrefix(p.MimeType, "html/") {
 		return SU.MU_type_HTML
 	}
-
+	if S.HasPrefix(p.MType, "html/") {
+		return SU.MU_type_HTML
+	}
 	if S.HasPrefix(p.MType, "xml/") {
 		return SU.MU_type_XML
 	}
@@ -73,7 +76,8 @@ func (p PathAnalysis) MarkupType() SU.MarkupType {
 		return SU.MU_type_MKDN
 	}
 	if S.HasPrefix(p.MType, "bin/") {
-		return SU.MU_type_UNK // No BIN !!
+		return SU.MU_type_BIN // opaque
 	}
+	fmt.Printf("fu.pa.muType: failed on: <%s> \n", p.MType)
 	return SU.MU_type_UNK
 }
