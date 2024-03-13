@@ -24,6 +24,7 @@ func AbsWRT(problyRelFP string, wrtDir string) string {
 }
 
 // OpenRW opens (and returns) the filepath as a writable file.
+// An existing file is not truncated, merely opened. 
 func OpenRW(path string) (f *os.File, e error) {
 	f, e = os.OpenFile(path, os.O_RDWR, 0666)
 	if e != nil {
