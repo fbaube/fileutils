@@ -2,6 +2,8 @@ github.com/fatih/color v1.16.0 h1:zmkK9Ngbjj+K0yRhTVONQh1p/HknKYSlNT+vZCzyokM=
 github.com/fatih/color v1.16.0/go.mod h1:fL2Sau1YI5c0pdGEVCbKQbLXB6edEj1ZgiY4NijnWvE=
 github.com/fbaube/ctoken v0.0.0-20240117104044-e4c4f08f089a h1:r59r15IW9qrWfpRBWuzWi3M5diLNesZhNA1o1XjoOx4=
 github.com/fbaube/ctoken v0.0.0-20240117104044-e4c4f08f089a/go.mod h1:pPoxOOTB5Gd1RcsqSuhfFvH2/StTWFVU/aWHmF+DVA8=
+github.com/fbaube/ctoken v0.0.0-20240318064251-0d73030038b5 h1:0scpgD74lzmpOOn9YE6lHI7LOVdvALQPU2up3kbyHuE=
+github.com/fbaube/ctoken v0.0.0-20240318064251-0d73030038b5/go.mod h1:MzaCWuPd7bek9dVfpVC6hamdoKfyTctcWvBqdTEQUo0=
 github.com/fbaube/gtoken v0.0.0-20230421173215-d97b8767dfae h1:bd0XuJw79xcOKSj9DmxXKhM8ME3gYVl7GuYGA9yIs+s=
 github.com/fbaube/gtoken v0.0.0-20230421173215-d97b8767dfae/go.mod h1:L5TPmM5qhEVECO49RCwHxUMIJStcDicDuXPz9VzgyNs=
 github.com/fbaube/humanbytes v0.0.0-20240227103335-a0b11501ad0e h1:2lRZ3QxDYaZ9F7RXLSL3zugdmeQTGOrRddBk+RVTRY0=
@@ -22,6 +24,8 @@ github.com/fbaube/stringutils v0.0.0-20240110181932-8dd4155bdb7f h1:KZvXZMbG4zCX
 github.com/fbaube/stringutils v0.0.0-20240110181932-8dd4155bdb7f/go.mod h1:49bqx//iTAsBFtz350zEvJluNM5jaTYcRSw/hTPwY9o=
 github.com/fbaube/stringutils v0.0.0-20240227182912-df670eade115 h1:MKnHqf56QnMgHdYfOjimAw0pq8sevqXVRQnROX5Qs1E=
 github.com/fbaube/stringutils v0.0.0-20240227182912-df670eade115/go.mod h1:WCZlSHSWEOj/EaoxrmOcLVuXKuCGKfods14j1RS1JrY=
+github.com/fbaube/stringutils v0.0.0-20240318064103-bf7b5a2b5f11 h1:SbTSSAz6W2bk6A7J4nbrQxSoSQQfwnPu4v8vT/4eO9c=
+github.com/fbaube/stringutils v0.0.0-20240318064103-bf7b5a2b5f11/go.mod h1:5GRMKxtq6rUel/Pwfr7VG0eHVBPITL1UCsHyGHhTo8U=
 github.com/fbaube/wasmutils v0.0.0-20231209183154-e25018375bc2 h1:c2o0/6fIdaGD9G84GUFg41qHYPWqfKO0HD8G9KLJQH4=
 github.com/fbaube/wasmutils v0.0.0-20231209183154-e25018375bc2/go.mod h1:Yv24ab7DbaTunolfMWqQVI0g8yCNFu8y5IHxLbwZ0ZE=
 github.com/fbaube/xmlutils v0.0.0-20230904080817-586c01346ef2 h1:bixXQUHTZen4D96wGZbE+ZDx2yrIAYlqPG0skSxUkdg=
@@ -39,6 +43,8 @@ golang.org/x/exp v0.0.0-20240119083558-1b970713d09a h1:Q8/wZp0KX97QFTc2ywcOE0YRj
 golang.org/x/exp v0.0.0-20240119083558-1b970713d09a/go.mod h1:idGWGoKP1toJGkd5/ig9ZLuPcZBC3ewk7SzmH0uou08=
 golang.org/x/exp v0.0.0-20240222234643-814bf88cf225 h1:LfspQV/FYTatPTr/3HzIcmiUFH7PGP+OQ6mgDYo3yuQ=
 golang.org/x/exp v0.0.0-20240222234643-814bf88cf225/go.mod h1:CxmFvTBINI24O/j8iY7H1xHzx2i4OsyguNBmN/uPtqc=
+golang.org/x/exp v0.0.0-20240314144324-c7f7c6466f7f h1:3CW0unweImhOzd5FmYuRsD4Y4oQFKZIjAnKbjV4WIrw=
+golang.org/x/exp v0.0.0-20240314144324-c7f7c6466f7f/go.mod h1:CxmFvTBINI24O/j8iY7H1xHzx2i4OsyguNBmN/uPtqc=
 golang.org/x/net v0.19.0 h1:zTwKpTd2XuCqf8huc7Fo2iSy+4RHPd10s4KzeTnVr1c=
 golang.org/x/net v0.19.0/go.mod h1:CfAk/cbD4CthTvqiEl8NpboMuiuOYsAr/7NOjZJtv1U=
 golang.org/x/sys v0.0.0-20220811171246-fbc7d0a398ab/go.mod h1:oPkhp1MJrh7nUepCBck5+mAzfO9JrbApNNgaTdGDITg=

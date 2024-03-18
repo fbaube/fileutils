@@ -18,6 +18,15 @@ const MAX_FILE_SIZE = 4000000
 // further processing elsewhere. In the most common usage, it is a file.
 // It can be nil, if e.g. its content was created on-the-fly.
 //
+// NOTE that the file name (the part of the full path after the last
+// directory separator) is not stored separately: it is stored in the
+// AbsFP *and* the RelFP.
+//
+// NOTE also that this path & name information duplicates what is
+// stored in an instance of orderednodes.Nord . 
+//
+// NOTE that the field [FileMeta] embed an instance of [os.FileInfo].
+// 
 // PathProps is embedded in ContentityRecord. (FIXME)
 //
 // It might seem odd to include a [TypedRaw] rather than a plain [Raw].
@@ -26,7 +35,7 @@ const MAX_FILE_SIZE = 4000000
 // sometimes we can - or want to - have to - do things like include
 // HTML in Markdown, or permit HTML tags in LwDITA.
 //
-// Note that RelFP and AbsFP must be exported to be persisted to the DB.
+// NOTE that RelFP and AbsFP must be exported to be persisted to the DB.
 // .
 type PathProps struct { // this has (Typed) Raw
 	CT.TypedRaw // was: string
