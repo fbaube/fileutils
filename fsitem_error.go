@@ -13,26 +13,26 @@ type PathError struct {
 	Err  error }
 */
 
-// Err can contain %w but must be set by caller to NewPathPropsError(..),
+// Err can contain %w but must be set by caller to NewFSItemError(..),
 // and caller can also decide whether to set pkg.filename.methodname.Lnn
 // e.g. PathError { Err: fmt.Errorf("Zork failed: %w (fu.zork.L22)", e) }
 
-// PathPropsError is
-// PathProps + SrcLoc (in source code) +
+// FSItemError is
+// FSItem + SrcLoc (in source code) +
 // PathError struct { Op, Path string; Err error }
 //
 // # Maybe use the format pkg.filename.methodname.Lnn
 //
 // In code where package `mcfile` is available,
 // use mcfile.ContentityError
-type PathPropsError struct {
+type FSItemError struct {
 	PE fs.PathError
-	*PathProps
+	*FSItem
 }
 
-// WrapAsPathPropsError SHOULD USE %w
-func WrapAsPathPropsError(e error, op string, pp *PathProps) PathPropsError {
-	ce := PathPropsError{}
+// WrapAsFSItemError SHOULD USE %w
+func WrapAsFSItemError(e error, op string, pp *FSItem) FSItemError {
+	ce := FSItemError{}
 	ce.PE.Err = e
 	ce.PE.Op = op
 	if pp == nil {
@@ -43,9 +43,9 @@ func WrapAsPathPropsError(e error, op string, pp *PathProps) PathPropsError {
 	return ce
 }
 
-// NewPathPropsError TBD.
-func NewPathPropsError(ermsg string, op string, pp *PathProps) PathPropsError {
-	ce := PathPropsError{}
+// NewFSItemError TBD.
+func NewFSItemError(ermsg string, op string, pp *FSItem) FSItemError {
+	ce := FSItemError{}
 	ce.PE.Err = errors.New(ermsg)
 	ce.PE.Op = op
 	if pp == nil {
@@ -56,11 +56,11 @@ func NewPathPropsError(ermsg string, op string, pp *PathProps) PathPropsError {
 	return ce
 }
 
-func (ce PathPropsError) Error() string {
+func (ce FSItemError) Error() string {
 	return ce.String()
 }
 
-func (ce *PathPropsError) String() string {
+func (ce *FSItemError) String() string {
 	var s string
 	s = fmt.Sprintf("%s(%s): %s", ce.PE.Op, ce.PE.Path, ce.PE.Err.Error())
 	return s

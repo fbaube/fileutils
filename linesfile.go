@@ -17,12 +17,12 @@ type FileLine struct {
 
 // LinesFile is for reading a file where each line is a record.
 type LinesFile struct {
-	*PathProps
+	*FSItem
 	Lines []*FileLine
 }
 
 // NewLinesFile is pretty self-explanatory.
-func (pPI *PathProps) NewLinesFile() (*LinesFile, error) {
+func (pPI *FSItem) NewLinesFile() (*LinesFile, error) {
 	e := pPI.GoGetFileContents() // getContentBytes()
 	if e != nil {
 		panic(e)

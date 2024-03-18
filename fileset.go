@@ -17,13 +17,13 @@ type FileSet struct {
 	// // RelFilePath string
 	// AbsFilePath is the fully resolved counterpart to `RelFilePath`.
 	// // AbsFilePath
-	DirSpec PathProps
+	DirSpec FSItem
 	// `filepath.WalkFunc` can provide relative filepaths, so we can't
 	// say for sure whether this list will contain relative or absolute
 	// paths. Therefore for convenience we use a bunch of strings.
 	FilePaths []string
 	// Then we process them.
-	CheckedFiles []PathProps
+	CheckedFiles []FSItem
 }
 
 // Size returns the number of files.
@@ -39,14 +39,14 @@ func NewOneFileSet(s string) *FileSet {
 	if s == "" {
 		return pfs
 	}
-	pp, e := NewPathProps(s)
+	pp, e := NewFSItem(s)
 	if e != nil || pp == nil || !pfs.DirSpec.IsFile() { // PathType() != "FILE" {
 		panic("fu.FileSet.NewOneFS: bad file: " + s)
 	}
 	pfs.DirSpec = *pp
 	pfs.FilePaths = make([]string, 0, 1)
 	pfs.FilePaths = append(pfs.FilePaths, string(pfs.DirSpec.AbsFP))
-	pfs.CheckedFiles = make([]PathProps, 0, 1)
+	pfs.CheckedFiles = make([]FSItem, 0, 1)
 	pfs.CheckedFiles = append(pfs.CheckedFiles, pfs.DirSpec)
 	return pfs
 }

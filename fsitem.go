@@ -13,21 +13,19 @@ import (
 // MAX_FILE_SIZE is set (arbitrarily) to 4 megabytes
 const MAX_FILE_SIZE = 4000000
 
-// PathProps describes a filepath we have redd, will read, or will create.
-// It might also be a directory or symlink, either of which requires
-// further processing elsewhere. In the most common usage, it is a file.
-// It can be nil, if e.g. its content was created on-the-fly.
+// FSItem is a filepath (and contents) that we have redd, will read, 
+// or will create. It might be a directory or symlink, either of which 
+// requires further processing elsewhere. In the most common usage, it 
+// is a file. It can be nil, if e.g. its content was created on-the-fly.
 //
 // NOTE that the file name (the part of the full path after the last
 // directory separator) is not stored separately: it is stored in the
-// AbsFP *and* the RelFP.
+// AbsFP *and* the RelFP. Note also that this path & name information
+// duplicates what is stored in an instance of orderednodes.Nord . 
 //
-// NOTE also that this path & name information duplicates what is
-// stored in an instance of orderednodes.Nord . 
-//
-// NOTE that the field [FileMeta] embed an instance of [os.FileInfo].
+// NOTE that the embedded field [FileMeta] embeds an [os.FileInfo].
 // 
-// PathProps is embedded in ContentityRecord. (FIXME)
+// FSItem is embedded in struct [datarepo/rowmodels/ContentityRow].
 //
 // It might seem odd to include a [TypedRaw] rather than a plain [Raw].
 // But in general when we are working with serializing and deserializing
@@ -35,39 +33,53 @@ const MAX_FILE_SIZE = 4000000
 // sometimes we can - or want to - have to - do things like include
 // HTML in Markdown, or permit HTML tags in LwDITA.
 //
+// It might also seem odd that MU_type_DIRLIKE is a "markup type",
+// but this avoids many practival problems encountered in trying 
+// to process file system trees.
+//
 // NOTE that RelFP and AbsFP must be exported to be persisted to the DB.
 // .
-type PathProps struct { // this has (Typed) Raw
-	CT.TypedRaw // was: string
+type FSItem struct { // this has (Typed) Raw
+	FileMeta
+	CT.TypedRaw 
 	RelFP       string
 	AbsFP       AbsFilePath
 	// ShortFP is for display use, and is expressed if possible
 	// using "~" or ".". The latter means it depends on the CWD at
 	// invocation and so is session-dependent and not persistable. 
 	ShortFP string
-	FileMeta
 }
 
-func (pi *PathProps) String() (s string) {
-	if pi.IsFile() {
-		s = fmt.Sprintf("OK-File (len:%d) ", pi.Size())
-	} else if pi.IsDir() {
-		s = fmt.Sprintf("OK-Dirr (len:%d) ", pi.Size())
-	} else if pi.IsSymlink() {
+func (pfsi *FSItem) String() (s string) {
+	if pfsi.IsFile() {
+		s = fmt.Sprintf("OK-File (len:%d) ", pfsi.Size())
+	} else if pfsi.IsDir() {
+		s = fmt.Sprintf("OK-Dirr (len:%d) ", pfsi.Size())
+	} else if pfsi.IsSymlink() {
 		s = "OK-SymL "
 	} else {
-		s = "Not-OK (PathProps uninitialized?)"
+		s = "Not-OK (FSItem uninitialized?)"
 	}
-	s += pi.AbsFP.Tildotted()
+	s += pfsi.AbsFP.Tildotted()
 	return s
 }
 
 // Echo implements [Stringser].
-func (p PathProps) Echo() string {
+func (p FSItem) Echo() string {
 	return p.AbsFP.S()
 }
 
-func (p *PathProps) IsDirlike() bool {
+// Info implements [Stringser].
+func (p FSItem) Info() string {
+	return "FIXME.Info:" + p.AbsFP.S()
+}
+
+// Debug implements [Stringser].
+func (p FSItem) Debug() string {
+	return "FIXME.Debug:" + p.AbsFP.S()
+}
+
+func (p *FSItem) IsDirlike() bool {
      if p.IsFile() { return false }
      if p.IsDir()  { return true  }
      return p.FileMeta.IsDirlike()
@@ -75,7 +87,7 @@ func (p *PathProps) IsDirlike() bool {
 
 // IsWhat is for use with functions from github.com/samber/lo .
 // If the item does not exists, it returns "".
-func (p *PathProps) IsWhat() string {
+func (p *FSItem) IsWhat() string {
 	if p.IsFile() {
 		return "FILE"
 	}
@@ -93,33 +105,33 @@ func (p *PathProps) IsWhat() string {
 
 // ResolveSymlinks will follow links until it finds
 // something else. NOTE that this is a SECURITY HOLE. 
-func (pp *PathProps) ResolveSymlinks() *PathProps {
-	if !pp.IsSymlink() {
+func (p *FSItem) ResolveSymlinks() *FSItem {
+	if !p.IsSymlink() {
 		return nil
 	}
 	var newPath string
 	var e error
-	for pp.IsSymlink() {
+	for p.IsSymlink() {
 		// func os.Readlink(pathname string) (string, error)
 		// func FP.EvalSymlinks(path string) (string, error)
-		newPath, e = FP.EvalSymlinks(pp.AbsFP.S())
+		newPath, e = FP.EvalSymlinks(p.AbsFP.S())
 		if e != nil {
-			L.L.Error("fu.RslvSymLx <%s>: %s", pp.AbsFP, e.Error())
-			// pp.SetError(fmt.Errorf("fu.RslvSymLx <%s>: %w", pp.AbsFP, e))
+			L.L.Error("fu.RslvSymLx <%s>: %s", p.AbsFP, e.Error())
+			// p.SetError(fmt.Errorf("fu.RslvSymLx <%s>: %w", p.AbsFP, e))
 			return nil
 		}
-		println("--> Symlink from:", pp.AbsFP)
+		println("--> Symlink from:", p.AbsFP)
 		println("     resolved to:", newPath)
-		pp.AbsFP = AbsFilePath(newPath)
+		p.AbsFP = AbsFilePath(newPath)
 		var e error
-		pp, e = NewPathProps(newPath)
+		p, e = NewFSItem(newPath)
 		if e != nil {
 			panic(e)
 			return nil
 		}
 		// CHECK IT
 	}
-	return pp
+	return p
 }
 
 // GoGetFileContents reads in the file (assuming it is a file)
@@ -137,7 +149,7 @@ func (pp *PathProps) ResolveSymlinks() *PathProps {
 // The call it makes to [os.Open] defaults to R/W mode,
 // altho R/O would probably suffice.
 // .
-func (p *PathProps) GoGetFileContents() error {
+func (p *FSItem) GoGetFileContents() error {
 	if p.Size() == 0 {
 		// No-op
 		return nil
