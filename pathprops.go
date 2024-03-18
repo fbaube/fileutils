@@ -41,8 +41,9 @@ type PathProps struct { // this has (Typed) Raw
 	CT.TypedRaw // was: string
 	RelFP       string
 	AbsFP       AbsFilePath
-	// ShortFP is for display use, and is
-	// expressed if possible using "~" or "."
+	// ShortFP is for display use, and is expressed if possible
+	// using "~" or ".". The latter means it depends on the CWD at
+	// invocation and so is session-dependent and not persistable. 
 	ShortFP string
 	FileMeta
 }
@@ -66,6 +67,12 @@ func (p PathProps) Echo() string {
 	return p.AbsFP.S()
 }
 
+func (p *PathProps) IsDirlike() bool {
+     if p.IsFile() { return false }
+     if p.IsDir()  { return true  }
+     return p.FileMeta.IsDirlike()
+}
+
 // IsWhat is for use with functions from github.com/samber/lo .
 // If the item does not exists, it returns "".
 func (p *PathProps) IsWhat() string {
@@ -84,7 +91,8 @@ func (p *PathProps) IsWhat() string {
 	return "" // "Non-existent"
 }
 
-// ResolveSymlinks will follow links until it finds something else.
+// ResolveSymlinks will follow links until it finds
+// something else. NOTE that this is a SECURITY HOLE. 
 func (pp *PathProps) ResolveSymlinks() *PathProps {
 	if !pp.IsSymlink() {
 		return nil

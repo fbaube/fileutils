@@ -4,6 +4,7 @@ import (
 	// SU "github.com/fbaube/stringutils"
 	MU "github.com/fbaube/miscutils"
 	"os"
+	"fmt"
 )
 
 /* REF: os.FileInfo
@@ -29,24 +30,42 @@ ModeSticky     // t: sticky
 ModeIrregular  // ?: non-regular file; nothing else is known
 */
 
-// FileMeta is the most basic level of file system
-// metadata: the results of a call to [os.Stat] (or
-// the contents of a record in sqlar), lightly parsed.
+// FileMeta (ptr to it) implements [FSItemer] and is the most basic 
+// level of file system metadata: the results of a call to [os.Stat] 
+// (or the contents of a record in sqlar), lightly parsed.
+// 
+// NOTE that it is also used for directories and symlinks,
+// so a more precise name would be FSItemMeta. 
 //
-// This is "mostly" applicable to contentful nodes
-// in other hierarchical structures. For example,
-// for non-files it still has size (& permissions).
+// This struct is "mostly" applicable to non-file FS nodes
+// and other hierarchical structures (like XML). For example:
+//  - for directories, Size() can be the number 
+//    of files in it, and permissions can apply
+//  - for XML elements, Size() can apply
 //
 // IsDir() is pass-thru.
-// Size() is pass-thru, and/but might need mods
-// for directories, and might be overridden when
-// file content is available (and modifiable).
+// 
+// TODO: Size() is now pass-thru, but it could be overridden 
+// for directories (to return child item count), and might be
+// overridden for a file that is modifiable/dynamic in memory. 
 // .
 type FileMeta struct {
 	os.FileInfo
+	// path is used only for [Refresh] and is not exported. 
+	path string
 	exists bool
 	// error
 	MU.Errer
+}
+
+// compile-time interface check 
+func init() {
+     var pfm *FileMeta
+     var fsir FSItemer 
+     // _, ok := fm.(FSItemer)
+     fsir = pfm
+     // if !ok { panic("fileutils: FileMeta not implem FSItemer") }
+     _ = fmt.Sprintf("pfm %T fsir %T \n", pfm, fsir)
 }
 
 // NewFileMeta replaces a call to [os.LStat]. This is necessary because
@@ -55,14 +74,18 @@ type FileMeta struct {
 // exists. However no further analysis of the path is performed in this
 // func, because that is more properly done by the caller.
 //
-// Note that if the file/dir does not exist, [exists] is false and/but
+// NOTE that if the file/dir does not exist, [exists] is false and/but
 // no error is indicated (i.e. [error] is nil).
+//
+// NOTE that by convention, directories should have a trailing separator,
+// but that we don't bother to enforce that here. 
 // .
-func NewFileMeta(path string) *FileMeta {
+func NewFileMeta(inpath string) *FileMeta {
 	var p *FileMeta
 	var e error
 	p = new(FileMeta)
-	p.FileInfo, e = os.Lstat(path)
+	p.path = inpath
+	p.FileInfo, e = os.Lstat(inpath)
 	p.SetError(e)
 	if e == nil || !os.IsNotExist(e) {
 		p.exists = true
@@ -72,6 +95,20 @@ func NewFileMeta(path string) *FileMeta {
 		p.ClearError()
 	}
 	return p
+}
+
+// Refresh does not check for changed type, it only checks (a) existence,
+// and (b) file size, writing to stdout if either has changed.
+
+func (p *FileMeta) Refresh() {
+        pp := NewFileMeta(p.path)
+	if p.Exists() != pp.Exists() {
+	   fmt.Fprintf(os.Stderr, "Existence changed! (%s)", p.path) 
+	}
+	if p.Size() != pp.Size() {
+	   fmt.Printf("size changed: %d => %d \n", p.Size(), pp.Size())
+	}
+	*p = *pp
 }
 
 // Exists is a convenience function.
@@ -98,16 +135,14 @@ func (p *FileMeta) IsFile() bool {
 	return p.exists && p.isFile() && !p.IsDir() && !p.isSymlink()
 }
 
-/*
-// IsOkayDir is a (somewhat foolproofed) convenience function.
-func (p *FileMeta) IsOkayDir() bool {
-	return p.exists && !p.isFile() && p.IsDir() && !p.isSymL()
-}
-*/
-
 // IsSymlink is a (somewhat foolproofed) convenience function.
 func (p *FileMeta) IsSymlink() bool {
 	return p.exists && !p.isFile() && !p.IsDir() && p.isSymlink()
+}
+
+// IsDirlike is, well, documented elsewhere.
+func (p *FileMeta) IsDirlike() bool {
+        return p.exists && !p.isFile()
 }
 
 func (p *FileMeta) isFile() bool {
@@ -117,3 +152,11 @@ func (p *FileMeta) isFile() bool {
 func (p *FileMeta) isSymlink() bool {
 	return (0 != (p.Mode() & os.ModeSymlink))
 }
+
+/*
+// IsOkayDir is a (somewhat foolproofed) convenience function.
+func (p *FileMeta) IsOkayDir() bool {
+	return p.exists && !p.isFile() && p.IsDir() && !p.isSymL()
+}
+*/
+
