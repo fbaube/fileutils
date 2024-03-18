@@ -13,10 +13,11 @@ import (
 // MAX_FILE_SIZE is set (arbitrarily) to 4 megabytes
 const MAX_FILE_SIZE = 4000000
 
-// FSItem is a filepath (and contents) that we have redd, will read, 
-// or will create. It might be a directory or symlink, either of which 
-// requires further processing elsewhere. In the most common usage, it 
-// is a file. It can be nil, if e.g. its content was created on-the-fly.
+// FSItem is an item identified by a filepath (plus its contents) that
+// we have redd, will read, or will create. It might be a directory or
+// symlink, either of which requires further processing elsewhere. In
+// the most common usage, it is a file. Its filepath(s) can be empty
+// ("") if (for example) its content was created interactively. 
 //
 // NOTE that the file name (the part of the full path after the last
 // directory separator) is not stored separately: it is stored in the
@@ -41,42 +42,8 @@ const MAX_FILE_SIZE = 4000000
 // .
 type FSItem struct { // this has (Typed) Raw
 	FileMeta
-	CT.TypedRaw 
-	RelFP       string
-	AbsFP       AbsFilePath
-	// ShortFP is for display use, and is expressed if possible
-	// using "~" or ".". The latter means it depends on the CWD at
-	// invocation and so is session-dependent and not persistable. 
-	ShortFP string
-}
-
-func (pfsi *FSItem) String() (s string) {
-	if pfsi.IsFile() {
-		s = fmt.Sprintf("OK-File (len:%d) ", pfsi.Size())
-	} else if pfsi.IsDir() {
-		s = fmt.Sprintf("OK-Dirr (len:%d) ", pfsi.Size())
-	} else if pfsi.IsSymlink() {
-		s = "OK-SymL "
-	} else {
-		s = "Not-OK (FSItem uninitialized?)"
-	}
-	s += pfsi.AbsFP.Tildotted()
-	return s
-}
-
-// Echo implements [Stringser].
-func (p FSItem) Echo() string {
-	return p.AbsFP.S()
-}
-
-// Info implements [Stringser].
-func (p FSItem) Info() string {
-	return "FIXME.Info:" + p.AbsFP.S()
-}
-
-// Debug implements [Stringser].
-func (p FSItem) Debug() string {
-	return "FIXME.Debug:" + p.AbsFP.S()
+	CT.TypedRaw
+	FPs Filepaths 
 }
 
 func (p *FSItem) IsDirlike() bool {
@@ -114,15 +81,15 @@ func (p *FSItem) ResolveSymlinks() *FSItem {
 	for p.IsSymlink() {
 		// func os.Readlink(pathname string) (string, error)
 		// func FP.EvalSymlinks(path string) (string, error)
-		newPath, e = FP.EvalSymlinks(p.AbsFP.S())
+		newPath, e = FP.EvalSymlinks(p.FPs.AbsFP.S())
 		if e != nil {
-			L.L.Error("fu.RslvSymLx <%s>: %s", p.AbsFP, e.Error())
-			// p.SetError(fmt.Errorf("fu.RslvSymLx <%s>: %w", p.AbsFP, e))
+			L.L.Error("fu.RslvSymLx <%s>: %s", p.FPs.AbsFP, e.Error())
+			// p.SetError(fmt.Errorf("fu.RslvSymLx <%s>: %w", p.FPs.AbsFP, e))
 			return nil
 		}
-		println("--> Symlink from:", p.AbsFP)
+		println("--> Symlink from:", p.FPs.AbsFP)
 		println("     resolved to:", newPath)
-		p.AbsFP = AbsFilePath(newPath)
+		p.FPs.AbsFP = AbsFilePath(newPath)
 		var e error
 		p, e = NewFSItem(newPath)
 		if e != nil {
@@ -159,7 +126,7 @@ func (p *FSItem) GoGetFileContents() error {
 		return nil
 	}
 	var shortAbsFP string
-	shortAbsFP = SU.ElideHomeDir(p.AbsFP.S())
+	shortAbsFP = SU.ElideHomeDir(p.FPs.AbsFP.S())
 
 	if p.Raw != "" {
 		// No-op with warning
@@ -180,7 +147,7 @@ func (p *FSItem) GoGetFileContents() error {
 	// Open it, just to check (and then immediately close it)
 	var pF *os.File
 	var e error
-	pF, e = os.Open(p.AbsFP.S())
+	pF, e = os.Open(p.FPs.AbsFP.S())
 	// Note that this defer'd Close() (i.e. file is left open)
 	// is not a problem for the call to io.Readall].
 	defer pF.Close()

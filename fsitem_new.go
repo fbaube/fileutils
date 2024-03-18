@@ -40,10 +40,10 @@ func NewFSItem(fp string) (*FSItem, error) {
 	var e error
 	var pfsi *FSItem
 	pfsi = new(FSItem)
-	pfsi.RelFP = fp
+	pfsi.FPs.RelFP = fp
 	afp, e := FP.Abs(fp)
-	pfsi.AbsFP = AbsFilePath(afp)
-	pfsi.ShortFP = SU.Tildotted(afp)
+	pfsi.FPs.AbsFP = AbsFilePath(afp)
+	pfsi.FPs.ShortFP = SU.Tildotted(afp)
 	if e != nil {
 		return pfsi, WrapAsFSItemError(
 			e, "FP.Abs(..) (fu.PFSInew.L32)", nil)

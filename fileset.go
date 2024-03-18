@@ -45,7 +45,7 @@ func NewOneFileSet(s string) *FileSet {
 	}
 	pfs.DirSpec = *pp
 	pfs.FilePaths = make([]string, 0, 1)
-	pfs.FilePaths = append(pfs.FilePaths, string(pfs.DirSpec.AbsFP))
+	pfs.FilePaths = append(pfs.FilePaths, string(pfs.DirSpec.FPs.AbsFP))
 	pfs.CheckedFiles = make([]FSItem, 0, 1)
 	pfs.CheckedFiles = append(pfs.CheckedFiles, pfs.DirSpec)
 	return pfs

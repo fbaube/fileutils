@@ -30,38 +30,38 @@ type FSItemError struct {
 	*FSItem
 }
 
-// WrapAsFSItemError SHOULD USE %w
-func WrapAsFSItemError(e error, op string, pp *FSItem) FSItemError {
-	ce := FSItemError{}
-	ce.PE.Err = e
-	ce.PE.Op = op
-	if pp == nil {
-		ce.PE.Path = "(path not provided)"
+// WrapAsFSItemError is EOP (error,op,path) but like using Printf's "%w" 
+func WrapAsFSItemError(e error, op string, pfsi *FSItem) FSItemError {
+	pfsie := new(FSItemError)
+	pfsie.PE.Err = e
+	pfsie.PE.Op = op
+	if pfsi == nil {
+		pfsie.PE.Path = "(path not provided)"
 	} else {
-		ce.PE.Path = pp.AbsFP.S()
+		pfsie.PE.Path = pfsi.FPs.AbsFP.S()
 	}
-	return ce
+	return *pfsie
 }
 
-// NewFSItemError TBD.
-func NewFSItemError(ermsg string, op string, pp *FSItem) FSItemError {
-	ce := FSItemError{}
-	ce.PE.Err = errors.New(ermsg)
-	ce.PE.Op = op
-	if pp == nil {
-		ce.PE.Path = "(path not provided)"
+// NewFSItemError is EOP (error,op,path) but like errors.New or fmt.Errorf
+func NewFSItemError(ermsg string, op string, pfsi *FSItem) FSItemError {
+	pfsie := new(FSItemError)
+	pfsie.PE.Err = errors.New(ermsg)
+	pfsie.PE.Op = op
+	if pfsi == nil {
+		pfsie.PE.Path = "(path not provided)"
 	} else {
-		ce.PE.Path = pp.AbsFP.S()
+		pfsie.PE.Path = pfsi.FPs.AbsFP.S()
 	}
-	return ce
+	return *pfsie
 }
 
-func (ce FSItemError) Error() string {
-	return ce.String()
+func (p FSItemError) Error() string {
+	return p.String()
 }
 
-func (ce *FSItemError) String() string {
+func (p *FSItemError) String() string {
 	var s string
-	s = fmt.Sprintf("%s(%s): %s", ce.PE.Op, ce.PE.Path, ce.PE.Err.Error())
+	s = fmt.Sprintf("%s(%s): %s", p.PE.Op, p.PE.Path, p.PE.Err.Error())
 	return s
 }
