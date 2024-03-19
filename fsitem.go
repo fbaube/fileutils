@@ -2,10 +2,12 @@ package fileutils
 
 import (
 	"fmt"
+	"errors"
 	CT "github.com/fbaube/ctoken"
 	L "github.com/fbaube/mlog"
-	SU "github.com/fbaube/stringutils"
+	// SU "github.com/fbaube/stringutils"
 	"io"
+	"io/fs"
 	"os"
 	FP "path/filepath"
 )
@@ -116,7 +118,7 @@ func (p *FSItem) ResolveSymlinks() *FSItem {
 // The call it makes to [os.Open] defaults to R/W mode,
 // altho R/O would probably suffice.
 // .
-func (p *FSItem) GoGetFileContents() error {
+func (p *FSItem) GoGetFileContents() *fs.PathError {
 	if p.Size() == 0 {
 		// No-op
 		return nil
@@ -125,24 +127,23 @@ func (p *FSItem) GoGetFileContents() error {
 		// No-op
 		return nil
 	}
-	var shortAbsFP string
-	shortAbsFP = SU.ElideHomeDir(p.FPs.AbsFP.S())
-
+	var shortFP = p.FPs.ShortFP
 	if p.Raw != "" {
 		// No-op with warning
 		L.L.Warning("pp.GoGetFileContents: already "+
-			"loaded [%d]: %s", len(p.Raw), shortAbsFP)
+			"loaded [%d]: %s", len(p.Raw), shortFP)
 		return nil
 	}
 	// Suspiciously tiny ?
 	if p.Size() < 6 {
 		L.L.Warning("pp.GoGetFileContents: tiny "+
-			"file [%d]: %s", p.Size(), shortAbsFP)
+			"file [%d]: %s", p.Size(), shortFP)
 	}
 	// If it's too big, BARF!
 	if p.Size() > MAX_FILE_SIZE {
-		return fmt.Errorf("pp.GoGetFileContents: file "+
-			"too large [%d]: %s", p.Size(), shortAbsFP)
+		return &fs.PathError{Op:"FSI.GoGetFileContents",
+		       Err:errors.New(fmt.Sprintf(
+		       "file too large: %d", p.Size())),Path:shortFP}
 	}
 	// Open it, just to check (and then immediately close it)
 	var pF *os.File
@@ -155,14 +156,12 @@ func (p *FSItem) GoGetFileContents() error {
 		// We could check for file non-existence here.
 		// And we could panic if it happens, altho a race
 		// for a just-deleted file is also conceivable.
-		return fmt.Errorf("pp.GoGetFileContents.osOpen<%s>: %w",
-			shortAbsFP, e)
+		return &fs.PathError{Op:"os.Open",Err:e,Path:shortFP}
 	}
 	var bb []byte
 	bb, e = io.ReadAll(pF)
 	if e != nil {
-		return fmt.Errorf("pp.GoGetFileContents.ioReadAll<%s>: %w",
-			shortAbsFP, e)
+		return &fs.PathError{Op:"io.ReadAll",Err:e,Path:shortFP}
 	}
 	// NOTE: 2023.03 Trimming leading whitespace and ensuring
 	// that there is a trailing newline are probably unnecessary
@@ -173,7 +172,7 @@ func (p *FSItem) GoGetFileContents() error {
 	// This is not supposed to happen,
 	// cos we checked for Size()==0 at entry
 	if len(bb) == 0 {
-		panic("==> empty file?!: " + shortAbsFP)
+		panic("==> empty file?!: " + shortFP)
 	}
 	p.Raw = CT.Raw(string(bb))
 	return nil
