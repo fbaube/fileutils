@@ -2,10 +2,14 @@ package fileutils
 
 import(
 	"io/fs"
+	S "strings"
 	FP "path/filepath"
 	SU "github.com/fbaube/stringutils"
 )
 
+// Filepaths shuld always have all three fields set, even if the third
+// ([ShortFP]) is basically session-specific. Note that directories have
+// a "/" appended. 
 type Filepaths struct {
      // RelFP is tipicly the path given (e.g.) on the command line and is
      // useful for resolving relative paths in batches of content items.
@@ -26,6 +30,8 @@ type Filepaths struct {
 func NewFilepaths(anFP string) (*Filepaths, *fs.PathError) { // error) {
      if anFP == "" { return nil, nil } 
      pFPs := new(Filepaths)
+     fm := NewFileMeta(anFP)
+     if fm.IsDir() && !S.HasSuffix(anFP, "/") { anFP += "/" } 
      if FP.IsAbs(anFP) {
      	pFPs.AbsFP = AbsFilePath(anFP)
 	pFPs.RelFP = SU.Tildotted(anFP) 

@@ -5,6 +5,7 @@ import (
 	MU "github.com/fbaube/miscutils"
 	"os"
 	"fmt"
+	S "strings"
 )
 
 /* REF: os.FileInfo
@@ -74,25 +75,27 @@ func init() {
 // exists. However no further analysis of the path is performed in this
 // func, because that is more properly done by the caller.
 //
-// NOTE that if the file/dir does not exist, [exists] is false and/but
-// no error is indicated (i.e. [error] is nil).
+// NOTE that if the file/dir does not exist, [exists] is false 
+// and/but no error is indicated (i.e. [error] is nil).
 //
-// NOTE that by convention, directories should have a trailing separator,
-// but that we don't bother to enforce that here. 
+// NOTE that by convention, directories should have a trailing 
+// path separator, and it is enforced here. 
 // .
 func NewFileMeta(inpath string) *FileMeta {
+     	if inpath == "" { return nil } 
 	var p *FileMeta
 	var e error
 	p = new(FileMeta)
-	p.path = inpath
 	p.FileInfo, e = os.Lstat(inpath)
+	if p.IsDir() && !S.HasSuffix(inpath, "/") { inpath += "/" } 
+	p.path = inpath
 	p.SetError(e)
 	if e == nil || !os.IsNotExist(e) {
 		p.exists = true
-		// Is this necessary ?
-		p.exists = p.IsDir() || p.isFile() || p.isSymlink()
+		// Is this necessary ? accurate ? 
+		// p.exists = p.IsDir() || p.isFile() || p.isSymlink()
 		// Make sure
-		p.ClearError()
+		// p.ClearError()
 	}
 	return p
 }
