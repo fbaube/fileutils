@@ -82,7 +82,10 @@ func init() {
 // path separator, and it is enforced here. 
 // .
 func NewFileMeta(inpath string) *FileMeta {
-     	if inpath == "" { return nil } 
+     	if inpath == "" {
+	   println("NewFileMeta GOT EMPTY PATH")
+	   return nil
+	   } 
 	var p *FileMeta
 	var e error
 	p = new(FileMeta)

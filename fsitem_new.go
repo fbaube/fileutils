@@ -3,9 +3,11 @@ package fileutils
 import (
 	// SU "github.com/fbaube/stringutils"
 	"io/fs"
+	"os"
 	"fmt"
 	"errors"
 	FP "path/filepath"
+	L "github.com/fbaube/mlog"
 )
 
 func NewFSItemWithContent(fp string) (*FSItem, *fs.PathError) {
@@ -34,6 +36,8 @@ func NewFSItemWithContent(fp string) (*FSItem, *fs.PathError) {
 func NewFSItem(fp string) (*FSItem, *fs.PathError) {
      	if fp == "" {
 	   println("NewFSItem GOT NIL PATH")
+	   return nil, &os.PathError{Op:"NewFSItem",
+	   	  Err:errors.New("Empty path arg"),Path:""}
 	   }
 	var pfsi *FSItem
 	pfsi = new(FSItem)
@@ -42,9 +46,21 @@ func NewFSItem(fp string) (*FSItem, *fs.PathError) {
 	     	pfsi.SetError(e)
 		return nil, &fs.PathError{Op:"FSI.NewFPs",Err:e,Path:fp}
 	}
+	// L.L.Dbg("NewFilepaths: %#v", *pfps)
 	pfsi.FPs = *pfps
 	pfsi.FileMeta = *NewFileMeta(pfps.AbsFP.S())
-	return pfsi, pfsi.GetError().(*fs.PathError)
+	var fmError error 
+	if fmError = pfsi.GetError(); fmError == nil {
+	   return pfsi, nil
+	   }
+	L.L.Info("fmError %T %#v", fmError, fmError)
+	var q *os.PathError
+	var ok bool
+	q, ok = fmError.(*fs.PathError)
+	if !ok {
+	   q = &os.PathError{Op:"NewFileMeta",Err:fmError,Path:fp}
+	   }
+	return pfsi, q
 }
 
 // NewFSItemRelativeTo takes a relative filepath
