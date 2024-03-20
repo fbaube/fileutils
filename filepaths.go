@@ -28,7 +28,10 @@ type Filepaths struct {
 // Ref: type PathError struct {	Op string Path string Err error }
 // .
 func NewFilepaths(anFP string) (*Filepaths, *fs.PathError) { // error) {
-     if anFP == "" { return nil, nil } 
+     if anFP == "" {
+     	println("NewFilepaths GOT NIL PATH")
+	return nil, nil
+	} 
      pFPs := new(Filepaths)
      fm := NewFileMeta(anFP)
      if fm.IsDir() && !S.HasSuffix(anFP, "/") { anFP += "/" } 

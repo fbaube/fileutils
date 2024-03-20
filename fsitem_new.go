@@ -32,6 +32,9 @@ func NewFSItemWithContent(fp string) (*FSItem, *fs.PathError) {
 // case, use NewFSItemRelativeTo (below).
 // .
 func NewFSItem(fp string) (*FSItem, *fs.PathError) {
+     	if fp == "" {
+	   println("NewFSItem GOT NIL PATH")
+	   }
 	var pfsi *FSItem
 	pfsi = new(FSItem)
 	pfps, e := NewFilepaths(fp)
