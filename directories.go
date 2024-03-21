@@ -14,6 +14,13 @@ func (afp AbsFilePath) DirExists() bool {
 	return (err == nil && fi.IsDir())
 }
 
+// IsDirAndExists returns true *iff* the directory
+// exists and is in fact a directory.
+func IsDirAndExists(path string) bool {
+	fi, err := os.Lstat(path)
+	return (err == nil && fi.IsDir())
+}
+
 // FileSize returns the size *iff* the
 // filepath exists and is in fact a file.
 func (afp AbsFilePath) FileSize() int {

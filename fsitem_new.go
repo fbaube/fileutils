@@ -11,7 +11,7 @@ import (
 )
 
 func NewFSItemWithContent(fp string) (*FSItem, *fs.PathError) {
-	var e *fs.PathError
+	var e error // *fs.PathError
 	var pfsi *FSItem
 	pfsi, e = NewFSItem(fp)
 	if e != nil {
