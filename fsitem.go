@@ -118,7 +118,7 @@ func (p *FSItem) ResolveSymlinks() *FSItem {
 // The call it makes to [os.Open] defaults to R/W mode,
 // altho R/O would probably suffice.
 // .
-func (p *FSItem) GoGetFileContents() error { // *fs.PathError {
+func (p *FSItem) GoGetFileContents() error { 
 	if p.Size() == 0 {
 		// No-op
 		return nil

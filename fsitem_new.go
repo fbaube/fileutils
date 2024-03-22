@@ -10,8 +10,8 @@ import (
 	L "github.com/fbaube/mlog"
 )
 
-func NewFSItemWithContent(fp string) (*FSItem, *fs.PathError) {
-	var e error // *fs.PathError
+func NewFSItemWithContent(fp string) (*FSItem, error) {
+	var e error 
 	var pfsi *FSItem
 	pfsi, e = NewFSItem(fp)
 	if e != nil {
@@ -33,7 +33,7 @@ func NewFSItemWithContent(fp string) (*FSItem, *fs.PathError) {
 // which may not be the desired behavior; in such a
 // case, use NewFSItemRelativeTo (below).
 // .
-func NewFSItem(fp string) (*FSItem, *fs.PathError) {
+func NewFSItem(fp string) (*FSItem, error) {
      	if fp == "" {
 	   println("NewFSItem GOT NIL PATH")
 	   return nil, &os.PathError{Op:"NewFSItem",
@@ -66,7 +66,7 @@ func NewFSItem(fp string) (*FSItem, *fs.PathError) {
 // NewFSItemRelativeTo takes a relative filepath
 // plus an absolute filepath being referenced. 
 // This func does not load & analyse the content.
-func NewFSItemRelativeTo(rfp, relTo string) (*FSItem, *fs.PathError) {
+func NewFSItemRelativeTo(rfp, relTo string) (*FSItem, error) {
 	if !FP.IsAbs(relTo) {
 		return nil, &fs.PathError{Op:"fp.isRelTo.notAbs",
 		Err:errors.New("relFP must be rel to an absFP"),

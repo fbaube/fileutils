@@ -1,5 +1,10 @@
 package fileutils
 
+// TODO maybe generalize
+// it to have the funcs
+//  - MustNoContent
+//  - MustBeLeaf 
+
 import (
 	// SU "github.com/fbaube/stringutils"
 	MU "github.com/fbaube/miscutils"

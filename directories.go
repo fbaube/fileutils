@@ -5,6 +5,7 @@ import (
 	"os"
 	"path"
 	FP "path/filepath"
+	S "strings"
 )
 
 // DirExists returns true *iff* the directory
@@ -188,4 +189,9 @@ func CopyDirRecursivelyFromTo(src string, dst string) error {
 		}
 	}
 	return nil
+}
+
+func EnsureTrailingPathSep(s string) string {
+     if S.HasSuffix(s, PathSep) { return s }
+     return s + PathSep
 }

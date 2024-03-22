@@ -2,7 +2,6 @@ package fileutils
 
 import(
 	"io/fs"
-	S "strings"
 	FP "path/filepath"
 	SU "github.com/fbaube/stringutils"
 )
@@ -27,14 +26,14 @@ type Filepaths struct {
 //
 // Ref: type PathError struct {	Op string Path string Err error }
 // .
-func NewFilepaths(anFP string) (*Filepaths, *fs.PathError) { // error) {
+func NewFilepaths(anFP string) (*Filepaths, error) {
      if anFP == "" {
      	println("NewFilepaths GOT NIL PATH")
 	return nil, nil
 	} 
      pFPs := new(Filepaths)
      fm := NewFileMeta(anFP)
-     if fm.IsDir() && !S.HasSuffix(anFP, "/") { anFP += "/" } 
+     if fm.IsDir() { anFP = EnsureTrailingPathSep(anFP) } 
      if FP.IsAbs(anFP) {
      	pFPs.AbsFP = AbsFilePath(anFP)
 	pFPs.RelFP = SU.Tildotted(anFP) 
