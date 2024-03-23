@@ -4,9 +4,9 @@ import (
 	// SU "github.com/fbaube/stringutils"
 	"io/fs"
 	"os"
-	"fmt"
+	// "fmt"
 	"errors"
-	FP "path/filepath"
+	// FP "path/filepath"
 	L "github.com/fbaube/mlog"
 )
 
@@ -63,8 +63,10 @@ func NewFSItem(fp string) (*FSItem, error) {
 	return pfsi, q
 }
 
-// NewFSItemRelativeTo takes a relative filepath
-// plus an absolute filepath being referenced. 
+/*
+// NewFSItemRelativeTo simply appends a relative filepath 
+// to an absolute filepath being referenced, and then uses 
+// it to create a new FSItem. So, it's pretty dumb.
 // This func does not load & analyse the content.
 func NewFSItemRelativeTo(rfp, relTo string) (*FSItem, error) {
 	if !FP.IsAbs(relTo) {
@@ -75,3 +77,4 @@ func NewFSItemRelativeTo(rfp, relTo string) (*FSItem, error) {
 	afp := FP.Join(relTo, rfp)
 	return NewFSItem(afp)
 }
+*/

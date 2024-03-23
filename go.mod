@@ -5,12 +5,12 @@ go 1.22
 toolchain go1.22.0
 
 require (
-	github.com/fbaube/ctoken v0.0.0-20240320075402-d501c60baf3e
+	github.com/fbaube/ctoken v0.0.0-20240322195920-6d5d80a301ae
 	github.com/fbaube/gtoken v0.0.0-20230421173215-d97b8767dfae
 	github.com/fbaube/miscutils v0.0.0-20240307083109-5e380dcbb1e7
 	github.com/fbaube/mlog v0.0.0-20230904080411-cfac35fed413
 	github.com/fbaube/parseutils v0.0.0-20230622205737-06d517672cd1
-	github.com/fbaube/stringutils v0.0.0-20240318064103-bf7b5a2b5f11
+	github.com/fbaube/stringutils v0.0.0-20240322200159-80cb818c8713
 	github.com/fbaube/wasmutils v0.0.0-20231209183154-e25018375bc2
 	github.com/fbaube/xmlutils v0.0.0-20230904080817-586c01346ef2
 	github.com/mgutz/str v1.2.0
