@@ -95,7 +95,11 @@ func NewFileMeta(inpath string) *FileMeta {
 	var e error
 	p = new(FileMeta)
 	p.FileInfo, e = os.Lstat(inpath)
-	if p.IsDir() && !S.HasSuffix(inpath, "/") { inpath += "/" } 
+	// There's a potential problem here, that FileInfo.Name()
+	// might not be returning a trailing path sep, and it
+	// might not be legal there either. So we want to rely
+	// instead on the FileMeta.path
+	if p.IsDir() { inpath = EnsureTrailingPathSep(inpath) }
 	p.path = inpath
 	p.SetError(e)
 	if e == nil || !os.IsNotExist(e) {

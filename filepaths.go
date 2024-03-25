@@ -33,7 +33,8 @@ func NewFilepaths(anFP string) (*Filepaths, error) {
 	} 
      pFPs := new(Filepaths)
      fm := NewFileMeta(anFP)
-     if fm.IsDir() { anFP = EnsureTrailingPathSep(anFP) } 
+     if fm.IsDir() { anFP = EnsureTrailingPathSep(anFP) }
+     
      if FP.IsAbs(anFP) {
      	pFPs.AbsFP = AbsFilePath(anFP)
 	pFPs.RelFP = SU.Tildotted(anFP) 
