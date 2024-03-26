@@ -17,9 +17,9 @@ func (p *FSItem) Echo() string {
 func (p *FSItem) Info() string {
         var s string 
 	if p.IsFile() {
-		s = fmt.Sprintf("File[L:%d] ", p.Size())
+		s = fmt.Sprintf("File[len:%d] ", p.Size())
 	} else if p.IsDir() {
-		s = fmt.Sprintf("Dirr[L:%d] ", p.Size())
+		s = fmt.Sprintf("Dirr[len:%d] ", p.Size())
 	} else if p.IsSymlink() {
 		s = "Symlink "
 	} else {
