@@ -18,6 +18,7 @@ func (p *FSItem) Info() string {
         var s string 
 	if p.IsFile() {
 		s = fmt.Sprintf("File[len:%d] ", p.Size())
+		// panic("DERF")
 	} else if p.IsDir() {
 		s = fmt.Sprintf("Dirr[len:%d] ", p.Size())
 	} else if p.IsSymlink() {

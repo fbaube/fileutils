@@ -49,7 +49,8 @@ ModeIrregular  // ?: non-regular file; nothing else is known
 //    of files in it, and permissions can apply
 //  - for XML elements, Size() can apply
 //
-// IsDir() is pass-thru.
+// IsDir() is pass-thru. If the item is a directory, its name
+// will end in a path separator (tipicly "/"). 
 // 
 // TODO: Size() is now pass-thru, but it could be overridden 
 // for directories (to return child item count), and might be
