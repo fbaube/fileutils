@@ -138,6 +138,7 @@ func IsFileAtPath(aPath string) (bool, os.FileInfo, error) {
 	aPath = ResolvePath(aPath)
 	// If nothing exists at the filepath,
 	// Stat returns os.ErrNotExist
+	// Maybe Lstat is needed here ? 
 	fi, e = os.Stat(aPath)
 	// fi.IsRegular() excludes directories, pipes, symlinks,
 	// append-only, exclusive-access, and other detritus.

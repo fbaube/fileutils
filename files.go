@@ -63,7 +63,7 @@ func CreateEmpty(path AbsFilePath) (*os.File, error) {
 	if e != nil {
 		return nil, fmt.Errorf("fu.CreateEmpty.Create<%s>: %w", spath, e)
 	}
-	fi, e := os.Stat(spath)
+	fi, e := os.Stat(spath) // Lstat is not needed 
 	if e != nil || !fi.Mode().IsRegular() {
 		return nil, fmt.Errorf("fu.CreateEmpty.notaFile<%s>: %w", spath, e)
 	}
@@ -174,7 +174,8 @@ func CopyFileFromTo(src, dst string) error {
 	if _, err = io.Copy(dstfd, srcfd); err != nil {
 		return err
 	}
-	if srcinfo, err = os.Stat(src); err != nil {
+	// Lstat might helpful here ?? 
+	if srcinfo, err = os.Stat(src); err != nil { 
 		return err
 	}
 	return os.Chmod(dst, srcinfo.Mode())

@@ -36,12 +36,13 @@ ModeSticky     // t: sticky
 ModeIrregular  // ?: non-regular file; nothing else is known
 */
 
-// FileMeta (ptr to it) implements [FSItemer] and is the most basic 
-// level of file system metadata: the results of a call to [os.Stat] 
-// (or the contents of a record in sqlar), lightly parsed.
+// FileMeta (ptr to it) implements [FSItemer] (and also DirEntry?)
+// and is the most basic level of file system metadata: the results
+// of a call to [FP.LStat]  (or the contents of a record in sqlar
+// orzip), lightly parsed.
 // 
 // NOTE that it is also used for directories and symlinks,
-// so a more precise name would be FSItemMeta. 
+// so a more precise name would be FSItemMeta.
 //
 // This struct is "mostly" applicable to non-file FS nodes
 // and other hierarchical structures (like XML). For example:
@@ -86,6 +87,8 @@ func init() {
 //
 // NOTE that by convention, directories should have a trailing 
 // path separator, and it is enforced here. 
+//
+// NOTE not 100% sure how it behaves with relative filepaths. 
 // .
 func NewFileMeta(inpath string) *FileMeta {
      	if inpath == "" {
@@ -105,6 +108,12 @@ func NewFileMeta(inpath string) *FileMeta {
 	p.SetError(e)
 	if e == nil || !os.IsNotExist(e) {
 		p.exists = true
+		if p.FileInfo.Name() != inpath {
+		   // NOTE false warning if they differ on trailing slash 
+		   fmt.Printf("WEIRDNESS in filemeta: inpath<%s> " +
+		   	filemetapath<%s>", inpath, p.FileInfo.Name())
+			panic("FileMeta Problem")
+			}
 		// Is this necessary ? accurate ? 
 		// p.exists = p.IsDir() || p.isFile() || p.isSymlink()
 		// Make sure

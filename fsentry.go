@@ -4,13 +4,15 @@ import (
 	"io/fs"
 )
 
-// FSEntry handles read-only access
-// and attributes for files, dirs,
-// and symilnks; it extends [fs.File]
-// (also R/O), which comprises
+// FSEntry interface is not really used but it  handles 
+// read-only access and attributes for files, dirs, and 
+// symiinks; it extends [fs.File] (also R/O), which comprises
 //   - Stat() (FileInfo, error)
 //   - Read([]byte) (int, error)
 //   - Close() error
+//
+// If it needs a include a FileInfo
+// then it also implements DirEntry. 
 //
 // Related there is also interface
 // [io/fs.ReadFileFS):
@@ -88,6 +90,8 @@ If you are looking up a symbolic link,
   about the file at its target location.
 - os.Lstat providess info about the symbolic
   link itself, without actually following it.
+
+But maybe ReadLinkFS is coming in 2024.
 
 */
 

@@ -114,6 +114,7 @@ func DirectoryFiles(f *os.File) (int, []os.FileInfo, error) {
 
 // MakeDirectoryExist might not create it ?! (NOTE)
 func MakeDirectoryExist(path string) error {
+     // is Lstat needed here ? 
 	if _, err := os.Stat(path); err != nil {
 		if os.IsNotExist(err) {
 			if err = os.Mkdir(path, os.ModePerm); err != nil {
@@ -165,6 +166,7 @@ func CopyDirRecursivelyFromTo(src string, dst string) error {
 	var fds []os.DirEntry // FileInfo
 	var srcinfo os.FileInfo
 
+	// is Lstat needed here ? 
 	if srcinfo, err = os.Stat(src); err != nil {
 		return err
 	}
