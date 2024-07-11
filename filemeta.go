@@ -11,6 +11,7 @@ import (
 	"os"
 	"fmt"
 	// S "strings"
+	"errors"
 )
 
 /* REF: os.FileInfo
@@ -90,10 +91,10 @@ func init() {
 //
 // NOTE not 100% sure how it behaves with relative filepaths. 
 // .
-func NewFileMeta(inpath string) *FileMeta {
+func NewFileMeta(inpath string) (*FileMeta, error) {
      	if inpath == "" {
 	   println("NewFileMeta GOT EMPTY PATH")
-	   return nil
+	   return nil, errors.New("Empty path")
 	   } 
 	var p *FileMeta
 	var e error
@@ -110,23 +111,29 @@ func NewFileMeta(inpath string) *FileMeta {
 		p.exists = true
 		if p.FileInfo.Name() != inpath {
 		   // NOTE false warning if they differ on trailing slash 
-		   fmt.Printf("WEIRDNESS in filemeta: inpath<%s> " +
-		   	filemetapath<%s>", inpath, p.FileInfo.Name())
+		   println(fmt.Sprintf("NewFileMeta: path mismatch: " +
+		   	"inpath<%s> filemetapath<%s>",
+			inpath, p.FileInfo.Name()))
 			panic("FileMeta Problem")
+			
 			}
 		// Is this necessary ? accurate ? 
 		// p.exists = p.IsDir() || p.isFile() || p.isSymlink()
 		// Make sure
 		// p.ClearError()
+		return p, nil
 	}
-	return p
+	return nil, fmt.Errorf("NewFileMeta<%s>: %w", inpath, e)
 }
 
 // Refresh does not check for changed type, it only checks (a) existence,
 // and (b) file size, writing to stdout if either has changed.
 
 func (p *FileMeta) Refresh() {
-        pp := NewFileMeta(p.path)
+        pp, e := NewFileMeta(p.path)
+	if e != nil {
+	   fmt.Fprintf(os.Stderr, "FileMeta.Refresh failed: %w", e)
+	}
 	if p.Exists() != pp.Exists() {
 	   fmt.Fprintf(os.Stderr, "Existence changed! (%s)", p.path) 
 	}

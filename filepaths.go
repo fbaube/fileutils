@@ -1,6 +1,7 @@
 package fileutils
 
 import(
+	"fmt"
 	"io/fs"
 	FP "path/filepath"
 	SU "github.com/fbaube/stringutils"
@@ -32,7 +33,10 @@ func NewFilepaths(anFP string) (*Filepaths, error) {
 	return nil, nil
 	} 
      pFPs := new(Filepaths)
-     fm := NewFileMeta(anFP)
+     fm, e := NewFileMeta(anFP)
+     if e != nil {
+     	return nil, fmt.Errorf("NewFilepaths<%s>: %w", anFP, e)
+     }
      if fm.IsDir() { anFP = EnsureTrailingPathSep(anFP) }
      
      if FP.IsAbs(anFP) {

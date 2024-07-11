@@ -1,13 +1,10 @@
 package fileutils
 
 import (
-	// SU "github.com/fbaube/stringutils"
 	"io/fs"
 	"os"
-	// "fmt"
+	"fmt"
 	"errors"
-	// FP "path/filepath"
-	L "github.com/fbaube/mlog"
 )
 
 func NewFSItemWithContent(fp string) (*FSItem, error) {
@@ -48,11 +45,15 @@ func NewFSItem(fp string) (*FSItem, error) {
 	}
 	// L.L.Dbg("NewFilepaths: %#v", *pfps)
 	pfsi.FPs = *pfps
-	pfsi.FileMeta = *NewFileMeta(pfps.AbsFP.S())
-	var fmError error 
-	if fmError = pfsi.GetError(); fmError == nil {
+	var pnfm *FileMeta
+	// pfsi.FileMeta, e = *NewFileMeta(pfps.AbsFP.S())
+	pnfm, e = NewFileMeta(pfps.AbsFP.S())
+	pfsi.FileMeta = *pnfm
+	// var fmError error 
+	if e == nil { // fmError = pfsi.GetError(); fmError == nil {
 	   return pfsi, nil
-	   }
+	}
+	/*
 	L.L.Info("fmError %T %#v", fmError, fmError)
 	var q *os.PathError
 	var ok bool
@@ -60,7 +61,8 @@ func NewFSItem(fp string) (*FSItem, error) {
 	if !ok {
 	   q = &os.PathError{Op:"NewFileMeta",Err:fmError,Path:fp}
 	   }
-	return pfsi, q
+	*/
+	return pfsi, fmt.Errorf("NewFSItem<%s>: %w", fp, e)
 }
 
 /*
