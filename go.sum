@@ -40,6 +40,8 @@ github.com/fbaube/miscutils v0.0.0-20240307083109-5e380dcbb1e7 h1:bqn4Q0XLSyluKH
 github.com/fbaube/miscutils v0.0.0-20240307083109-5e380dcbb1e7/go.mod h1:dg2mLgV/vplcdzw+BhyH4fnv/j8VuOGEnDvftQyBrqQ=
 github.com/fbaube/miscutils v0.0.0-20240423072124-459b3fe30059 h1:yBbAlwGRquojXQhn3cPs4LFaXM5sLli3EqATSd6suLA=
 github.com/fbaube/miscutils v0.0.0-20240423072124-459b3fe30059/go.mod h1:nhz82+zk2dWFrHGk/MuoF+x8W5RdKUSNoFUPNlksrDE=
+github.com/fbaube/miscutils v0.0.0-20240711170042-126d05ff8acf h1:7PnaKfZ7si2tnlTZv6sgQghpd3oMwPGD8Ojl/+IowYU=
+github.com/fbaube/miscutils v0.0.0-20240711170042-126d05ff8acf/go.mod h1:UMYDTZO33u5mFVGq5ad6zZ3V8gNfuKg86sdic9J0GEQ=
 github.com/fbaube/mlog v0.0.0-20230904080411-cfac35fed413 h1:hXpL/x5iYx38UGHzGU6V9ONPYeeLxzfniZDbAblkplw=
 github.com/fbaube/mlog v0.0.0-20230904080411-cfac35fed413/go.mod h1:gdqN52o2Q28x8fcloz1M7KyknKnK6VPxPkAOc3+HxmQ=
 github.com/fbaube/mlog v0.0.0-20240424185134-3b40182c9674 h1:52Gz4s3MmkJeCrw594oW+hW43cFRX7e5dgnL8qw+D8Y=
@@ -93,6 +95,8 @@ golang.org/x/exp v0.0.0-20240613232115-7f521ea00fb8 h1:yixxcjnhBmY0nkL253HFVIm0J
 golang.org/x/exp v0.0.0-20240613232115-7f521ea00fb8/go.mod h1:jj3sYF3dwk5D+ghuXyeI3r5MFf+NT2An6/9dOA95KSI=
 golang.org/x/exp v0.0.0-20240707233637-46b078467d37 h1:uLDX+AfeFCct3a2C7uIWBKMJIR3CJMhcgfrUAqjRK6w=
 golang.org/x/exp v0.0.0-20240707233637-46b078467d37/go.mod h1:M4RDyNAINzryxdtnbRXRL/OHtkFuWGRjvuhBJpk2IlY=
+golang.org/x/exp v0.0.0-20240719175910-8a7402abbf56 h1:2dVuKD2vS7b0QIHQbpyTISPd0LeHDbnYEryqj5Q1ug8=
+golang.org/x/exp v0.0.0-20240719175910-8a7402abbf56/go.mod h1:M4RDyNAINzryxdtnbRXRL/OHtkFuWGRjvuhBJpk2IlY=
 golang.org/x/net v0.19.0 h1:zTwKpTd2XuCqf8huc7Fo2iSy+4RHPd10s4KzeTnVr1c=
 golang.org/x/net v0.19.0/go.mod h1:CfAk/cbD4CthTvqiEl8NpboMuiuOYsAr/7NOjZJtv1U=
 golang.org/x/sys v0.0.0-20220811171246-fbc7d0a398ab/go.mod h1:oPkhp1MJrh7nUepCBck5+mAzfO9JrbApNNgaTdGDITg=
