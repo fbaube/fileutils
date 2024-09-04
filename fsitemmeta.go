@@ -6,12 +6,12 @@ package fileutils
 //  - MustBeLeaf 
 
 import (
-	MU "github.com/fbaube/miscutils"
 	"io/fs"
 	"os"
 	"fmt"
 	"errors"
 	"time"
+	"syscall"
 )
 
 /* REF: ifc fs.FileInfo
@@ -76,9 +76,9 @@ type FSItemMeta struct {
 	// store this to hide OS dependencies
 	modTime time.Time
 	// hard link detection 
-	inode, nlinks int64
-	// error
-	MU.Errer
+	inode, nlinks int // uint64
+	// NPE-proof error
+	Errer
 }
 
 // compile-time interface check 
@@ -97,8 +97,10 @@ func init() {
 // exists. However no further analysis of the path is performed in this
 // func, because that is more properly done by the caller.
 //
-// NOTE that if the file/dir does not exist, [exists] is false 
-// and/but no error is indicated (i.e. [error] is nil).
+// NOTE that if the file/dir does not exist, this returns (nil, nil).
+//
+// NOTE that if some fields are unavailable due to portability issues,
+// this returns (non-nil, non-nil), so the error should not be fatal.
 //
 // NOTE that by convention, directories should (welll, MUST) 
 // have a trailing path separator, and it is enforced here. 
@@ -109,10 +111,19 @@ func NewFSItemMeta(inpath string) (*FSItemMeta, error) {
      	if inpath == "" {
 	   println("NewFSItemMeta GOT EMPTY PATH")
 	   return nil, errors.New("Empty path")
-	   } 
+	   }
 	var p *FSItemMeta
 	var e error
 	p = new(FSItemMeta)
+	/*
+	Fields to set:
+	fs.FileInfo
+	path string
+	exists bool
+	modTime time.Time
+	inode, nlinks int64
+	Errer
+	*/
 	p.FileInfo, e = os.Lstat(inpath)
 	// There's a potential problem here, that FileInfo.Name()
 	// might not be returning a trailing path sep, and it
@@ -121,23 +132,38 @@ func NewFSItemMeta(inpath string) (*FSItemMeta, error) {
 	if p.IsDir() { inpath = EnsureTrailingPathSep(inpath) }
 	p.path = inpath
 	p.SetError(e)
-	if e == nil || !os.IsNotExist(e) {
-		p.exists = true
-		if p.FileInfo.Name() != inpath {
-		   // NOTE false warning if they differ on trailing slash 
-		   println(fmt.Sprintf("NewFSItemMeta: path mismatch: " +
-		   	"inpath<%s> filemetapath<%s>",
-			inpath, p.FileInfo.Name()))
-			panic("FSItemMeta Problem")
-			
+	if e != nil {
+	     	if errors.Is(e, fs.ErrNotExist) {
+		   	// Does not exist !
+			return nil, nil
 			}
-		// Is this necessary ? accurate ? 
-		// p.exists = p.IsDir() || p.isFile() || p.isSymlink()
-		// Make sure
-		// p.ClearError()
-		return p, nil
+		p.exists = false // redundant, but let's 
+		        // be clear: we really don't know
+		return nil, fmt.Errorf("NewFSItemMeta<%s>: %w", inpath, e)
 	}
-	return nil, fmt.Errorf("NewFSItemMeta<%s>: %w", inpath, e)
+	p.exists = true
+	p.modTime = p.FileInfo.ModTime()
+	s, ok := p.FileInfo.Sys().(*syscall.Stat_t)
+	if !ok {
+               return p, fmt.Errorf("NewFSItemMeta: " +
+	       	      "can't convert Stat.Sys() to syscall.Stat_t: %s", inpath)
+	}
+	var nlinks int 
+	nlinks = int(s.Nlink) 
+	if nlinks > 1 && (p.FileInfo.Mode()&fs.ModeSymlink == 0) {
+ 	   	// The index number of this file's inode:
+		p.inode = int(s.Ino)
+		p.nlinks = int(s.Nlink)
+	}		
+	// inode, nlinks int64
+	if p.FileInfo.Name() != inpath {
+	   // NOTE false warning if they differ on trailing slash 
+	   println(fmt.Sprintf("NewFSItemMeta: path mismatch: " +
+	   	"inpath<%s> FSitemmetapath<%s>",
+		 inpath, p.FileInfo.Name()))
+		 panic("FSItemMeta Problem")
+	}
+	return p, nil
 }
 
 // Refresh does not check for changed type, it only checks (a) existence,
@@ -145,8 +171,9 @@ func NewFSItemMeta(inpath string) (*FSItemMeta, error) {
 
 func (p *FSItemMeta) Refresh() {
         pp, e := NewFSItemMeta(p.path)
-	if e != nil {
-	   fmt.Fprintf(os.Stderr, "FSItemMeta.Refresh failed: %w", e)
+	if pp == nil && e != nil {
+	   fmt.Fprintf(os.Stderr, "FSItemMeta.Refresh<%s> failed: %w",
+	   	p.Name(), e)
 	}
 	if p.Exists() != pp.Exists() {
 	   fmt.Fprintf(os.Stderr, "Existence changed! (%s)", p.path) 
@@ -198,6 +225,10 @@ func (p *FSItemMeta) isFile() bool {
 
 func (p *FSItemMeta) isSymlink() bool {
 	return (0 != (p.Mode() & os.ModeSymlink))
+}
+
+func (p *FSItemMeta) hasMultiHardlinks() bool {
+	return (p.nlinks > 1)
 }
 
 // Type implements [fs.DirEntry] by returning the [fs.FileMode].

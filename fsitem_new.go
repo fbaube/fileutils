@@ -29,6 +29,8 @@ func NewFSItemWithContent(fp string) (*FSItem, error) {
 // Note that a relative path is appended to the CWD,
 // which may not be the desired behavior; in such a
 // case, use NewFSItemRelativeTo (below).
+//
+// NOTE if no item exists at fp, this might be flakey.
 // .
 func NewFSItem(fp string) (*FSItem, error) {
      	if fp == "" {
@@ -50,7 +52,7 @@ func NewFSItem(fp string) (*FSItem, error) {
 	pnfm, e = NewFSItemMeta(pfps.AbsFP.S())
 	pfsi.FSItemMeta = *pnfm
 	// var fmError error 
-	if e == nil { // fmError = pfsi.GetError(); fmError == nil {
+	if pnfm != nil { 
 	   return pfsi, nil
 	}
 	/*

@@ -34,7 +34,7 @@ func NewFilepaths(anFP string) (*Filepaths, error) {
 	} 
      pFPs := new(Filepaths)
      fm, e := NewFSItemMeta(anFP)
-     if e != nil {
+     if fm == nil && e != nil {
      	return nil, fmt.Errorf("NewFilepaths<%s>: %w", anFP, e)
      }
      if fm.IsDir() { anFP = EnsureTrailingPathSep(anFP) }
