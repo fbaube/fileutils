@@ -33,7 +33,7 @@ func NewFilepaths(anFP string) (*Filepaths, error) {
 	return nil, nil
 	} 
      pFPs := new(Filepaths)
-     fm, e := NewFileMeta(anFP)
+     fm, e := NewFSItemMeta(anFP)
      if e != nil {
      	return nil, fmt.Errorf("NewFilepaths<%s>: %w", anFP, e)
      }

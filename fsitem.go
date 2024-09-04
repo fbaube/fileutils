@@ -26,7 +26,7 @@ const MAX_FILE_SIZE = 4000000
 // AbsFP *and* the RelFP. Note also that this path & name information
 // duplicates what is stored in an instance of orderednodes.Nord . 
 //
-// NOTE that the embedded field [FileMeta] embeds an [os.FileInfo].
+// NOTE that the embedded field [FileMeta] embeds an [fs.FileInfo].
 // 
 // FSItem is embedded in struct [datarepo/rowmodels/ContentityRow].
 //
@@ -43,7 +43,7 @@ const MAX_FILE_SIZE = 4000000
 // NOTE that RelFP and AbsFP must be exported to be persisted to the DB.
 // .
 type FSItem struct { // this has (Typed) Raw
-	FileMeta
+	FSItemMeta
 	CT.TypedRaw
 	FPs Filepaths 
 }
@@ -51,7 +51,7 @@ type FSItem struct { // this has (Typed) Raw
 func (p *FSItem) IsDirlike() bool {
      if p.IsFile() { return false }
      if p.IsDir()  { return true  }
-     return p.FileMeta.IsDirlike()
+     return p.FSItemMeta.IsDirlike()
 }
 
 // IsWhat is for use with functions from github.com/samber/lo .
