@@ -77,6 +77,7 @@ type FSItemMeta struct {
 	modTime time.Time
 	// hard link detection 
 	inode, nlinks int // uint64
+	hash []byte
 	// NPE-proof error
 	Errer
 }
