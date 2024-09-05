@@ -227,7 +227,7 @@ func (p *FSItemMeta) isSymlink() bool {
 	return (0 != (p.Mode() & os.ModeSymlink))
 }
 
-func (p *FSItemMeta) hasMultiHardlinks() bool {
+func (p *FSItemMeta) HasMultiHardlinks() bool {
 	return (p.nlinks > 1)
 }
 
