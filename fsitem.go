@@ -137,22 +137,16 @@ func (p *FSItem) ResolveSymlinks() *FSItem {
 	return p
 }
 
-// GoGetFileContents reads in the file (assuming it is a file)
-// into the field [Raw] and does a quick check for XML and HTML5
-// declarations.
+// LoadContents reads the file (assuming it is a file) into the field
+// [TypedRaw] and quickly checks for XML and HTML5 declarations.
 //
-// It assumes that [LStat] has been called, and that the size
-// of the file is known. Therefore this func is a no-op if func
-// [BasicInfo.Size] returns 0, its zero value. Therefore do not
-// call this if the argument's [BasicInfo] is uninitialized.
+// Before proceeding it calls [Refresh], just in case.
 //
-// It is tolerant about non-files and empty files,
-// returning nil for error.
+// It is tolerant about non-files, and empty files,returning nil for error.
 //
-// NOTE the call it makes to [os.Open] defaults to
-// R/W mode, altho R/O would probably suffice.
+// NOTE the call to [os.Open] defaults to R/W mode, altho R/O might suffice.
 // .
-func (p *FSItem) GoGetFileContents() error { 
+func (p *FSItem) LoadContents() error { 
 	if p.fi.Size() == 0 {
 		// No-op
 		return nil
@@ -211,3 +205,9 @@ func (p *FSItem) GoGetFileContents() error {
 	p.Raw = CT.Raw(string(bb))
 	return nil
 }
+
+func FileInfoString(p fs.FileInfo) string {
+     if p == nil { return "<!NIL!>" }
+     return fmt.Sprintf("%s<%s>%d", p.Name(), FileInfoTLC(p), p.Size())
+}
+

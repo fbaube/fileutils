@@ -23,7 +23,7 @@ type LinesFile struct {
 
 // NewLinesFile is pretty self-explanatory.
 func (pPI *FSItem) NewLinesFile() (*LinesFile, error) {
-	e := pPI.GoGetFileContents() // getContentBytes()
+	e := pPI.LoadContents() 
 	if e != nil {
 		panic(e)
 	}
