@@ -40,17 +40,17 @@ func NewFSItem(fp string) (*FSItem, error) {
 	   }
 	var pfsi *FSItem
 	pfsi = new(FSItem)
-	pfps, e := NewFilepaths(fp)
+	pFPs, e := NewFilepaths(fp)
 	if e != nil {
 	     	pfsi.SetError(e)
 		return nil, &fs.PathError{Op:"FSI.NewFPs",Err:e,Path:fp}
 	}
 	// L.L.Dbg("NewFilepaths: %#v", *pfps)
-	pfsi.FPs = *pfps
-	var pnfm *FSItemMeta
+	pfsi.FPs = pFPs
+	var pnfm *FSItem
 	// pfsi.FSItemMeta, e = *NewFSItemMeta(pfps.AbsFP.S())
-	pnfm, e = NewFSItemMeta(pfps.AbsFP.S())
-	pfsi.FSItemMeta = *pnfm
+	pnfm, e = NewFSItemMeta(pFPs.AbsFP)
+	// ?! pfsi.FSItem = *pnfm
 	// var fmError error 
 	if pnfm != nil { 
 	   return pfsi, nil

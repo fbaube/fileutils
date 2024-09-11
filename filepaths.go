@@ -15,7 +15,10 @@ type Filepaths struct {
      // useful for resolving relative paths in batches of content items.
      RelFP string
      // AbsFP is the authoritative field when processing individual files. 
-     AbsFP AbsFilePath
+     AbsFP string
+     // GotRel is a warning that this struct was created using a relative
+     // FP, not an absolute FP.
+     GotRel bool 
      // ShortFP is the path shortened by using "." (CWD) or "~" (user's
      // home directory), so it might only be valid for the current CLI
      // invocation or user session and it is def not persistable. 
@@ -37,10 +40,10 @@ func NewFilepaths(anFP string) (*Filepaths, error) {
      if fm == nil && e != nil {
      	return nil, fmt.Errorf("NewFilepaths<%s>: %w", anFP, e)
      }
-     if fm.IsDir() { anFP = EnsureTrailingPathSep(anFP) }
+     if fm.fi.IsDir() { anFP = EnsureTrailingPathSep(anFP) }
      
      if FP.IsAbs(anFP) {
-     	pFPs.AbsFP = AbsFilePath(anFP)
+     	pFPs.AbsFP = anFP
 	pFPs.RelFP = SU.Tildotted(anFP) 
      } else {
         pFPs.RelFP = anFP
@@ -50,9 +53,16 @@ func NewFilepaths(anFP string) (*Filepaths, error) {
 	if e != nil {
 	   return nil, &fs.PathError{Op:"FP.AbsFP",Err:e,Path:anFP}
 	}
-	pFPs.AbsFP = AbsFilePath(s)
+	pFPs.AbsFP = s
      }
-     pFPs.ShortFP = SU.Tildotted(pFPs.AbsFP.S())
+     pFPs.ShortFP = SU.Tildotted(pFPs.AbsFP)
      return pFPs, nil
+}
+
+// CreationPath is the path (abs or rel) used to create it.
+// It can be "", if the item wasn't/isn't on disk.
+func (p *Filepaths) CreationPath() string {
+        if p.GotRel { return p.RelFP }
+        return p.AbsFP
 }
 

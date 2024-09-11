@@ -7,7 +7,7 @@
 // or a relative path argument, so these functions take string arguments.
 // However other functions are opinionated about only accepting absolute
 // filepaths, so for convenience & correctness we define the type
-// AbsFilePath, a new type based on string.
+// [AbsFilePath], a new type based on string.
 //
 // This can be handy in data structures, where a string field RelFilePath
 // can store a path as it was supplied by the user (or used in a file
@@ -22,17 +22,22 @@
 // the three markup formats supported by LwDITA (Lightweight DITA),
 // it introduces the idea of an MType, analogous to a MIME type.
 // See file mtype.go .
-
+// 
 // Dependencies
 //
 // This package imports github.com/fbaube/(stringutils,wasmutils)
 //
-// Dependencies on package os
+// Dependencies on packages os, path, filepath, fs 
 //
 // Note that for simplicity and correctness, this package should
 // depend as much as possible on these stdlib libraries:
 //
-// 1) "path" https://golang.org/pkg/path/
+// 1) "os" https://golang.org/pkg/os/
+//
+// A mix of pure functions and os.File methods.
+// See comments below in source file.
+//
+// 2) "path" https://golang.org/pkg/path/
 //
 // Funcs: Base(s) Clean(s) Dir(s) Ext(s) IsAbs(s) Join(s..) Split(s) Match(..)
 //
@@ -41,23 +46,17 @@
 // package does not deal with Windows paths with drive letters or backslashes;
 // to do O/S paths, use package path/filepath .
 //
-// 2) filepath https://golang.org/pkg/path/filepath/
+// 3) "filepath" https://golang.org/pkg/path/filepath/
 //
 // Funcs: as for package "path" above but optimised for file paths,
 // plus: Abs(s) EvalSymlinks(s) FromSlash(s) Glob(s) Rel(base,target)
 // SplitList(s) ToSlash(s) VolumeName(s)
 // Walk(root string, walkFn WalkFunc) type_WalkFunc
 //
-// 3) os https://golang.org/pkg/os/
+// 4) fs https://golang.org/pkg/io/fs/
 //
-// A mix of pure functions and os.File methods.
-// See comments below in source file.
-//
-// 4) Maybe also some dependencies on package aferoutils
-//
-package fileutils
-
-// Pure functions:
+// Miscellaneous notes about file and directory functions in package [os]:
+// 
 // - func Getwd() (dir string, err error)
 // - func Mkdir[All](name string, perm FileMode) error
 // - func Readlink(name string) (string, error) // returns the dest of the symlink
@@ -116,3 +115,23 @@ package fileutils
 // - func Lstat(name string) (FileInfo, error) // returns a FileInfo describing
 //   the named file. If the file is a symlink, the returned FileInfo describes
 //   the symlink. Lstat makes no attempt to follow the link.
+
+// https://github.com/golang/go/issues/32300 (Rejected) 
+// os: let FileInfo type also contain the full path, not just basename #32300
+
+// There are two important rules for representing & handling non-files:
+//  - A directory name (or path to a directory) MUST end with a slash
+//    (or OS sep)
+//  - We always want the immediate target of the name, and not anything
+//    "downstream", like following a symlink.
+//    For this reason, a symlink MUST NOT end with a slash (or OS sep).
+//    This is because of the behavior of os.Lstat and os.Readlink.
+//    If the name passed in ends in a slash (or OS sep?), these funcs
+//    skip over the link to return the symlink's target, but NOTE that
+//    only ONE link is ever skipped over; if there are multiple links,
+//    in a chain, only the first is skipped over; for this reason the
+//    behavior seems quite inconcsistent, so therefore we make this
+//    rule that we strip off the trailing slash (or OS sep).
+
+package fileutils
+

@@ -10,17 +10,17 @@ func (p *FSItem) String() (s string) {
 
 // Echo implements [Stringser].
 func (p *FSItem) Echo() string {
-	return p.FPs.AbsFP.S()
+	return p.FPs.AbsFP
 }
 
 // Info implements [Stringser].
 func (p *FSItem) Info() string {
         var s string 
 	if p.IsFile() {
-		s = fmt.Sprintf("File[len:%d] ", p.Size())
+		s = fmt.Sprintf("File[len:%d] ", p.fi.Size())
 		// panic("DERF")
-	} else if p.IsDir() {
-		s = fmt.Sprintf("Dirr[len:%d] ", p.Size())
+	} else if p.fi.IsDir() {
+		s = fmt.Sprintf("Dirr[len:%d] ", p.fi.Size())
 	} else if p.IsSymlink() {
 		s = "Symlink "
 	} else {
