@@ -197,3 +197,10 @@ func EnsureTrailingPathSep(s string) string {
      if S.HasSuffix(s, PathSep) { return s }
      return s + PathSep
 }
+
+func StripTrailingPathSep(s string) string {
+     if S.HasSuffix(s, PathSep) { return s[:len(s)-1] }
+     if S.HasSuffix(s, "/") { return s[:len(s)-1] }
+     return s 
+}
+

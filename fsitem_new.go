@@ -3,12 +3,12 @@ package fileutils
 import (
 	"io/fs"
 	"os"
-	"fmt"
 	"errors"
 	"syscall"
-	FP "path/filepath"
+	// FP "path/filepath"
 )
 
+/*
 // TODO replace this with New + LoadContent 
 func NewFSItemWithContent(fp string) (*FSItem, error) {
 	var e error 
@@ -24,6 +24,7 @@ func NewFSItemWithContent(fp string) (*FSItem, error) {
 	}
 	return pfsi, nil
 }
+*/
 
 // NewFSItem takes a filepath (absolute or relative) and
 // analyzes the object (assuming one exists) at the path.
@@ -34,40 +35,68 @@ func NewFSItemWithContent(fp string) (*FSItem, error) {
 // case, use NewFSItemRelativeTo (below).
 //
 // NOTE if no item exists at fp, this might be flakey.
+//
+// Note that an empty path is not OK; instead create
+// an pathless FSItem from the content. 
 // .
 func NewFSItem(fp string) (*FSItem, error) {
+     	var e error 
+     	// Check the path
      	if fp == "" {
-	   println("NewFSItem GOT NIL PATH")
-	   return nil, &os.PathError{Op:"NewFSItem",
-	   	  Err:errors.New("Empty path arg"),Path:""}
+	   return nil, errors.New("NewFSItem: empty path")
 	   }
-	var pfsi *FSItem
-	pfsi = new(FSItem)
-	pFPs, e := NewFilepaths(fp)
+	var pFPs *Filepaths 
+	pFPs, e = NewFilepaths(fp)
 	if e != nil {
-	     	pfsi.SetError(e)
-		return nil, &fs.PathError{Op:"FSI.NewFPs",Err:e,Path:fp}
+		return nil, &fs.PathError{ Op:"NewFilepaths", Path:fp, Err:e }
 	}
-	// L.L.Dbg("NewFilepaths: %#v", *pfps)
-	pfsi.FPs = pFPs
-	var pnfm *FSItem
-	// pfsi.FSItemMeta, e = *NewFSItemMeta(pfps.AbsFP.S())
-	pnfm, e = NewFSItemMeta(pFPs.AbsFP)
-	// ?! pfsi.FSItem = *pnfm
-	// var fmError error 
-	if pnfm != nil { 
-	   return pfsi, nil
-	}
-	/*
-	L.L.Info("fmError %T %#v", fmError, fmError)
-	var q *os.PathError
-	var ok bool
-	q, ok = fmError.(*fs.PathError)
-	if !ok {
-	   q = &os.PathError{Op:"NewFSItemMeta",Err:fmError,Path:fp}
+	var pI *FSItem
+	pI = new(FSItem)
+	// L.L.Dbg("NewFilepaths: %#v", *pFPs)
+	pI.FPs = pFPs 
+	var FI fs.FileInfo
+	// Before we can call os.Lstat, we have to strip off any trailing
+	// slash (or OS sep), cos it would make Lstat follow a symlink
+	// (which kind of defeats the whole purpose of defining it in
+	// opposition to os.Stat) 
+	pFPs.TrimPathSepSuffixes()
+	// Now we can proceed 
+	FI, e = os.Lstat(pFPs.AbsFP)
+	if e != nil {
+                if errors.Is(e, fs.ErrNotExist) {
+                        // Does not exist!
+                        return nil, nil
+                        }
+                return nil, &os.PathError{
+		       Op:"os.Lstat", Path:pFPs.AbsFP, Err:e }
+        }
+	pI.Exists = true 
+	// Now we can check for a directory, and if
+	// it is, add the trailing slashes back in
+	if FI.IsDir() {
+	   pI.FPs.EnsurePathSepSuffixes()
 	   }
-	*/
-	return pfsi, fmt.Errorf("NewFSItem<%s>: %w", fp, e)
+	// Now we try to fetch the fields that might be OS-dependent
+	s, ok := FI.Sys().(*syscall.Stat_t)
+        if !ok {
+	       // Non-fatal error 
+	       pe := &os.PathError{ Op:"parse fs.FileInfo", 
+	       	      Path:pI.FPs.AbsFP, Err:errors.New(
+		     "cannot convert Stat.Sys() to syscall.Stat_t") }
+		pI.SetError(pe)
+	       }
+        var nlinks int
+        nlinks = int(s.Nlink)
+        if nlinks > 1 && (FI.Mode()&fs.ModeSymlink == 0) {
+                // The index number of this file's inode:
+                pI.Inode = int(s.Ino)
+                pI.NLinks = int(s.Nlink)
+        }
+        // TODO: FILE PERMS
+        // inode, nlinks int64
+	
+	
+        return pI, nil
 }
 
 /*
@@ -85,6 +114,10 @@ func NewFSItemRelativeTo(rfp, relTo string) (*FSItem, error) {
 	return NewFSItem(afp)
 }
 */
+
+func NewFSItemFromContent(s string) (*FSItem, error) {
+     return nil, nil
+}
 
 // ==================
 
@@ -129,6 +162,7 @@ ModeSticky     // t: sticky
 ModeIrregular  // ?: non-regular file; nothing else is known
 */
 
+/*
 // NewFSItemMeta replaces a call to [os.LStat]. This is necessary because
 // a call of the form NewFSItemMeta(FileInfo) won't work because an error
 // return from [os.LStat] indicates whether the file or dir (or symlink)
@@ -178,7 +212,7 @@ func NewFSItemMetaFromFileInfo(fi fs.FileInfo) (*FSItem, error) {
 	modTime time.Time
 	inode, nlinks int64
 	Errer
-	*/
+	* /
 	var inpath string 
 	inpath, e = FP.Abs(fi.Name())
 	// If we got this far, we now assume that the item's path is valid. 
@@ -216,7 +250,7 @@ func NewFSItemMetaFromFileInfo(fi fs.FileInfo) (*FSItem, error) {
 	   println(fmt.Sprintf("NewFSItemMeta: path mismatch: " +
 	   	"FSitemMeta.path<%s> inpath<%s>", 
 		 fi.Name(), inpath))
-	} */
+	} * /
 	return p, nil
 }
 
@@ -230,3 +264,6 @@ func NewFSItemMetaFromDirEntry(de fs.DirEntry) (*FSItem, error) {
 	  }     
      return NewFSItemMetaFromFileInfo(fi)
 }
+
+*/
+

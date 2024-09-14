@@ -14,15 +14,17 @@ import (
 // MAX_FILE_SIZE is set (arbitrarily) to 4 megabytes
 const MAX_FILE_SIZE = 4000000
 
-// FSItem is an item identified by a filepath (plus its contents) that we
-// have, will, or tried to read, write, or create. It might be a directory 
-// or symlink, either of which requires further processing elsewhere. In
-// the most common usage, it is a file. Its filepath(s) can be empty ("")
-// if (for example) its content was created interactively or it so far
-// lives only in memory.
+// FSItem is an item identified by a filepath (plus its contents) 
+// that we have tried to or will try to read, write, or create. It 
+// might be a directory or symlink, either of which requires further
+// processing elsewhere. In the most common usage, it is a file. 
 //
-// Basically all fields are unexported. This will change in the future
-// when the handlng of modificstions is defined better. 
+// It might be just a path where nothing exists but we intend to do
+// something. Its filepath(s) can be empty ("") if (for example) its
+// content was created interactively or it so far lives only in memory.
+//
+// NOTE basically all fields are exported. This will change in the 
+// future when the handlng of modifications is tightened up. 
 //
 // NOTE that the file name (aka [FP.Base], the part of the full path after
 // the last directory separator) is not stored separately: it is stored in
