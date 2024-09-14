@@ -50,10 +50,7 @@ func NewFSItem(fp string) (*FSItem, error) {
 	if e != nil {
 		return nil, &fs.PathError{ Op:"NewFilepaths", Path:fp, Err:e }
 	}
-	var pI *FSItem
-	pI = new(FSItem)
 	// L.L.Dbg("NewFilepaths: %#v", *pFPs)
-	pI.FPs = pFPs 
 	var FI fs.FileInfo
 	// Before we can call os.Lstat, we have to strip off any trailing
 	// slash (or OS sep), cos it would make Lstat follow a symlink
@@ -70,6 +67,11 @@ func NewFSItem(fp string) (*FSItem, error) {
                 return nil, &os.PathError{
 		       Op:"os.Lstat", Path:pFPs.AbsFP, Err:e }
         }
+	// Now we have valid info 
+	var pI *FSItem
+	pI = new(FSItem)
+	pI.FPs = pFPs
+	pI.fi = FI
 	pI.Exists = true 
 	// Now we can check for a directory, and if
 	// it is, add the trailing slashes back in
