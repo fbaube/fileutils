@@ -93,22 +93,21 @@ func (p *FSItem) IsDir() bool {
 }
 
 /*
-// IsWhat is for use with functions from github.com/samber/lo .
-// If the item does not exists, it returns "".
-func (p *FSItem) IsWhat() string {
+// Code4L is for TBS.
+func (p *FSItem) Code4L() string {
 	if p.IsFile() {
 		return "FILE"
 	}
 	if p.IsDir() {
-		return "DIR"
+		return "DIRR"
 	}
 	if p.IsSymlink() {
-		return "SYMLINK"
+		return "SYML"
 	}
 	if p.Exists() {
-		return "UnknownType"
+		return "OTHR"
 	}
-	return "" // "Non-existent"
+	return "!EXS" // "Non-existent"
 }
 */
 
