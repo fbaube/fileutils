@@ -88,6 +88,10 @@ type FSItem struct { // this has (Typed) Raw
 	Errer
 }
 
+func (p *FSItem) IsDir() bool {
+     return p.fi.IsDir()
+}
+
 /*
 // IsWhat is for use with functions from github.com/samber/lo .
 // If the item does not exists, it returns "".
