@@ -22,7 +22,7 @@ func ReadDir(inpath string) ([]FSItem, error) {
      var path = FPs.AbsFP
      var sAbsOrRel string 
      if FP.IsAbs(inpath) { sAbsOrRel = "Abs" } else { sAbsOrRel = "Rel" } 
-     notLcl := FPs.NonLocal
+     notLcl := !FPs.Local
      fmt.Printf("Readdir: Inpath<%s> type:%s Local:%t \n",
      		 inpath, sAbsOrRel, !notLcl)
      var theDir *os.File

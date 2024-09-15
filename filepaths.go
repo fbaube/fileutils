@@ -1,6 +1,7 @@
 package fileutils
 
 import(
+	"fmt"
 	"os"
 	"io/fs"
 	"errors"
@@ -21,14 +22,22 @@ import(
 type Filepaths struct {
      // RelFP is tipicly the path given (e.g.) on the command line and is
      // useful for resolving relative paths in batches of content items.
+     // The value might be valid only for the current CLI invocation or
+     // user session, but it is persistable to preserve relationships
+     // among files in import batches. 
      RelFP string
      // AbsFP is the authoritative field when processing individual files. 
      AbsFP string
-     // GotRel is a warning that this struct was created using a relative
-     // FP, not an absolute FP.
-     GotRel bool
-     // NonLocal is a warning that the path is not local.
-     NonLocal bool
+     // GotAbs (from [path/filepath/IsAbs]) says that this struct was
+     // created using a relative FP, not an absolute FP, and so the
+     // field [RelFP] is calculated. 
+     GotAbs bool
+     // Local (from [path/filepath/IsLocal]) is OK but not-Local might
+     // be a security hole.
+     Local bool
+     // Valid (from [path/filepath/ValidPath]) fails for absolute paths,
+     // but can be set to `true` for them. 
+     Valid bool
      // ShortFP is the path shortened by using "." (CWD) or "~" (user's
      // home directory), so it might only be valid for the current CLI
      // invocation or user session and it is def not persistable. 
@@ -37,29 +46,24 @@ type Filepaths struct {
 
 // NewFilepaths relies on the std lib, and accepts
 // either an absolute or a relative filepath. It
-// does, however, not accept an empty filepath. 
+// does, however, not accept an empty filepath.
+// It 
+// It takes care to remove a trailing slash (or OS sep) before calling functions in [path/filepath], so that symlinks are not unintentionally followed.
 //
 // Ref: type PathError struct {	Op string Path string Err error }
 // .
 func NewFilepaths(anFP string) (*Filepaths, error) {
+     var pFPs *Filepaths 
      if anFP == "" {
      	return nil, errors.New("NewFilepaths: empty path")
 	} 
      // Normalize it ("using only lexical analysis") 
      anFP = FP.Clean(anFP)
+     // Allocate the storage now, to use the filag fields. 
+     pFPs = new(Filepaths)
      // Validate it (altho we expect this 
      // call to fail if it is an absolute FP) 
-     isValid := fs.ValidPath(anFP)
-     if !isValid {
-     	return nil, &os.PathError{
-	       Op: "fs.ValidPath", Path: anFP, Err: fs.ErrInvalid }
-	}
-     // Strip off any trailing slash (or OS sep), cos we do not
-     // want func [os.Lstat] to auto-follow symlinks.
-     
-	
-     // Seems OK, superficially=lexically at least...
-     pFPs := new(Filepaths)
+     pFPs.Valid = fs.ValidPath(anFP)
      // Check whether it is local.
      // func FP.IsLocal(path string) bool
      // IsLocal reports whether path, using lexical
@@ -75,9 +79,19 @@ func NewFilepaths(anFP string) (*Filepaths, error) {
      // IsLocal is a purely lexical operation. In particular,
      // it does not account for the effect of any symbolic
      // links that may exist in the filesystem.
-     pFPs.NonLocal = !FP.IsLocal(anFP)
-     pFPs.GotRel = !FP.IsAbs(anFP)
-     // Maybe required here for Windoze:
+     pFPs.Local = FP.IsLocal(anFP) 
+     pFPs.GotAbs = FP.IsAbs(anFP)
+     fmt.Printf("<%s> Abs<%t> Local<%t> Valid <%t> \n",
+     	 anFP, pFPs.GotAbs, pFPs.Local, pFPs.Valid)
+     if pFPs.GotAbs {
+     	if pFPs.Valid { println("Abs is valid ?!:", anFP) } else
+	 { println("Abs is invalid, as expected ::", anFP) }
+	} 
+     if !(pFPs.Valid || pFPs.GotAbs) {
+     	return nil, &os.PathError{
+	       Op: "fs.ValidPath(RelFP)", Path: anFP, Err: fs.ErrInvalid }
+	}
+     // Maybe required somewhere near here for Windoze:
      // func Localize(path string) (string, error)
      // Localize converts a slash-separated path into an OS path.
      // The input path must be a valid path per io/fs.ValidPath.
@@ -86,9 +100,9 @@ func NewFilepaths(anFP string) (*Filepaths, error) {
      // cos \ is a separator character and cannot be part of a filename.
 
      // If got an abs.FP 
-     if !pFPs.GotRel {
+     if pFPs.GotAbs {
      	pFPs.AbsFP = anFP
-	pFPs.RelFP = SU.Tildotted(anFP) 
+	pFPs.RelFP = SU.Tildotted(anFP) // Calculated 
 	pFPs.ShortFP = pFPs.RelFP 
      } else {
         pFPs.RelFP = anFP
@@ -101,14 +115,19 @@ func NewFilepaths(anFP string) (*Filepaths, error) {
 	}
      	pFPs.ShortFP = SU.Tildotted(pFPs.AbsFP)
      }
+     // Strip off any trailing slash (or OS sep), cos we do 
+     // not want func [os.Lstat] to auto-follow symlinks. If 
+     // the path is a directory and needs a traililng slash 
+     // (or OS sep), it will be added later elsewhere. 
+     pFPs.TrimPathSepSuffixes() 
      return pFPs, nil
 }
 
 // CreationPath is the path (abs or rel) used to create it.
 // It can be "", if the item wasn't/isn't on disk.
 func (p *Filepaths) CreationPath() string {
-        if p.GotRel { return p.RelFP }
-        return p.AbsFP
+        if p.GotAbs { return p.AbsFP }
+        return p.RelFP
 }
 
 func (p *Filepaths) TrimPathSepSuffixes() {
