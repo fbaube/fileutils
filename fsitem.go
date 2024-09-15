@@ -162,9 +162,9 @@ func (p *FSItem) LoadContents() error {
 		return nil
 	}
 	var shortFP = p.FPs.ShortFP
-	if p.Raw != "" {
+	if p.TypedRaw != nil {
 		// No-op with warning
-		L.L.Warning("pp.GoGetFileContents: already "+
+		L.L.Warning("pp.LoadFileContents: already "+
 			"loaded [%d]: %s", len(p.Raw), shortFP)
 		return nil
 	}
