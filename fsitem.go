@@ -152,39 +152,46 @@ func (p *FSItem) ResolveSymlinks() *FSItem {
 //
 // NOTE the call to [os.Open] defaults to R/W mode, altho R/O might suffice.
 // .
-func (p *FSItem) LoadContents() error { 
-	if p.fi.Size() == 0 {
+func (p *FSItem) LoadContents() error {
+     	var e error 
+     	// Update the metadata (fs.FileInfo)
+	e = p.Refresh()
+	if e != nil {
+	     p.SetError(e)
+	     return &os.PathError{
+	     	    Op:"LoadContents.Refresh", Path:p.FPs.AbsFP, Err:e }
+	}
+	if !p.IsFile() {
 		// No-op
 		return nil
 	}
-	if !p.IsFile() {
+	if p.fi.Size() == 0 {
 		// No-op
 		return nil
 	}
 	var shortFP = p.FPs.ShortFP
 	if p.TypedRaw != nil {
 		// No-op with warning
-		L.L.Warning("pp.LoadFileContents: already "+
+		L.L.Warning("pp.LoadContents: already "+
 			"loaded [%d]: %s", len(p.Raw), shortFP)
 		return nil
 	}
 	// Suspiciously tiny ?
 	if p.fi.Size() < 6 {
-		L.L.Warning("pp.GoGetFileContents: tiny "+
+		L.L.Warning("pp.LoadContents: tiny "+
 			"file [%d]: %s", p.fi.Size(), shortFP)
 	}
 	// If it's too big, BARF!
 	if p.fi.Size() > MAX_FILE_SIZE {
-		return &fs.PathError{Op:"FSI.GoGetFileContents",
+		return &fs.PathError{Op:"FSI.LoadContents",
 		       Err:errors.New(fmt.Sprintf(
 		       "file too large: %d", p.fi.Size())), Path:shortFP}
 	}
 	// Open it, just to check (and then immediately close it)
 	var pF *os.File
-	var e error
 	pF, e = os.Open(p.FPs.AbsFP)
-	// Note that this defer'd Close() (i.e. file is left open)
-	// is not a problem for the call to io.Readall].
+	// Note that this defer'd Close() (i.e. the file is left open)
+	// is not a problem for the call to [io.Readall].
 	defer pF.Close()
 	if e != nil {
 		// We could check for file non-existence here.
@@ -208,7 +215,10 @@ func (p *FSItem) LoadContents() error {
 	if len(bb) == 0 {
 		panic("==> empty file?!: " + shortFP)
 	}
+	p.TypedRaw = new(CT.TypedRaw)
 	p.Raw = CT.Raw(string(bb))
+	// Try to set CT.RawMT?
+	
 	return nil
 }
 

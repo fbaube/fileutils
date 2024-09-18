@@ -1,15 +1,16 @@
 module github.com/fbaube/fileutils
 
-go 1.22
+go 1.23
 
-toolchain go1.22.0
+toolchain go1.23.1
 
 require (
-	github.com/fbaube/ctoken v0.0.0-20240423072024-5de83ee55980
+	github.com/fbaube/ctoken v0.0.0-20240918123605-d4f3b42f3fa7
+	github.com/fbaube/dsmnd v0.0.0-20240918123654-3b99d9511c64
 	github.com/fbaube/gtoken v0.0.0-20230421173215-d97b8767dfae
 	github.com/fbaube/mlog v0.0.0-20240425064535-3b89e3b28a76
 	github.com/fbaube/parseutils v0.0.0-20230622205737-06d517672cd1
-	github.com/fbaube/stringutils v0.0.0-20240326203406-bf4fec3db0ff
+	github.com/fbaube/stringutils v0.0.0-20240918123723-de59284266dd
 	github.com/fbaube/wasmutils v0.0.0-20231209183154-e25018375bc2
 	github.com/fbaube/xmlutils v0.0.0-20230904080817-586c01346ef2
 	github.com/mgutz/str v1.2.0
