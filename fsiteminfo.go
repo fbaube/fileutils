@@ -28,8 +28,8 @@ type FSItemInfo interface {
 
      // TYPE INFO
 
-     // Code4L returns one of "FILE", "DIRR", "SYML", "OTHR".
-     Code4L() string 
+     // FICode4L returns one of "FILE", "DIRR", "SYML", "OTHR".
+     FICode4L() string 
      // IsFile says whether it is a regular file. 
      IsFile() bool 
      // IsDir says whether it is a directory. It is

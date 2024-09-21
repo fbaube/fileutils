@@ -110,10 +110,10 @@ func (p *FSItem) Refresh() error {
 //  TYPE INFO 
 // ===========
 
-// Code4L returns a 4-Letter code: FILE, DIRR, SYML, OTHR.
-// An FSItem that is one of multiple hard links to 
-// a particular inode are not distinguished here. 
-func FileInfoTLC(p fs.FileInfo) string {
+// FICode4L returns a 4-Letter code: FILE, DIRR, SYML, OTHR.
+// A FileInfo that is one of multiple hard links to a
+// particular inode is not distinguished as such here. 
+func FICode4L(p fs.FileInfo) string {
      if p == nil  { return "_NIL" }
      if p.IsDir() { return "DIRR" }
      // func (m FileMode) IsRegular() bool

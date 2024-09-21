@@ -8,30 +8,31 @@ import(
 )
 
 // ReadDir returns only errors from the initial step of opening the directory.
-// An error returned on an individual directory item is attached to the items 
+// An error returned on an individual directory item is attached to the item 
 // via interface [Errer].
 func ReadDir(inpath string) ([]FSItem, error) {
      if inpath == "" { return nil, errors.New("ReadDir: nil path") }
      var e error
      // Check the path
      var FPs *Filepaths
+     // Ordinarily ´func NewFilepaths` should be called with
+     // a relative filepath when possible, but here in this
+     // use case it doesn't really bring any extra benefit. 
      FPs, e = NewFilepaths(inpath)
      if e != nil {
      	return nil, &os.PathError{ Op:"NewFilepaths", Path:inpath, Err:e }
 	}
      var path = FPs.AbsFP
-     var sAbsOrRel string 
-     if FP.IsAbs(inpath) { sAbsOrRel = "Abs" } else { sAbsOrRel = "Rel" } 
-     notLcl := !FPs.Local
-     fmt.Printf("Readdir: Inpath<%s> type:%s Local:%t \n",
-     		 inpath, sAbsOrRel, !notLcl)
+     var sAbsRel = "Rel" 
+     if FPs.GotAbs { sAbsRel = "Abs" } 
+     fmt.Printf("Readdir: %s: %s Local:%t \n", inpath, sAbsRel, FPs.Local)
      var theDir *os.File
      theDir, e = os.Open(path)
      if e != nil {
      	  return nil, &os.PathError{ Op:"Open", Path:path, Err:e }
 	  }
-     // ReadDir should not be used, cos an [fs.FileInfo] is useless as an
-     // argument to [NewFSItem], cos it does not have path information.
+     // [fs.FileInfo] and [fs.DirEntry] are useless as arguments 
+     // to [NewFSItem], because they do not have path information.
      // Therefore we use this instead:
      //   func (f *File) Readdirnames(n int) (names []string, err error)
      // Readdirnames reads the contents of the directory associated with
@@ -39,11 +40,10 @@ func ReadDir(inpath string) ([]FSItem, error) {
      // in directory order. 
      // Use with n <= 0, so that Readdirnames returns all the names from
      // the directory in a single slice. Then:
-     //  - If Readdirnames succeeds (reads all the way to the end of the
-     //    directory), it returns the slice and a nil error.
+     //  - If it succeeds (reads all the way to the end of the directory),
+     //    it returns the slice and a nil error.
      //  - If it encounters an error before the end of the directory,
-     //    Readdirnames returns the names read until that point and
-     //    a non-nil error.
+     //    it returns the names read until that point and a non-nil error.
      var entries []string
      var FSIs []FSItem
      var pFSI  *FSItem

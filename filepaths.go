@@ -47,8 +47,14 @@ type Filepaths struct {
 // NewFilepaths relies on the std lib, and accepts
 // either an absolute or a relative filepath. It
 // does, however, not accept an empty filepath.
-// It 
-// It takes care to remove a trailing slash (or OS sep) before calling functions in [path/filepath], so that symlinks are not unintentionally followed.
+// 
+// It takes care to remove a trailing slash (or OS
+// sep) before calling functions in [path/filepath],
+// so that symlinks are not unintentionally followed.
+//
+// NOTE the stdlib functions called here (Valid, IsLocal)
+// do not like absolute filepaths, so it might be better
+// to call this with a relative filepath when possible. 
 //
 // Ref: type PathError struct {	Op string Path string Err error }
 // .
@@ -81,11 +87,11 @@ func NewFilepaths(anFP string) (*Filepaths, error) {
      // links that may exist in the filesystem.
      pFPs.Local = FP.IsLocal(anFP) 
      pFPs.GotAbs = FP.IsAbs(anFP)
-     fmt.Printf("<%s> Abs<%t> Local<%t> Valid <%t> \n",
+     fmt.Fprintf(os.Stderr, "<%s> Abs<%t> Local<%t> Valid <%t> \n",
      	 anFP, pFPs.GotAbs, pFPs.Local, pFPs.Valid)
      if pFPs.GotAbs {
      	if pFPs.Valid { println("Abs is valid ?!:", anFP) } else
-	 { println("Abs is invalid, as expected ::", anFP) }
+	 { println("Abs is invalid, as expected ::", anFP) ; panic("OOPS") }
 	} 
      if !(pFPs.Valid || pFPs.GotAbs) {
      	return nil, &os.PathError{

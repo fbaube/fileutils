@@ -79,7 +79,9 @@ type FSItem struct { // this has (Typed) Raw
 	// Exists is false when [os.Lstat] returns ´(nil, nil)´. 
 	Exists bool
 	// Dirty has semantics TBD.
-	Dirty bool 
+	Dirty bool
+	// Perms is UNIX-style "rwx" user/group/world
+	Perms string 
 	// Inode and NLinks are for hard link detection. 
 	Inode, NLinks int // uint64
 	// Hash is for content change detection 
@@ -93,9 +95,13 @@ func (p *FSItem) IsDir() bool {
      return p.fi.IsDir()
 }
 
-/*
 // Code4L is for TBS.
 func (p *FSItem) Code4L() string {
+        var ret string
+	if !p.Exists { ret = "!EXS:" }
+	ret = ret + FICode4L(p.fi)
+	return ret 
+	/*
 	if p.IsFile() {
 		return "FILE"
 	}
@@ -109,8 +115,8 @@ func (p *FSItem) Code4L() string {
 		return "OTHR"
 	}
 	return "!EXS" // "Non-existent"
+	*/
 }
-*/
 
 // ResolveSymlinks will follow links until it finds
 // something else. NOTE that this can be a SECURITY HOLE. 
@@ -223,7 +229,7 @@ func (p *FSItem) LoadContents() error {
 }
 
 func FileInfoString(p fs.FileInfo) string {
-     if p == nil { return "<!NIL!>" }
-     return fmt.Sprintf("%s<%s>%d", p.Name(), FileInfoTLC(p), p.Size())
+     if p == nil { return "<FI:NIL>" }
+     return fmt.Sprintf("%s<%s>%d", p.Name(), FICode4L(p), p.Size())
 }
 

@@ -8,6 +8,10 @@ func (p *FSItem) String() (s string) {
      return p.Info()
 }
 
+func (p *FSItem) StringWithPermissions() (s string) {
+     return p.Info() + " " + p.Perms
+}
+
 // Echo implements [Stringser].
 func (p *FSItem) Echo() string {
 	return p.FPs.AbsFP

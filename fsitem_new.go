@@ -3,28 +3,11 @@ package fileutils
 import (
 	"io/fs"
 	"os"
+	"fmt"
 	"errors"
 	"syscall"
 	// FP "path/filepath"
 )
-
-/*
-// TODO replace this with New + LoadContent 
-func NewFSItemWithContent(fp string) (*FSItem, error) {
-	var e error 
-	var pfsi *FSItem
-	pfsi, e = NewFSItem(fp)
-	if e != nil {
-		return nil, &fs.PathError{Op:"NewFSItem",Err:e,Path:fp}
-	}
-	e = pfsi.LoadContents()
-	if e != nil {
-		return nil, &fs.PathError{
-		       Op:"FSI.LoadContents", Err:e,Path:fp}
-	}
-	return pfsi, nil
-}
-*/
 
 // NewFSItem takes a filepath (absolute or relative) and
 // analyzes the object (assuming one exists) at the path.
@@ -45,7 +28,8 @@ func NewFSItem(fp string) (*FSItem, error) {
      	if fp == "" {
 	   return nil, errors.New("NewFSItem: empty path")
 	   }
-	var pFPs *Filepaths 
+	var pFPs *Filepaths
+	println("Calling NewFilepaths:", fp) 
 	pFPs, e = NewFilepaths(fp)
 	if e != nil {
 		return nil, &fs.PathError{ Op:"NewFilepaths", Path:fp, Err:e }
@@ -96,9 +80,26 @@ func NewFSItem(fp string) (*FSItem, error) {
         }
         // TODO: FILE PERMS
         // inode, nlinks int64
-	
-	
+
+	var perms, world, group, yuser int 
+	perms = int(FI.Mode().Perm()) // 0777 or 0x1ff
+	world =  perms & 7
+	group = (perms >> 3) & 7
+	yuser = (perms >> 6) & 7
+	var ww, gg, yu string
+	ww = permStr(world)
+	gg = permStr(group)
+	yu = permStr(yuser)
+	pI.Perms = fmt.Sprintf("u:%s,g:%s,w:%s", yu, gg, ww) 
         return pI, nil
+}
+
+func permStr(i int) string {
+     var s string
+     if 0 != (i&4) { s  = "r" } else { s  = "-" }
+     if 0 != (i&2) { s += "w" } else { s += "-" }
+     if 0 != (i&1) { s += "x" } else { s += "-" }
+     return s
 }
 
 /*
