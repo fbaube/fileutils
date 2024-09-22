@@ -59,9 +59,12 @@ const MAX_FILE_SIZE = 4000000
 // other hierarchical structures (like XML), but this is not explored yet.
 // .
 type FSItem struct { // this has (Typed) Raw
-     	// fi is not exported, because it is relied on heavily and updated
-	// often & carefully. 
-	fi fs.FileInfo
+     	// fi should NOT be exported, because it is relied on heavily 
+	// and updated often & carefully. 
+	FI fs.FileInfo
+	// FSItem_type is closely linked to FI and they
+	// should always be updated in lockstep.
+	FSItem_type
 	// TypedRaw is a ptr, to allow for lazy loading.
 	*CT.TypedRaw
 	// FPs is a ptr, to allow for items that are not (yet) on disk 
@@ -91,15 +94,16 @@ type FSItem struct { // this has (Typed) Raw
 }
 
 func (p *FSItem) IsDir() bool {
-     if p.fi == nil { println("IsDir got a nil ptr") ; return false } 
-     return p.fi.IsDir()
+     if p.FI == nil { println("IsDir got a nil ptr") ; return false } 
+     return p.FI.IsDir()
 }
 
+/*
 // Code4L is for TBS.
 func (p *FSItem) Code4L() string {
         var ret string
 	if !p.Exists { ret = "!EXS:" }
-	ret = ret + FICode4L(p.fi)
+	ret = ret + FICode4L(p.FI)
 	return ret 
 	/*
 	if p.IsFile() {
@@ -115,8 +119,9 @@ func (p *FSItem) Code4L() string {
 		return "OTHR"
 	}
 	return "!EXS" // "Non-existent"
-	*/
+	* /
 }
+*/
 
 // ResolveSymlinks will follow links until it finds
 // something else. NOTE that this can be a SECURITY HOLE. 
@@ -161,7 +166,8 @@ func (p *FSItem) ResolveSymlinks() *FSItem {
 func (p *FSItem) LoadContents() error {
      	var e error 
      	// Update the metadata (fs.FileInfo)
-	e = p.Refresh()
+	// OOPS Causes infinite recursion !!
+	// e = p.Refresh()
 	if e != nil {
 	     p.SetError(e)
 	     return &os.PathError{
@@ -171,7 +177,7 @@ func (p *FSItem) LoadContents() error {
 		// No-op
 		return nil
 	}
-	if p.fi.Size() == 0 {
+	if p.FI.Size() == 0 {
 		// No-op
 		return nil
 	}
@@ -183,15 +189,15 @@ func (p *FSItem) LoadContents() error {
 		return nil
 	}
 	// Suspiciously tiny ?
-	if p.fi.Size() < 6 {
+	if p.FI.Size() < 6 {
 		L.L.Warning("pp.LoadContents: tiny "+
-			"file [%d]: %s", p.fi.Size(), shortFP)
+			"file [%d]: %s", p.FI.Size(), shortFP)
 	}
 	// If it's too big, BARF!
-	if p.fi.Size() > MAX_FILE_SIZE {
+	if p.FI.Size() > MAX_FILE_SIZE {
 		return &fs.PathError{Op:"FSI.LoadContents",
 		       Err:errors.New(fmt.Sprintf(
-		       "file too large: %d", p.fi.Size())), Path:shortFP}
+		       "file too large: %d", p.FI.Size())), Path:shortFP}
 	}
 	// Open it, just to check (and then immediately close it)
 	var pF *os.File
@@ -228,8 +234,10 @@ func (p *FSItem) LoadContents() error {
 	return nil
 }
 
+/*
 func FileInfoString(p fs.FileInfo) string {
      if p == nil { return "<FI:NIL>" }
-     return fmt.Sprintf("%s<%s>%d", p.Name(), FICode4L(p), p.Size())
+     return fmt.Sprintf("%s<%s>%d", p.Name(), p.FSItem_type, p.Size())
 }
+*/
 

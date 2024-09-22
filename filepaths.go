@@ -1,7 +1,7 @@
 package fileutils
 
 import(
-	"fmt"
+	// "fmt"
 	"os"
 	"io/fs"
 	"errors"
@@ -87,11 +87,11 @@ func NewFilepaths(anFP string) (*Filepaths, error) {
      // links that may exist in the filesystem.
      pFPs.Local = FP.IsLocal(anFP) 
      pFPs.GotAbs = FP.IsAbs(anFP)
-     fmt.Fprintf(os.Stderr, "<%s> Abs<%t> Local<%t> Valid <%t> \n",
-     	 anFP, pFPs.GotAbs, pFPs.Local, pFPs.Valid)
+     // fmt.Fprintf(os.Stderr, "<%s> Abs<%t> Local<%t> Valid <%t> \n",
+     //	 anFP, pFPs.GotAbs, pFPs.Local, pFPs.Valid)
      if pFPs.GotAbs {
      	if pFPs.Valid { println("Abs is valid ?!:", anFP) } else
-	 { println("Abs is invalid, as expected ::", anFP) ; panic("OOPS") }
+	 { println("Abs.FP is invalid, as expected:", anFP) } // ;panic("OOPS")}
 	} 
      if !(pFPs.Valid || pFPs.GotAbs) {
      	return nil, &os.PathError{

@@ -29,11 +29,13 @@ func NewFSItem(fp string) (*FSItem, error) {
 	   return nil, errors.New("NewFSItem: empty path")
 	   }
 	var pFPs *Filepaths
-	println("Calling NewFilepaths:", fp) 
 	pFPs, e = NewFilepaths(fp)
 	if e != nil {
 		return nil, &fs.PathError{ Op:"NewFilepaths", Path:fp, Err:e }
 	}
+	// From this point onward, field [FSItem_type] must
+	// be maintained in lockstep with field [FI].
+	
 	// L.L.Dbg("NewFilepaths: %#v", *pFPs)
 	var FI fs.FileInfo
 	// Before we can call os.Lstat, we have to strip off any trailing
@@ -55,8 +57,13 @@ func NewFSItem(fp string) (*FSItem, error) {
 	var pI *FSItem
 	pI = new(FSItem)
 	pI.FPs = pFPs
-	pI.fi = FI
-	pI.Exists = true 
+	pI.FI = FI
+	pI.Exists = true
+
+	// This is where we set the FSItem_type,
+	// and we want to rely on this field. 
+	pI.setFSItemType()
+	
 	// Now we can check for a directory, and if
 	// it is, add the trailing slashes back in
 	if FI.IsDir() {
@@ -90,7 +97,7 @@ func NewFSItem(fp string) (*FSItem, error) {
 	ww = permStr(world)
 	gg = permStr(group)
 	yu = permStr(yuser)
-	pI.Perms = fmt.Sprintf("u:%s,g:%s,w:%s", yu, gg, ww) 
+	pI.Perms = fmt.Sprintf("%s,%s,%s", yu, gg, ww) 
         return pI, nil
 }
 
@@ -270,3 +277,17 @@ func NewFSItemMetaFromDirEntry(de fs.DirEntry) (*FSItem, error) {
 
 */
 
+// setFSItemType sets field [FSItem_type] based on the
+// contents of field [FI], and also returns the value. 
+func (p *FSItem) setFSItemType() FSItem_type {
+     if p.FI.IsDir() {
+     	p.FSItem_type = FSItem_type_DIRR
+     } else if p.FI.Mode().IsRegular() {
+        p.FSItem_type = FSItem_type_FILE
+     } else if 0 != (p.FI.Mode() & fs.ModeSymlink) {
+        p.FSItem_type = FSItem_type_SYML
+     } else {
+        p.FSItem_type = FSItem_type_OTHR
+     }
+     return p.FSItem_type
+}

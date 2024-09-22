@@ -61,18 +61,6 @@ func (p *FSItemMeta) StringWithPermissions() string {
 //  BASICS
 // ========
 
-// IsExist is updated by [Refresh] but any
-// error returned by Refresh is ignored. 
-func (p *FSItem) IsExist() bool {
-     	p.Refresh() // ignore error return 
-	return p.Exists
-}
-
-// IsDirty is TBD. 
-func (p *FSItem) IsDirty() bool {
-	return p.Dirty
-}
-
 // Refresh updates the embedded [fs.FileInfo] and checks four things: 
 // existence, item type, file size, and modification time. Details:
 //  - A file coming into existence or a file being appended to might 
@@ -89,18 +77,18 @@ func (p *FSItem) Refresh() error {
         pp, e := NewFSItem(crePath)
 	if pp == nil && e != nil {
 	   fmt.Fprintf(os.Stderr, "FSItem.Refresh<%s> failed: %w \n",
-	   	p.fi.Name(), e)
+	   	p.FI.Name(), e)
 	}
-	if p.IsExist() != pp.IsExist() {
+	if p.Exists != pp.Exists {
 	   fmt.Fprintf(os.Stderr, "Existence changed! (%s) \n", crePath)
 	}
-	if p.fi.Size() != pp.fi.Size() {
+	if p.FI.Size() != pp.FI.Size() {
 	   fmt.Printf("Size changed! (%s) %d => %d \n",
-	   	crePath, p.fi.Size(), pp.fi.Size())
+	   	crePath, p.FI.Size(), pp.FI.Size())
 	}
-	if !p.fi.ModTime().Equal(pp.fi.ModTime()) {
+	if !p.FI.ModTime().Equal(pp.FI.ModTime()) {
 	   fmt.Printf("ModTime changed! (%s) %s => %s \n",
-	   	crePath, p.fi.ModTime(), pp.fi.ModTime())
+	   	crePath, p.FI.ModTime(), pp.FI.ModTime())
 	}
 	*p = *pp
 	return nil
@@ -110,32 +98,22 @@ func (p *FSItem) Refresh() error {
 //  TYPE INFO 
 // ===========
 
-// FICode4L returns a 4-Letter code: FILE, DIRR, SYML, OTHR.
-// A FileInfo that is one of multiple hard links to a
-// particular inode is not distinguished as such here. 
-func FICode4L(p fs.FileInfo) string {
-     if p == nil  { return "_NIL" }
-     if p.IsDir() { return "DIRR" }
-     // func (m FileMode) IsRegular() bool
-     if p.Mode().IsRegular() { return "FILE" }
-     if 0 != (p.Mode() & fs.ModeSymlink) { return "SYML" }
-     return "OTHR"
-}
-
 // IsFile is a convenience function.
 func (p *FSItem) IsFile() bool {
-	return p.Exists && p.isFile() && !p.fi.IsDir() && !p.isSymlink()
+	return p.FSItem_type == FSItem_type_FILE
+	// p.Exists && p.isFile() && !p.FI.IsDir() && !p.isSymlink()
 }
 
 // IsDirlike is, well, documented elsewhere.
 func (p *FSItem) IsDirlike() bool {
-        if !p.Exists { return false }
-	return p.fi.IsDir() || p.IsSymlink()
+        // if !p.Exists { return false }
+	return p.FI.IsDir() || (p.FSItem_type == FSItem_type_SYML) //p.IsSymlink
 }
 
 // IsSymlink is a convenience function.
 func (p *FSItem) IsSymlink() bool {
-	return p.Exists && !p.isFile() && !p.fi.IsDir() && p.isSymlink()
+	return p.FSItem_type == FSItem_type_SYML
+	// p.Exists && !p.isFile() && !p.FI.IsDir() && p.isSymlink()
 }
 
 func (p *FSItem) HasMultiHardlinks() bool {
@@ -146,13 +124,15 @@ func (p *FSItem) HasMultiHardlinks() bool {
 //  TYPE INFO utility functions
 // -----------------------------
 
+/*
 func (p *FSItem) isFile() bool {
-	return p.fi.Mode().IsRegular() && !p.fi.IsDir()
+	return p.FI.Mode().IsRegular() && !p.FI.IsDir()
 }
 
 func (p *FSItem) isSymlink() bool {
-	return (0 != (p.fi.Mode() & os.ModeSymlink))
+	return (0 != (p.FI.Mode() & os.ModeSymlink))
 }
+*/
 
 // =====================
 //  EMBEDDED INTERFACES
@@ -160,22 +140,22 @@ func (p *FSItem) isSymlink() bool {
 
 // Type implements [fs.DirEntry] by returning the [fs.FileMode].
 func (p *FSItem) Type() fs.FileMode {
-     return p.fi.Mode()
+     return p.FI.Mode()
 }
 
 // DirEntryInfo implements [fs.DirEntry] by returning interface [fs.FileInfo].
 // This should be named Info but it collides with interface [Stringser).
 func (p *FSItem) DirEntryInfo() fs.FileInfo {
-     return p.fi
+     return p.FI
 }
 
 // IsEmpty is a convenience function for files (and directories too?).
 func (p *FSItem) IsEmpty() bool {
-	return p.fi.Size() == 0 || !p.IsFile()
+	return p.FI.Size() == 0 || !p.IsFile()
 }
 
 // HasContents is the opposite of [IsEmpty].
 func (p *FSItem) HasContents() bool {
-	return p.isFile() && p.fi.Size() > 0
+	return p.IsFile() && p.FI.Size() > 0
 }
 
