@@ -2,6 +2,7 @@ package fileutils
 
 import (
 	"fmt"
+	S "strings"
 )
 
 func (p *FSItem) String() (s string) {
@@ -17,19 +18,23 @@ func (p *FSItem) StringWithPermissions() (s string) {
 // Rawtype Len Abs/Rel Local? Valid? Name nLinks? Error? \n 
 func (p *FSItem) ListingString() string {
      // If this gets an error, the error should
-     // have been set already via interface Errer
+     // have been set already via interface Errer,
+     // so here we ignore the error return value. 
      p.LoadContents()
-     var rtp, nlinks, err string
+     // var sb S.Builder
+     // Lotsa temp variables 
+     var rtp, siz, nlinks, err string
      var local, valid = "-", "-"
      var absrel = "r"
      if p.FPs.GotAbs { absrel = "a" }
-     if p.TypedRaw != nil { rtp = string(p.TypedRaw.Raw_type) }
+     if p.TypedRaw != nil { rtp = S.ToUpper(string(p.TypedRaw.Raw_type)) }
+     if p.IsFile() { siz = fmt.Sprintf("%4d", p.FI.Size()) }
      if p.NLinks > 1 { nlinks = fmt.Sprintf("%d", p.NLinks) } 
      err = p.Error()
      if p.FPs.Local { local = "L" }
      if p.FPs.Valid { valid = "V" }
-     return fmt.Sprintf("%s %s %4d %s%s%s %s %s %s",
-     	    p.Perms, rtp, p.FI.Size(), absrel, local,
+     return fmt.Sprintf("%s %s %s %s%s%s %s %s %s",
+     	    p.Perms, rtp, siz, absrel, local,
 	    valid, p.FI.Name(), nlinks, err)
 
 }
