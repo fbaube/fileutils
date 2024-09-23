@@ -3,6 +3,7 @@ package fileutils
 import (
 	"fmt"
 	S "strings"
+	HB "github.com/fbaube/humanbytes"
 )
 
 func (p *FSItem) String() (s string) {
@@ -15,27 +16,25 @@ func (p *FSItem) StringWithPermissions() (s string) {
 
 // ListingString prints:
 // rwx,rwx,rwx [or not exist] ... 
-// Rawtype Len Abs/Rel Local? Valid? Name nLinks? Error? \n 
+// Rawtype (file)Len Name Error? \n 
 func (p *FSItem) ListingString() string {
-     // If this gets an error, the error should
-     // have been set already via interface Errer,
+
+     // If this returns an error, it should 
+     // also set the error via interface Errer,
      // so here we ignore the error return value. 
-     p.LoadContents()
-     // var sb S.Builder
-     // Lotsa temp variables 
-     var rtp, siz, nlinks, err string
-     var local, valid = "-", "-"
-     var absrel = "r"
-     if p.FPs.GotAbs { absrel = "a" }
-     if p.TypedRaw != nil { rtp = S.ToUpper(string(p.TypedRaw.Raw_type)) }
-     if p.IsFile() { siz = fmt.Sprintf("%4d", p.FI.Size()) }
-     if p.NLinks > 1 { nlinks = fmt.Sprintf("%d", p.NLinks) } 
+     elc := p.LoadContents()
+     if elc != nil {
+     	p.SetError(fmt.Errorf("LoadContents: %w", elc))
+        return "ERROR:ListingString:" + elc.Error()
+        }
+     
+     var fstp, size, err string
+     fstp = S.ToUpper(string(p.FSItem_type)) 
+     // if p.IsFile() { size = fmt.Sprintf("%4d", p.FI.Size()) }
+     if p.IsFile() { size = fmt.Sprintf("%6s", HB.SizeSI(int(p.FI.Size()))) }
      err = p.Error()
-     if p.FPs.Local { local = "L" }
-     if p.FPs.Valid { valid = "V" }
-     return fmt.Sprintf("%s %s %s %s%s%s %s %s %s",
-     	    p.Perms, rtp, siz, absrel, local,
-	    valid, p.FI.Name(), nlinks, err)
+     return fmt.Sprintf("%s %s %s %s %s",
+     	    p.Perms, fstp, size, p.FI.Name(), err)
 
 }
 

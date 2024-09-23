@@ -17,7 +17,8 @@ import (
 // which may not be the desired behavior; in such a
 // case, use NewFSItemRelativeTo (below).
 //
-// NOTE if no item exists at fp, this might be flakey.
+// NOTE if no item exists at fp, this might be flakey,
+// but return `(nil, nil)`.
 //
 // Note that an empty path is not OK; instead create
 // an pathless FSItem from the content. 
@@ -45,6 +46,10 @@ func NewFSItem(fp string) (*FSItem, error) {
 	pFPs.TrimPathSepSuffixes()
 	// Now we can proceed 
 	FI, e = os.Lstat(pFPs.AbsFP)
+	if FI == nil && e == nil {
+	       	// Does not exist!
+                return nil, nil
+                }
 	if e != nil {
                 if errors.Is(e, fs.ErrNotExist) {
                         // Does not exist!

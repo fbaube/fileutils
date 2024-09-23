@@ -26,9 +26,20 @@ func main() {
      	  os.Args[0], os.Args[1]); os.Exit(0) }
      // fmt.Printf("Mode: " + p.Type().String() + "\n")
      // fmt.Printf(p.StringWithPermissions() + "\n")
-     if p.IsFile() { p.LoadContents() }
-     PA, e := CA.NewPathAnalysis(p)
-     if p.IsFile() { p.TypedRaw.Raw_type = PA.RawType() }
+     if p.IsFile() {
+     	// p.LoadContents() 
+     	PA, e := CA.NewPathAnalysis(p)
+	if e != nil {
+	   println("ERROR:main:NPAerr:", e.Error())
+	   }
+	if PA == nil {
+	   println("ERROR:main:NPA PAAnil")
+	   }
+	if p.TypedRaw == nil { 
+	   println("ERROR:mail:nil TypedRaw")
+	   }
+     	p.TypedRaw.Raw_type = PA.RawType()
+	}
      fmt.Printf(p.ListingString()+ "\n")
      if p.IsSymlink() { 
      	s, _ := os.Readlink(nam2chk)

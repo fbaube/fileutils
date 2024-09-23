@@ -165,40 +165,51 @@ func (p *FSItem) ResolveSymlinks() *FSItem {
 // .
 func (p *FSItem) LoadContents() error {
      	var e error 
+	// println("LoadContents: Entering!")
      	// Update the metadata (fs.FileInfo)
 	// OOPS Causes infinite recursion !!
-	// e = p.Refresh()
+	/*
+	e = p.Refresh()
 	if e != nil {
 	     p.SetError(e)
 	     return &os.PathError{
 	     	    Op:"LoadContents.Refresh", Path:p.FPs.AbsFP, Err:e }
 	}
+	*/
+	// println("LoadContents: chkpt 1")
 	if !p.IsFile() {
 		// No-op
+		// println("LoadContents: not a file")
 		return nil
 	}
 	if p.FI.Size() == 0 {
 		// No-op
+		// println("LoadContents: file size zero")
 		return nil
 	}
+	// println("LoadContents: chkpt 2")
 	var shortFP = p.FPs.ShortFP
 	if p.TypedRaw != nil {
 		// No-op with warning
 		L.L.Warning("pp.LoadContents: already "+
 			"loaded [%d]: %s", len(p.Raw), shortFP)
+		// println("LoadContents: already loaded")
 		return nil
 	}
+	// println("LoadContents: chkpt 2b")
 	// Suspiciously tiny ?
 	if p.FI.Size() < 6 {
 		L.L.Warning("pp.LoadContents: tiny "+
 			"file [%d]: %s", p.FI.Size(), shortFP)
 	}
+	// println("LoadContents: chkpt 2c")
 	// If it's too big, BARF!
 	if p.FI.Size() > MAX_FILE_SIZE {
 		return &fs.PathError{Op:"FSI.LoadContents",
 		       Err:errors.New(fmt.Sprintf(
 		       "file too large: %d", p.FI.Size())), Path:shortFP}
 	}
+	// println("LoadContents: chkpt 3")
 	// Open it, just to check (and then immediately close it)
 	var pF *os.File
 	pF, e = os.Open(p.FPs.AbsFP)
@@ -227,9 +238,11 @@ func (p *FSItem) LoadContents() error {
 	if len(bb) == 0 {
 		panic("==> empty file?!: " + shortFP)
 	}
+	// println("LoadContents: Allocating!")
 	p.TypedRaw = new(CT.TypedRaw)
 	p.Raw = CT.Raw(string(bb))
-	// Try to set CT.RawMT?
+	
+	// TODO try to set CT.RawMT?
 	
 	return nil
 }
