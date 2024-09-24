@@ -66,7 +66,7 @@ func (p *FSItemMeta) StringWithPermissions() string {
 //  - A file coming into existence or a file being appended to might 
 //    be common use cases.
 //  - In general, if any of the four things has changed, it writes a
-//    warning to stdout and in some cases returns an [os.PathError].
+//    warning to stdout and in some cases returns an [fs.PathError].
 //  - If [Dirty] is set, some warnings do not apply.
 //  - If there is already an error, this call is ignored.
 // . 

@@ -1,8 +1,7 @@
 package fileutils
 
 import(
-	// "fmt"
-	"os"
+	"fmt"
 	"io/fs"
 	"errors"
 	S "strings"
@@ -42,6 +41,12 @@ type Filepaths struct {
      // home directory), so it might only be valid for the current CLI
      // invocation or user session and it is def not persistable. 
      ShortFP string
+}
+
+func (p *Filepaths) String() string {
+     	var src = "rel"
+	if p.GotAbs { src = "abs" }
+	return fmt.Sprintf("FPs(%s)%s:%s", src, p.RelFP, p.AbsFP)
 }
 
 // NewFilepaths relies on the std lib, and accepts
@@ -94,7 +99,7 @@ func NewFilepaths(anFP string) (*Filepaths, error) {
 	 { println("Abs.FP is invalid, as expected:", anFP) } // ;panic("OOPS")}
 	} 
      if !(pFPs.Valid || pFPs.GotAbs) {
-     	return nil, &os.PathError{
+     	return nil, &fs.PathError{
 	       Op: "fs.ValidPath(RelFP)", Path: anFP, Err: fs.ErrInvalid }
 	}
      // Maybe required somewhere near here for Windoze:

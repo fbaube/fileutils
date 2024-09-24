@@ -55,7 +55,7 @@ func NewFSItem(fp string) (*FSItem, error) {
                         // Does not exist!
                         return nil, nil
                         }
-                return nil, &os.PathError{
+                return nil, &fs.PathError{
 		       Op:"os.Lstat", Path:pFPs.AbsFP, Err:e }
         }
 	// Now we have valid info 
@@ -78,7 +78,7 @@ func NewFSItem(fp string) (*FSItem, error) {
 	s, ok := FI.Sys().(*syscall.Stat_t)
         if !ok {
 	       // Non-fatal error 
-	       pe := &os.PathError{ Op:"parse fs.FileInfo", 
+	       pe := &fs.PathError{ Op:"parse fs.FileInfo", 
 	       	      Path:pI.FPs.AbsFP, Err:errors.New(
 		     "cannot convert Stat.Sys() to syscall.Stat_t") }
 		pI.SetError(pe)

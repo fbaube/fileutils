@@ -172,7 +172,7 @@ func (p *FSItem) LoadContents() error {
 	e = p.Refresh()
 	if e != nil {
 	     p.SetError(e)
-	     return &os.PathError{
+	     return &fs.PathError{
 	     	    Op:"LoadContents.Refresh", Path:p.FPs.AbsFP, Err:e }
 	}
 	*/
