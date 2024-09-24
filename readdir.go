@@ -4,6 +4,7 @@ import(
 	"os"
 	"fmt"
 	"errors"
+	"io/fs"
 	FP "path/filepath"
 )
 
@@ -20,7 +21,7 @@ func ReadDir(inpath string) ([]FSItem, error) {
      // use case it doesn't really bring any extra benefit. 
      FPs, e = NewFilepaths(inpath)
      if e != nil {
-     	return nil, &os.PathError{ Op:"NewFilepaths", Path:inpath, Err:e }
+     	return nil, &fs.PathError{ Op:"NewFilepaths", Path:inpath, Err:e }
 	}
      var path = FPs.AbsFP
      var sAbsRel = "Rel" 
@@ -29,7 +30,7 @@ func ReadDir(inpath string) ([]FSItem, error) {
      var theDir *os.File
      theDir, e = os.Open(path)
      if e != nil {
-     	  return nil, &os.PathError{ Op:"Open", Path:path, Err:e }
+     	  return nil, &fs.PathError{ Op:"Open", Path:path, Err:e }
 	  }
      // [fs.FileInfo] and [fs.DirEntry] are useless as arguments 
      // to [NewFSItem], because they do not have path information.
@@ -49,7 +50,7 @@ func ReadDir(inpath string) ([]FSItem, error) {
      var pFSI  *FSItem
      entries, e = theDir.Readdirnames(-1)
      if e != nil {
-     	return nil, &os.PathError{ Op: "Readdirnames", Path:path, Err:e }
+     	return nil, &fs.PathError{ Op: "Readdirnames", Path:path, Err:e }
 	}
      for _, E := range entries {
      	    pFSI, e = NewFSItem(FP.Join(path, E))
