@@ -3,14 +3,14 @@ package main
 import (
 	"fmt"
 	"os"
-	FP "path/filepath"
+	// FP "path/filepath"
 	FU "github.com/fbaube/fileutils"
 	SU "github.com/fbaube/stringutils"
 )
 
-var pre = []string { "#" }
-var mid = []string { "/#", "/." }
-var pst = []string { "~" } 
+var pre = []string { "#", ".git", ".DS_Store" }
+var mid = []string { "/#", "/." } // incl .git, .DS_Store 
+var pst = []string { "~" }
 
 func main() {
      arg := os.Args[1]
@@ -19,13 +19,15 @@ func main() {
      for i, f := range FileSlc {
 	fmt.Printf("%s [%02d] %s \n", arg, i, f)
 	}
-     fmt.Printf("%s :: total %d \n", arg, len(FileSlc))
-     
+     fmt.Printf("%s :: total %d BEFORE filtering \n", arg, len(FileSlc))
+
+     fmt.Printf("===\nFILTERS: \n\t pre|%#v| \n\t mid|%#v| " +
+     			      "\n\tpost|%#v| \n===\n", pre, mid, pst)
      // Filter it
      FileSlc = SU.FilterStringList(FileSlc, pre, mid, pst) 
      for i, f := range FileSlc {
-	fmt.Printf("%s [%02d] %s \n", abs, i, f)
+	fmt.Printf("%s [%02d] %s \n", arg, i, f)
 	}
-     fmt.Printf("%s :: total %d after filtering \n", arg, len(FileSlc))
+     fmt.Printf("%s :: total %d AFTER filtering \n", arg, len(FileSlc))
 }
 

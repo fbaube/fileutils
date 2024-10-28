@@ -11,8 +11,8 @@ import (
 	L "github.com/fbaube/mlog"
 )
 
-// MAX_FILE_SIZE is set (arbitrarily) to 4 megabytes
-const MAX_FILE_SIZE = 4000000
+// MAX_FILE_SIZE is set (arbitrarily) to 100 megabytes
+const MAX_FILE_SIZE = 100_000_000
 
 // FSItem is an item identified by a filepath (plus its contents) 
 // that we have tried to or will try to read, write, or create. It 

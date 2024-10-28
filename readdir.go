@@ -23,14 +23,14 @@ func ReadDir(inpath string) ([]FSItem, error) {
      if e != nil {
      	return nil, &fs.PathError{ Op:"NewFilepaths", Path:inpath, Err:e }
 	}
-     var path = FPs.AbsFP
+     var theAbsPath = FPs.AbsFP
      var sAbsRel = "Rel" 
      if FPs.GotAbs { sAbsRel = "Abs" } 
      fmt.Printf("Readdir: %s: %s Local:%t \n", inpath, sAbsRel, FPs.Local)
      var theDir *os.File
-     theDir, e = os.Open(path)
+     theDir, e = os.Open(theAbsPath)
      if e != nil {
-     	  return nil, &fs.PathError{ Op:"Open", Path:path, Err:e }
+     	  return nil, &fs.PathError{ Op:"Open", Path:theAbsPath, Err:e }
 	  }
      // [fs.FileInfo] and [fs.DirEntry] are useless as arguments 
      // to [NewFSItem], because they do not have path information.
@@ -50,12 +50,17 @@ func ReadDir(inpath string) ([]FSItem, error) {
      var pFSI  *FSItem
      entries, e = theDir.Readdirnames(-1)
      if e != nil {
-     	return nil, &fs.PathError{ Op: "Readdirnames", Path:path, Err:e }
+     	return nil, &fs.PathError{ Op: "Readdirnames", Path:theAbsPath, Err:e }
 	}
      for _, E := range entries {
-     	    pFSI, e = NewFSItem(FP.Join(path, E))
+     	    // NOTE this could probably be a relative path;
+	    // it might or might not add value. 
+     	    pFSI, e = NewFSItem(FP.Join(theAbsPath, E))
 	    if e != nil {
-	       	 if pFSI == nil { pFSI = new(FSItem) }
+	       	 if pFSI == nil {
+		    pFSI = new(FSItem)
+		    pFSI.FPs,_ = NewFilepaths(theAbsPath)
+		    }
 	       	 pFSI.SetError(e)
 		 }
 	    FSIs = append (FSIs, *pFSI)

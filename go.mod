@@ -19,7 +19,7 @@ require (
 )
 
 require (
-	github.com/fatih/color v1.17.0 // indirect
+	github.com/fatih/color v1.18.0 // indirect
 	github.com/fbaube/logutils v0.0.0-20240425064504-eb572963f0fc // indirect
 	github.com/fbaube/lwdx v0.0.0-20240327195153-e4bf7566f0ba // indirect
 	github.com/gabriel-vasile/mimetype v1.4.5 // indirect
@@ -27,7 +27,7 @@ require (
 	github.com/mattn/go-isatty v0.0.20 // indirect
 	github.com/yuin/goldmark v1.5.4 // indirect
 	golang.org/x/net v0.29.0 // indirect
-	golang.org/x/sys v0.25.0 // indirect
+	golang.org/x/sys v0.26.0 // indirect
 	golang.org/x/tools v0.25.0 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 )
