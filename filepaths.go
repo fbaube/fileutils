@@ -95,9 +95,10 @@ func NewFilepaths(anFP string) (*Filepaths, error) {
      // fmt.Fprintf(os.Stderr, "<%s> Abs<%t> Local<%t> Valid <%t> \n",
      //	 anFP, pFPs.GotAbs, pFPs.Local, pFPs.Valid)
      if pFPs.GotAbs {
-     	if pFPs.Valid { println("Abs is valid ?!:", anFP) } else
+     	if pFPs.Valid { println("Abs is valid ?!:", anFP) } /* else
+	// Comment this out, cos it does not help. 
 	 { println("Abs.FP is invalid, as expected:", anFP) } // ;panic("OOPS")}
-	} 
+	*/ } 
      if !(pFPs.Valid || pFPs.GotAbs) {
      	return nil, &fs.PathError{
 	       Op: "fs.ValidPath(RelFP)", Path: anFP, Err: fs.ErrInvalid }
