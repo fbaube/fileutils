@@ -56,6 +56,8 @@ func ReadDir(inpath string) ([]FSItem, error) {
      	    // NOTE this could probably be a relative path;
 	    // it might or might not add value. 
      	    pFSI, e = NewFSItem(FP.Join(theAbsPath, E))
+	    // If error, return an FSItem that
+	    // has the paths and the error.
 	    if e != nil {
 	       	 if pFSI == nil {
 		    pFSI = new(FSItem)

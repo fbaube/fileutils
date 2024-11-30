@@ -10,13 +10,13 @@ import(
 )
 
 // Filepaths shuld always have all three fields set, even if the third
-// ([ShortFP]) is basically session-specific. Note that directories
-// always have a slash (or OS sep) appended, and symlinks never should. 
+// ([ShortFP]) is tipicly session-specific. Note that directories always
+// have a slash (or OS sep) appended, and symlinks never should. 
 //
 // NOTE that the file name (aka [FP.Base], the part of the full path after
 // the last directory separator) is not stored separately: it is stored in
 // AbsFP *and* RelFP. Note also that all this path & name information
-// duplicates what is stored in an instance of orderednodes.Nord .
+// duplicates what is stored in an instance of [orderednodes.Nord] .
 // . 
 type Filepaths struct {
      // RelFP is tipicly the path given (e.g.) on the command line and is
