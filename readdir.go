@@ -8,9 +8,23 @@ import(
 	FP "path/filepath"
 )
 
+func ReadDirAsPtrs(inpath string) ([]*FSItem, error) {
+     var outp []*FSItem
+     p, e := ReadDir(inpath)
+     if p == nil || len(p) == 0 || e != nil { return outp, e }
+     for _,p2 := range p {
+     	outp = append(outp, &p2)
+	}
+     return outp, nil
+}
+
 // ReadDir returns only errors from the initial step of opening the directory.
 // An error returned on an individual directory item is attached to the item 
 // via interface [Errer].
+//
+// It might be more useful in mamny use cases to return a slice of pointers,
+// but the pattern in the stdlib is to return struct instances, not pointers.
+// .
 func ReadDir(inpath string) ([]FSItem, error) {
      if inpath == "" { return nil, errors.New("ReadDir: nil path") }
      var e error
