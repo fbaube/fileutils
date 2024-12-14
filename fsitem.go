@@ -87,8 +87,8 @@ type FSItem struct { // this has (Typed) Raw
 	Perms string 
 	// Inode and NLinks are for hard link detection. 
 	Inode, NLinks int // uint64
-	// Hash is for content change detection 
-	Hash []byte
+	// Hash is for content change detection using md5
+	Hash [16]byte
 	// Errer provides an NPE-proof error field
 	Errer
 }
