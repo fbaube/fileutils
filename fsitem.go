@@ -94,6 +94,7 @@ type FSItem struct { // this has (Typed) Raw
 }
 
 func (p *FSItem) IsDir() bool {
+     if p == nil { return false } // "should not happen", but does 
      if p.FI == nil { println("IsDir got a nil ptr") ; return false } 
      return p.FI.IsDir()
 }
