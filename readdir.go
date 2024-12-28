@@ -9,11 +9,14 @@ import(
 )
 
 func ReadDirAsPtrs(inpath string) ([]*FSItem, error) {
+     var rFSI []FSItem
      var outp []*FSItem
-     p, e := ReadDir(inpath)
-     if p == nil || len(p) == 0 || e != nil { return outp, e }
-     for _,p2 := range p {
-     	outp = append(outp, &p2)
+     rFSI, e := ReadDir(inpath)
+     if rFSI == nil || len(rFSI) == 0 || e != nil { return outp, e }
+     for _,fsi := range rFSI {
+     	var ptr *FSItem
+	ptr = &fsi
+     	outp = append(outp, ptr)
 	}
      return outp, nil
 }
