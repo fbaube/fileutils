@@ -42,7 +42,7 @@ func ReadDir(inpath string) ([]FSItem, error) {
      var theAbsPath = FPs.AbsFP
      var sAbsRel = "Rel" 
      if FPs.GotAbs { sAbsRel = "Abs" } 
-     fmt.Printf("Readdir: %s: %s Local:%t \n", inpath, sAbsRel, FPs.Local)
+     fmt.Printf("Readdir: %s: %sPath Local:%t \n", inpath, sAbsRel, FPs.Local)
      var theDir *os.File
      theDir, e = os.Open(theAbsPath)
      if e != nil {
