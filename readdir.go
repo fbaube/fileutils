@@ -13,11 +13,8 @@ func ReadDirAsPtrs(inpath string) ([]*FSItem, error) {
      var outp []*FSItem
      rFSI, e := ReadDir(inpath)
      if rFSI == nil || len(rFSI) == 0 || e != nil { return outp, e }
-  // outp = make([]*FSItem, len(rFSI))
-     for ii,fsi := range rFSI {
-     	// var ptr *FSItem
-	// ptr = &fsi
-	fmt.Printf("Appending: %d \n", ii)
+     for _,fsi := range rFSI {
+	// fmt.Printf("Appending: %d \n", ii)
      	outp = append(outp, &fsi) // ptr)
 	}
      return outp, nil
