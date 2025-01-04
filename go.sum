@@ -4,6 +4,8 @@ github.com/fbaube/contentanalysis v0.0.0-20240922163721-6efac0cb86da h1:v6qz3Xlo
 github.com/fbaube/contentanalysis v0.0.0-20240922163721-6efac0cb86da/go.mod h1:PJHYIs3tlUbfOkkFxp0yZ4kooaCpSt5ZOPaPtop/y7c=
 github.com/fbaube/ctoken v0.0.0-20240918123605-d4f3b42f3fa7 h1:YlVqJpUNNqjJMSG3UbCf9Y5/Odb45TdSwBoFcnkH9eI=
 github.com/fbaube/ctoken v0.0.0-20240918123605-d4f3b42f3fa7/go.mod h1:VLP5G7SZOXioxvEwkHQmlKEg1g0VJoAHGMcM1eWG3Xg=
+github.com/fbaube/ctoken v0.0.0-20250104140858-fbf0cb3a0eb5 h1:hvQYBP83IgzJb4RO/6QHjP37XFVb7ATrY8wjZDzmKRo=
+github.com/fbaube/ctoken v0.0.0-20250104140858-fbf0cb3a0eb5/go.mod h1:fHA5W+sZ1Z2G4suOZsm6ZE+YcOPaa/LiftC8/aFf1gU=
 github.com/fbaube/dsmnd v0.0.0-20241113194348-8bcb3be2decd h1:UQ+HjDNZF2TZF4u2rh6uTr0sp0L6v9tw2uipcluNNe0=
 github.com/fbaube/dsmnd v0.0.0-20241113194348-8bcb3be2decd/go.mod h1:YVvG9X9nrUoOtk9DEkyyk6/0vdfNcDYHNWgBwGHbcUE=
 github.com/fbaube/gtoken v0.0.0-20230421173215-d97b8767dfae h1:bd0XuJw79xcOKSj9DmxXKhM8ME3gYVl7GuYGA9yIs+s=

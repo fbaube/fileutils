@@ -6,7 +6,7 @@ toolchain go1.23.1
 
 require (
 	github.com/fbaube/contentanalysis v0.0.0-20240922163721-6efac0cb86da
-	github.com/fbaube/ctoken v0.0.0-20240918123605-d4f3b42f3fa7
+	github.com/fbaube/ctoken v0.0.0-20250104140858-fbf0cb3a0eb5
 	github.com/fbaube/dsmnd v0.0.0-20241113194348-8bcb3be2decd
 	github.com/fbaube/gtoken v0.0.0-20230421173215-d97b8767dfae
 	github.com/fbaube/humanbytes v0.0.0-20240227103335-a0b11501ad0e

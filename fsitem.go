@@ -6,6 +6,7 @@ import (
 	"io"
 	"io/fs"
 	"os"
+	"crypto/md5"
 	FP "path/filepath"
 	CT "github.com/fbaube/ctoken"
 	L "github.com/fbaube/mlog"
@@ -87,8 +88,6 @@ type FSItem struct { // this has (Typed) Raw
 	Perms string 
 	// Inode and NLinks are for hard link detection. 
 	Inode, NLinks int // uint64
-	// Hash is for content change detection using md5
-	Hash [16]byte
 	// Errer provides an NPE-proof error field
 	Errer
 }
@@ -156,7 +155,8 @@ func (p *FSItem) ResolveSymlinks() *FSItem {
 }
 
 // LoadContents reads the file (assuming it is a file) into the field
-// [TypedRaw] and quickly checks for XML and HTML5 declarations.
+// [TypedRaw], takes the hash, and quickly checks for XML and HTML5
+// declarations.
 //
 // Before proceeding it calls [Refresh], just in case.
 //
@@ -166,10 +166,10 @@ func (p *FSItem) ResolveSymlinks() *FSItem {
 // .
 func (p *FSItem) LoadContents() error {
      	var e error 
+	/*
 	// println("LoadContents: Entering!")
      	// Update the metadata (fs.FileInfo)
 	// OOPS Causes infinite recursion !!
-	/*
 	e = p.Refresh()
 	if e != nil {
 	     p.SetError(e)
@@ -177,6 +177,7 @@ func (p *FSItem) LoadContents() error {
 	     	    Op:"LoadContents.Refresh", Path:p.FPs.AbsFP, Err:e }
 	}
 	*/
+	p.Hash = *new([16]byte)
 	// println("LoadContents: chkpt 1")
 	if !p.IsFile() {
 		// No-op
@@ -227,10 +228,11 @@ func (p *FSItem) LoadContents() error {
 	bb, e = io.ReadAll(pF)
 	if e != nil {
 		return &fs.PathError{Op:"io.ReadAll",Err:e,Path:shortFP}
-	}
+	}	
 	// NOTE: 2023.03 Trimming leading whitespace and ensuring
 	// that there is a trailing newline are probably unnecessary
 	// AND unhelpful - they violate the Principle of Least Surprise.
+	// They might also conflict with digital signings. 
 	// pPI.Raw = S.TrimSpace(pPI.TypedRaw.S() + "\n")
 	// pPI.size = len(pPI.Raw)
 
@@ -242,7 +244,9 @@ func (p *FSItem) LoadContents() error {
 	// println("LoadContents: Allocating!")
 	p.TypedRaw = new(CT.TypedRaw)
 	p.Raw = CT.Raw(string(bb))
-	
+	// Take the hash and set the field.
+        p.Hash = md5.Sum(bb)
+
 	// TODO try to set CT.RawMT?
 	
 	return nil
