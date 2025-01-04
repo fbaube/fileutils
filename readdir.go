@@ -20,6 +20,23 @@ func ReadDirAsPtrs(inpath string) ([]*FSItem, error) {
      return outp, nil
 }
 
+// ReadDirAsMap assumes that file/dir names are case-sensitive. 
+func ReadDirAsMap(inpath string) (map[string]*FSItem, error) {
+     var theMap map[string]*FSItem
+     var rFSI []FSItem
+     rFSI, e := ReadDir(inpath)
+     if rFSI == nil || len(rFSI) == 0 || e != nil { return nil, e }
+     theMap = make(map[string]*FSItem)
+     var p *FSItem
+     for _,fsi := range rFSI {
+	// fmt.Printf("Appending: %d \n", ii)
+	p = new(FSItem)
+	*p = fsi
+     	theMap[fsi.FI.Name()] = p
+	}
+     return theMap, nil
+}
+
 // ReadDir returns only errors from the initial step of opening the directory.
 // An error returned on an individual directory item is attached to the item 
 // via interface [Errer].
