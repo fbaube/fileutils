@@ -177,7 +177,6 @@ func (p *FSItem) LoadContents() error {
 	     	    Op:"LoadContents.Refresh", Path:p.FPs.AbsFP, Err:e }
 	}
 	*/
-	p.Hash = *new([16]byte)
 	// println("LoadContents: chkpt 1")
 	if !p.IsFile() {
 		// No-op
@@ -245,6 +244,7 @@ func (p *FSItem) LoadContents() error {
 	p.TypedRaw = new(CT.TypedRaw)
 	p.Raw = CT.Raw(string(bb))
 	// Take the hash and set the field.
+	// p.Hash = *new([16]byte)
         p.Hash = md5.Sum(bb)
 
 	// TODO try to set CT.RawMT?
