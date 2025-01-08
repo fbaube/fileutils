@@ -34,17 +34,11 @@ type DirectoryDetails struct {
 	DirName 	string
 	DirFileInfo	fs.FileInfo
 	NamesToItems	map[string]*FSItem
-	NamesToHashes	map[string]string 		      
+	NamesToHashes	map[string]string
+	ContentfulFileCount,
+	ContentlessFileCount,
+	DirCount, MiscCount  int 
 }
-
-/*
-// shorthand
-func size(p *FSItem) int    { return int(p.FI.Size()) }
-func dirr(p *FSItem) bool   { return p.FI.IsDir() } 
-func name(p *FSItem) string { return p.FI.Name()  }
-func hascnt(p *FSItem) bool { return size(p) > 0 && !dirr(p) } 
-func hash(p *FSItem) [16]byte { return p.TypedRaw.Hash } 
-*/
 
 // ReadDirectoryDetails includes "Read" in its name because it works 
 // kinda like ReadDir: it does not recurse down into subdirectories.
@@ -76,6 +70,10 @@ func ReadDirectoryDetails(aPath string) (*DirectoryDetails, error) {
 	   return nil, nil 
 	}
 	for key,p := range pDD.NamesToItems {
+	    	if p.FI.IsDir()             { pDD.DirCount++ }  else
+		if !p.FI.Mode().IsRegular() { pDD.MiscCount++ } else
+		if 0 == int(p.FI.Size())    { pDD.ContentlessFileCount++ } else
+		     			    { pDD.ContentfulFileCount++ } 
 		e = p.LoadContents()
 		// permissions problem ? 
 		if e != nil {	return nil, &fs.PathError { 
