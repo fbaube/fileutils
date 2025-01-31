@@ -1,7 +1,7 @@
 package fileutils
 
 import (
-	"encoding/xml"
+	"github.com/nbio/xml"
 	"fmt"
 	"os"
 	"os/user"
