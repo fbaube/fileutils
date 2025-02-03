@@ -6,7 +6,7 @@ toolchain go1.23.1
 
 require (
 	github.com/fbaube/contentanalysis v0.0.0-20240922163721-6efac0cb86da
-	github.com/fbaube/ctoken v0.0.0-20250113212848-89a1656c89a4
+	github.com/fbaube/ctoken v0.0.0-20250202175820-4a3ade2fbe7c
 	github.com/fbaube/dsmnd v0.0.0-20250111125333-2b80f885bfc2
 	github.com/fbaube/gtoken v0.0.0-20230421173215-d97b8767dfae
 	github.com/fbaube/humanbytes v0.0.0-20250119091546-d58fbfdd444c
@@ -16,7 +16,7 @@ require (
 	github.com/fbaube/wasmutils v0.0.0-20231209183154-e25018375bc2
 	github.com/fbaube/xmlutils v0.0.0-20240425064631-d7c56373bd9a
 	github.com/mgutz/str v1.2.0
-	github.com/nbio/xml v0.0.0-20241216070934-4764bf75a92d
+	github.com/nbio/xml v0.0.0-20250127210239-7f9281fed8c6
 )
 
 require (
@@ -28,7 +28,7 @@ require (
 	github.com/mattn/go-colorable v0.1.14 // indirect
 	github.com/mattn/go-isatty v0.0.20 // indirect
 	github.com/yuin/goldmark v1.5.4 // indirect
-	golang.org/x/exp v0.0.0-20250106191152-7588d65b2ba8 // indirect
+	golang.org/x/exp v0.0.0-20250128182459-e0ece0dbea4c // indirect
 	golang.org/x/net v0.34.0 // indirect
 	golang.org/x/sys v0.29.0 // indirect
 	golang.org/x/tools v0.29.0 // indirect

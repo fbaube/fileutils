@@ -9,6 +9,7 @@ import (
 	"crypto/md5"
 	FP "path/filepath"
 	CT "github.com/fbaube/ctoken"
+	SU "github.com/fbaube/stringutils"
 	L "github.com/fbaube/mlog"
 )
 
@@ -178,32 +179,32 @@ func (p *FSItem) LoadContents() error {
 	}
 	*/
 	// println("LoadContents: chkpt 1")
+	var shortFP = p.FPs.ShortFP
+	if p.TypedRaw != nil {
+		L.L.Warning("pp.LoadContents: already "+
+			"loaded [%d]: %s", len(p.Raw), shortFP)
+		// println("LoadContents: already loaded")
+		// >> return nil
+	}
+	// Allocate this to prevent NPEs
+	p.TypedRaw = new(CT.TypedRaw)
 	if !p.IsFile() {
 		// No-op
 		// println("LoadContents: not a file")
+		p.TypedRaw.Raw_type = SU.Raw_type_DIRLIKE 
 		return nil
 	}
 	if p.FI.Size() == 0 {
 		// No-op
 		// println("LoadContents: file size zero")
+		p.TypedRaw.Raw_type = SU.Raw_type_NIL
 		return nil
-	}
-	// println("LoadContents: chkpt 2")
-	var shortFP = p.FPs.ShortFP
-	if p.TypedRaw != nil {
-		// No-op with warning
-		L.L.Warning("pp.LoadContents: already "+
-			"loaded [%d]: %s", len(p.Raw), shortFP)
-		// println("LoadContents: already loaded")
-		return nil
-	}
-	// println("LoadContents: chkpt 2b")
-	// Suspiciously tiny ?
-	if p.FI.Size() < 6 {
+	} else if p.FI.Size() < 6 { // Suspiciously tiny ?
 		L.L.Warning("pp.LoadContents: tiny "+
 			"file [%d]: %s", p.FI.Size(), shortFP)
+		p.TypedRaw.Raw_type = SU.Raw_type_NIL
 	}
-	// println("LoadContents: chkpt 2c")
+	// println("LoadContents: chkpt 2")
 	// If it's too big, BARF!
 	if p.FI.Size() > MAX_FILE_SIZE {
 		return &fs.PathError{Op:"FSI.LoadContents",
