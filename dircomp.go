@@ -70,10 +70,10 @@ func ReadDirectoryDetails(aPath string) (*DirectoryDetails, error) {
 	   return nil, nil 
 	}
 	for key,p := range pDD.NamesToItems {
-	    	if p.FI.IsDir()             { pDD.DirCount++ }  else
-		if !p.FI.Mode().IsRegular() { pDD.MiscCount++ } else
-		if 0 == int(p.FI.Size())    { pDD.ContentlessFileCount++ } else
-		     			    { pDD.ContentfulFileCount++ } 
+	    	if p.IsDir()             { pDD.DirCount++ }  else
+		if !p.Mode().IsRegular() { pDD.MiscCount++ } else
+		if 0 == int(p.Size())    { pDD.ContentlessFileCount++ } else
+		     			 { pDD.ContentfulFileCount++ } 
 		e = p.LoadContents()
 		// permissions problem ? 
 		if e != nil {	return nil, &fs.PathError { 
@@ -101,7 +101,7 @@ func mapNamesToHashes(inMap map[string]*FSItem) map[string]string {
 		hashAsString := hex.EncodeToString(pFSI.TypedRaw.Hash[0:15])
 		outMap[inName] = hashAsString
 		fmt.Printf("%s: len[%d] Hash:%s \n",
-			inName, pFSI.FI.Size(), hashAsString)
+			inName, pFSI.Size(), hashAsString)
 	}
  	return outMap
 }

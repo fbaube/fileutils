@@ -4,9 +4,9 @@ import "io/fs"
 
 // Errer is a struct that can be used to embed 
 // an error in another struct, when we want to 
-// execute (pointer) methods on a struct in the 
-// style of a data pipeline, i.e. chainable, and
-// executed left-to-right.
+// execute a chain of (pointer) methods on a 
+// struct in the style of a data pipeline:
+// chainable, and executed left-to-right.
 //
 // We make the error public so that it is easily
 // set, and so that we can wrap errors easily
@@ -18,7 +18,6 @@ import "io/fs"
 // NOTE that this resembles a Result type, 
 // so we would like the API to resemble
 // https://pkg.go.dev/go.bytecodealliance.org@v0.4.0/cm#Result :
-//
 //  - type Result
 //  - func (r *Result)   Err() *Err
 //  - func (r *Result) IsErr() bool

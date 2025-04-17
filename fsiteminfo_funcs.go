@@ -12,6 +12,7 @@ import (
 	"io/fs"
 	"os"
 	"fmt"
+	"time"
 )
 
 /* REF: re. interface [fs.DirEntry]:
@@ -77,18 +78,18 @@ func (p *FSItem) Refresh() error {
         pp, e := NewFSItem(crePath)
 	if pp == nil && e != nil {
 	   fmt.Fprintf(os.Stderr, "FSItem.Refresh<%s> failed: %w \n",
-	   	p.FI.Name(), e)
+	   	p.Name(), e)
 	}
 	if p.Exists != pp.Exists {
 	   fmt.Fprintf(os.Stderr, "Existence changed! (%s) \n", crePath)
 	}
-	if p.FI.Size() != pp.FI.Size() {
+	if p.Size() != pp.Size() {
 	   fmt.Printf("Size changed! (%s) %d => %d \n",
-	   	crePath, p.FI.Size(), pp.FI.Size())
+	   	crePath, p.Size(), pp.Size())
 	}
-	if !p.FI.ModTime().Equal(pp.FI.ModTime()) {
+	if !p.ModTime().Equal(pp.ModTime()) {
 	   fmt.Printf("ModTime changed! (%s) %s => %s \n",
-	   	crePath, p.FI.ModTime(), pp.FI.ModTime())
+	   	crePath, p.ModTime(), pp.ModTime())
 	}
 	*p = *pp
 	return nil
@@ -107,7 +108,7 @@ func (p *FSItem) IsFile() bool {
 // IsDirlike is, well, documented elsewhere.
 func (p *FSItem) IsDirlike() bool {
         // if !p.Exists { return false }
-	return p.FI.IsDir() || (p.FSItem_type == FSItem_type_SYML) //p.IsSymlink
+	return p.IsDir() || (p.FSItem_type == FSItem_type_SYML) //p.IsSymlink
 }
 
 // IsSymlink is a convenience function.
@@ -140,22 +141,31 @@ func (p *FSItem) isSymlink() bool {
 
 // Type implements [fs.DirEntry] by returning the [fs.FileMode].
 func (p *FSItem) Type() fs.FileMode {
-     return p.FI.Mode()
+     return p.Mode()
 }
 
+/*
 // DirEntryInfo implements [fs.DirEntry] by returning interface [fs.FileInfo].
 // This should be named Info but it collides with interface [Stringser).
 func (p *FSItem) DirEntryInfo() fs.FileInfo {
-     return p.FI
+     return p.FileInfo
 }
+*/
 
-// IsEmpty is a convenience function for files (and directories too?).
-func (p *FSItem) IsEmpty() bool {
-	return p.FI.Size() == 0 || !p.IsFile()
+// NoContents is a convenience function for files (and directories too?).
+func (p *FSItem) NoContents() bool {
+	return p.Size() == 0 || !p.IsFile()
 }
 
 // HasContents is the opposite of [IsEmpty].
 func (p *FSItem) HasContents() bool {
-	return p.IsFile() && p.FI.Size() > 0
+	return p.IsFile() && p.Size() > 0
 }
 
+func (p *FSItem) ModTime() time.Time {
+     return p.ModTime()
+}
+
+func (p *FSItem) Info() (fs.FileInfo, error) {
+     return p.Info()
+}

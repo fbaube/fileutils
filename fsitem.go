@@ -16,10 +16,28 @@ import (
 // MAX_FILE_SIZE is set (arbitrarily) to 100 megabytes
 const MAX_FILE_SIZE = 100_000_000
 
+func init() {
+     var fsi *FSItem
+     fsi = &(FSItem {})
+     var de fs.DirEntry  // ifc
+     var sr SU.Stringser // ifc
+     // var okde, oksr bool 
+     de /* ,okde */ = fs.DirEntry(fsi)
+     sr /* ,oksr */ = SU.Stringser(fsi)
+     // if ! (okde && oksr) { panic("FSItem ifc's") }
+     fmt.Printf("de<%v> sr<%d> \n", de, sr)
+}
+
 // FSItem is an item identified by a filepath (plus its contents) 
 // that we have tried to or will try to read, write, or create. It 
 // might be a directory or symlink, either of which requires further
-// processing elsewhere. In the most common usage, it is a file. 
+// processing elsewhere. In the most common usage, it is a file.
+//
+// It implements four interfaces:
+//  - [fs.FileInfo]
+//  - [fs.DirEntry]
+//  - [Errer] (actually, via an embed) 
+//  - [stringutils.Stringser]
 //
 // It might be just a path where nothing exists but we intend to do
 // something. Its filepath(s) can be empty ("") if (for example) its
@@ -61,9 +79,12 @@ const MAX_FILE_SIZE = 100_000_000
 // other hierarchical structures (like XML), but this is not explored yet.
 // .
 type FSItem struct { // this has (Typed) Raw
-     	// fi should NOT be exported, because it is relied on heavily 
-	// and updated often & carefully. 
-	FI fs.FileInfo
+     	// FIXME: Add time of last FI check 
+     	// FileInfo should be an unexported, lower case "fi", 
+	// because it is relied on heavily and updated often 
+	// and carefully; also it is implementing interfaces
+	// FileInfo, DirEntry, FSItemer.
+	fs.FileInfo
 	// FSItem_type is closely linked to FI and they
 	// should always be updated in lockstep.
 	FSItem_type
@@ -95,8 +116,8 @@ type FSItem struct { // this has (Typed) Raw
 
 func (p *FSItem) IsDir() bool {
      if p == nil { return false } // "should not happen", but does 
-     if p.FI == nil { println("IsDir got a nil ptr") ; return false } 
-     return p.FI.IsDir()
+     if p.FileInfo == nil { println("IsDir got a nil ptr") ; return false } 
+     return p.FileInfo.IsDir()
 }
 
 /*
@@ -194,22 +215,22 @@ func (p *FSItem) LoadContents() error {
 		p.TypedRaw.Raw_type = SU.Raw_type_DIRLIKE 
 		return nil
 	}
-	if p.FI.Size() == 0 {
+	if p.Size() == 0 {
 		// No-op
 		// println("LoadContents: file size zero")
 		p.TypedRaw.Raw_type = SU.Raw_type_NIL
 		return nil
-	} else if p.FI.Size() < 6 { // Suspiciously tiny ?
+	} else if p.Size() < 6 { // Suspiciously tiny ?
 		L.L.Warning("pp.LoadContents: tiny "+
-			"file [%d]: %s", p.FI.Size(), shortFP)
+			"file [%d]: %s", p.Size(), shortFP)
 		p.TypedRaw.Raw_type = SU.Raw_type_NIL
 	}
 	// println("LoadContents: chkpt 2")
 	// If it's too big, BARF!
-	if p.FI.Size() > MAX_FILE_SIZE {
+	if p.Size() > MAX_FILE_SIZE {
 		return &fs.PathError{Op:"FSI.LoadContents",
 		       Err:errors.New(fmt.Sprintf(
-		       "file too large: %d", p.FI.Size())), Path:shortFP}
+		       "file too large: %d", p.Size())), Path:shortFP}
 	}
 	// println("LoadContents: chkpt 3")
 	// Open it, just to check (and then immediately close it)

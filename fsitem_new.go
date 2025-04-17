@@ -62,7 +62,7 @@ func NewFSItem(fp string) (*FSItem, error) {
 	var pI *FSItem
 	pI = new(FSItem)
 	pI.FPs = pFPs
-	pI.FI = FI
+	pI.FileInfo = FI
 	pI.Exists = true
 
 	// This is where we set the FSItem_type,
@@ -285,11 +285,11 @@ func NewFSItemMetaFromDirEntry(de fs.DirEntry) (*FSItem, error) {
 // setFSItemType sets field [FSItem_type] based on the
 // contents of field [FI], and also returns the value. 
 func (p *FSItem) setFSItemType() FSItem_type {
-     if p.FI.IsDir() {
+     if p.IsDir() {
      	p.FSItem_type = FSItem_type_DIRR
-     } else if p.FI.Mode().IsRegular() {
+     } else if p.Mode().IsRegular() {
         p.FSItem_type = FSItem_type_FILE
-     } else if 0 != (p.FI.Mode() & fs.ModeSymlink) {
+     } else if 0 != (p.Mode() & fs.ModeSymlink) {
         p.FSItem_type = FSItem_type_SYML
      } else {
         p.FSItem_type = FSItem_type_OTHR

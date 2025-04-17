@@ -7,11 +7,11 @@ import (
 )
 
 func (p *FSItem) String() (s string) {
-     return p.Info()
+     return p.Infos()
 }
 
 func (p *FSItem) StringWithPermissions() (s string) {
-     return p.Info() + " " + p.Perms
+     return p.Infos() + " " + p.Perms
 }
 
 // ListingString prints:
@@ -31,10 +31,10 @@ func (p *FSItem) ListingString() string {
      var fstp, size, err string
      fstp = S.ToUpper(string(p.FSItem_type)) 
      // if p.IsFile() { size = fmt.Sprintf("%4d", p.FI.Size()) }
-     if p.IsFile() { size = fmt.Sprintf("%6s", HB.SizeSI(int(p.FI.Size()))) }
+     if p.IsFile() { size = fmt.Sprintf("%6s", HB.SizeSI(int(p.Size()))) }
      err = p.Error()
      return fmt.Sprintf("%s %s %s %s %s",
-     	    p.Perms, fstp, size, p.FI.Name(), err)
+     	    p.Perms, fstp, size, p.Name(), err)
 
 }
 
@@ -43,14 +43,14 @@ func (p *FSItem) Echo() string {
 	return p.FPs.AbsFP
 }
 
-// Info implements [Stringser].
-func (p *FSItem) Info() string {
+// Infos implements [Stringser].
+func (p *FSItem) Infos() string {
         var s string 
 	if p.IsFile() {
-		s = fmt.Sprintf("File[len:%d] ", p.FI.Size())
+		s = fmt.Sprintf("File[len:%d] ", p.Size())
 		// panic("DERF")
-	} else if p.FI.IsDir() {
-		s = fmt.Sprintf("Dirr[len:%d] ", p.FI.Size())
+	} else if p.IsDir() {
+		s = fmt.Sprintf("Dirr[len:%d] ", p.Size())
 	} else if p.IsSymlink() {
 		s = "Symlink "
 	} else {
@@ -62,7 +62,7 @@ func (p *FSItem) Info() string {
 
 // Debug implements [Stringser].
 func (p *FSItem) Debug() string {
-	return p.Info()
+	return p.Infos()
 }
 
 func boolstring(b bool) string {

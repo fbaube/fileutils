@@ -32,7 +32,7 @@ func ReadDirAsMap(inpath string) (map[string]*FSItem, error) {
 	// fmt.Printf("Appending: %d \n", ii)
 	p = new(FSItem)
 	*p = fsi
-     	theMap[fsi.FI.Name()] = p
+     	theMap[fsi.Name()] = p
 	}
      return theMap, nil
 }
