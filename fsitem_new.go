@@ -4,6 +4,7 @@ import (
 	"io/fs"
 	"os"
 	"fmt"
+	"time"
 	"errors"
 	"syscall"
 	// FP "path/filepath"
@@ -17,11 +18,11 @@ import (
 // which may not be the desired behavior; in such a
 // case, use NewFSItemRelativeTo (below).
 //
-// NOTE if no item exists at fp, this might be flakey,
+// NOTE: If no item exists at fp, this might be flakey,
 // but return `(nil, nil)`.
 //
 // Note that an empty path is not OK; instead create
-// an pathless FSItem from the content. 
+// a pathless FSItem from the content. 
 // .
 func NewFSItem(fp string) (*FSItem, error) {
      	var e error 
@@ -35,18 +36,18 @@ func NewFSItem(fp string) (*FSItem, error) {
 		return nil, &fs.PathError{ Op:"NewFilepaths", Path:fp, Err:e }
 	}
 	// From this point onward, field [FSItem_type] must
-	// be maintained in lockstep with field [FI].
+	// be maintained in lockstep with field [FileInfo].
 	
 	// L.L.Dbg("NewFilepaths: %#v", *pFPs)
-	var FI fs.FileInfo
+	var fi fs.FileInfo
 	// Before we can call os.Lstat, we have to strip off any trailing
 	// slash (or OS sep), cos it would make Lstat follow a symlink
 	// (which kind of defeats the whole purpose of defining it in
 	// opposition to os.Stat) 
 	pFPs.TrimPathSepSuffixes()
 	// Now we can proceed 
-	FI, e = os.Lstat(pFPs.AbsFP)
-	if FI == nil && e == nil {
+	fi, e = os.Lstat(pFPs.AbsFP)
+	if fi == nil && e == nil {
 	       	// Does not exist!
                 return nil, nil
                 }
@@ -62,8 +63,10 @@ func NewFSItem(fp string) (*FSItem, error) {
 	var pI *FSItem
 	pI = new(FSItem)
 	pI.FPs = pFPs
-	pI.FileInfo = FI
+	pI.FileInfo = fi
 	pI.Exists = true
+	// Also set the time of access
+	pI.LastCheckTime = time.Now()
 
 	// This is where we set the FSItem_type,
 	// and we want to rely on this field. 
@@ -71,11 +74,11 @@ func NewFSItem(fp string) (*FSItem, error) {
 	
 	// Now we can check for a directory, and if
 	// it is, add the trailing slashes back in
-	if FI.IsDir() {
+	if fi.IsDir() {
 	   pI.FPs.EnsurePathSepSuffixes()
 	   }
 	// Now we try to fetch the fields that might be OS-dependent
-	s, ok := FI.Sys().(*syscall.Stat_t)
+	s, ok := fi.Sys().(*syscall.Stat_t)
         if !ok {
 	       // Non-fatal error 
 	       pe := &fs.PathError{ Op:"parse fs.FileInfo", 
@@ -85,7 +88,7 @@ func NewFSItem(fp string) (*FSItem, error) {
 	       }
         var nlinks int
         nlinks = int(s.Nlink)
-        if nlinks > 1 && (FI.Mode()&fs.ModeSymlink == 0) {
+        if nlinks > 1 && (fi.Mode()&fs.ModeSymlink == 0) {
                 // The index number of this file's inode:
                 pI.Inode = int(s.Ino)
                 pI.NLinks = int(s.Nlink)
@@ -94,7 +97,7 @@ func NewFSItem(fp string) (*FSItem, error) {
         // inode, nlinks int64
 
 	var perms, world, group, yuser int 
-	perms = int(FI.Mode().Perm()) // 0777 or 0x1ff
+	perms = int(fi.Mode().Perm()) // 0777 or 0x1ff
 	world =  perms & 7
 	group = (perms >> 3) & 7
 	yuser = (perms >> 6) & 7

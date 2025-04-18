@@ -12,7 +12,7 @@ require (
 	github.com/fbaube/humanbytes v0.0.0-20250119091546-d58fbfdd444c
 	github.com/fbaube/mlog v0.0.0-20240425064535-3b89e3b28a76
 	github.com/fbaube/parseutils v0.0.0-20230622205737-06d517672cd1
-	github.com/fbaube/stringutils v0.0.0-20250203130909-339670f598f3
+	github.com/fbaube/stringutils v0.0.0-20250417165306-e5b66aefb1de
 	github.com/fbaube/wasmutils v0.0.0-20250302100751-c3d5b233f416
 	github.com/fbaube/xmlutils v0.0.0-20240425064631-d7c56373bd9a
 	github.com/mgutz/str v1.2.0

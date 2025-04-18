@@ -4,8 +4,9 @@ import (
 	"fmt"
 	"errors"
 	"io"
-	"io/fs"
 	"os"
+	"time"
+	"io/fs"
 	"crypto/md5"
 	FP "path/filepath"
 	CT "github.com/fbaube/ctoken"
@@ -79,7 +80,8 @@ func init() {
 // other hierarchical structures (like XML), but this is not explored yet.
 // .
 type FSItem struct { // this has (Typed) Raw
-     	// FIXME: Add time of last FI check 
+     	// LastCheckTime is TBS.
+	LastCheckTime time.Time 
      	// FileInfo should be an unexported, lower case "fi", 
 	// because it is relied on heavily and updated often 
 	// and carefully; also it is implementing interfaces
