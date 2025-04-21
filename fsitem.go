@@ -142,10 +142,9 @@ func (p *FSItem) ResolveSymlinks() *FSItem {
 		println("--> Symlink from:", p.FPs.AbsFP)
 		println("     resolved to:", newPath)
 		p.FPs.AbsFP = newPath
-		var e error
-		p, e = NewFSItem(newPath)
-		if e != nil {
-			panic(e)
+		p = NewFSItem(newPath)
+		if p.HasError() {
+			panic(p.GetError())
 			return nil
 		}
 		// CHECK IT

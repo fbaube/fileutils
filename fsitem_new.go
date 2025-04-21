@@ -14,53 +14,59 @@ import (
 // analyzes the object (assuming one exists) at the path.
 // This func does not load and analyse the content.
 //
-// Note that a relative path is appended to the CWD,
-// which may not be the desired behavior; in such a
-// case, use NewFSItemRelativeTo (below).
+// A relative path is appended to the CWD,
+// which may not be the desired behavior; in 
+// such case, use NewFSItemRelativeTo (below).
 //
-// NOTE: If no item exists at fp, this might be flakey,
-// but return `(nil, nil)`.
+// There is only one return value, a pointer, always non-nil. 
+// Any error to be returned is in embedded struct [Errer];
+// if there is an error, the rest of the returned struct
+// may be empty/invalid, except (probably) embedded struct
+// FPs [Filepaths]. 
 //
 // Note that an empty path is not OK; instead create
-// a pathless FSItem from the content. 
+// (by hand) a new pathless FSItem from the content. 
 // .
-func NewFSItem(fp string) (*FSItem, error) {
-     	var e error 
+func NewFSItem(fp string) *FSItem {
+     	var e error
+        var Empty *FSItem
+	Empty = &(FSItem{})
+	
      	// Check the path
      	if fp == "" {
-	   return nil, errors.New("NewFSItem: empty path")
+	   Empty.SetError(errors.New("newfsitem: empty path"))
+	   return Empty
 	   }
 	var pFPs *Filepaths
 	pFPs, e = NewFilepaths(fp)
+	Empty.FPs = pFPs
 	if e != nil {
-		return nil, &fs.PathError{ Op:"NewFilepaths", Path:fp, Err:e }
+	   Empty.SetError(&fs.PathError{ Op:"newfilepaths", Path:fp, Err:e })
+	   return Empty
 	}
-	// From this point onward, field [FSItem_type] must
-	// be maintained in lockstep with field [FileInfo].
-	
 	// L.L.Dbg("NewFilepaths: %#v", *pFPs)
-	var fi fs.FileInfo
 	// Before we can call os.Lstat, we have to strip off any trailing
 	// slash (or OS sep), cos it would make Lstat follow a symlink
 	// (which kind of defeats the whole purpose of defining it in
 	// opposition to os.Stat) 
 	pFPs.TrimPathSepSuffixes()
+
 	// Now we can proceed 
+	var fi fs.FileInfo
 	fi, e = os.Lstat(pFPs.AbsFP)
-	if fi == nil && e == nil {
-	       	// Does not exist!
-                return nil, nil
-                }
-	if e != nil {
-                if errors.Is(e, fs.ErrNotExist) {
-                        // Does not exist!
-                        return nil, nil
-                        }
-                return nil, &fs.PathError{
-		       Op:"os.Lstat", Path:pFPs.AbsFP, Err:e }
-        }
-	// Now we have valid info 
-	var pI *FSItem
+	if fi == nil || e != nil {
+                if e != nil && errors.Is(e, fs.ErrNotExist) {
+		   Empty.SetError(&fs.PathError{ Op:"os.lstat",
+		   	 Path:pFPs.AbsFP, Err:errors.New("does not exist")})
+		} else {
+		   Empty.SetError(&fs.PathError{
+			 Op:"os.lstat", Path:pFPs.AbsFP, Err:e })
+        	}
+		return Empty
+	}
+	// Now we have valid info. We can return 
+	// a valid FSItem rather than var Empty. 
+	var pI  *FSItem
 	pI = new(FSItem)
 	pI.FPs = pFPs
 	pI.FileInfo = fi
@@ -68,8 +74,7 @@ func NewFSItem(fp string) (*FSItem, error) {
 	// Also set the time of access
 	pI.LastCheckTime = time.Now()
 
-	// This is where we set the FSItem_type,
-	// and we want to rely on this field. 
+	// Set the FSItem_type, important for calling code. 
 	pI.setFSItemType()
 	
 	// Now we can check for a directory, and if
@@ -80,17 +85,20 @@ func NewFSItem(fp string) (*FSItem, error) {
 	// Now we try to fetch the fields that might be OS-dependent
 	s, ok := fi.Sys().(*syscall.Stat_t)
         if !ok {
-	       // Non-fatal error 
-	       pe := &fs.PathError{ Op:"parse fs.FileInfo", 
+	       // Non-fatal error
+	       // FIXME: This might be difficult to debug 
+	       pe := &fs.PathError{ Op:"fs.fileinfo.sys", 
 	       	      Path:pI.FPs.AbsFP, Err:errors.New(
-		     "cannot convert Stat.Sys() to syscall.Stat_t") }
+		     "cannot convert Stat.Sys() to syscall.Stat_t " +
+		     "(should NOT be fatal!)") }
 		pI.SetError(pe)
+		// Do not return, from here 
 	       }
         var nlinks int
         nlinks = int(s.Nlink)
         if nlinks > 1 && (fi.Mode()&fs.ModeSymlink == 0) {
                 // The index number of this file's inode:
-                pI.Inode = int(s.Ino)
+                pI.Inode  = int(s.Ino)
                 pI.NLinks = int(s.Nlink)
         }
         // TODO: FILE PERMS
@@ -106,7 +114,7 @@ func NewFSItem(fp string) (*FSItem, error) {
 	gg = permStr(group)
 	yu = permStr(yuser)
 	pI.Perms = fmt.Sprintf("%s,%s,%s", yu, gg, ww) 
-        return pI, nil
+        return pI 
 }
 
 func permStr(i int) string {

@@ -10,8 +10,6 @@ package fileutils
 
 import (
 	"io/fs"
-	"os"
-	"fmt"
 	"time"
 )
 
@@ -61,39 +59,6 @@ func (p *FSItemMeta) StringWithPermissions() string {
 // ========
 //  BASICS
 // ========
-
-// Refresh updates the embedded [fs.FileInfo] and checks four things: 
-// existence, item type, file size, and modification time. Details:
-//  - A file coming into existence or a file being appended to might 
-//    be common use cases.
-//  - In general, if any of the four things has changed, it writes a
-//    warning to stdout and in some cases returns an [fs.PathError].
-//  - If [Dirty] is set, some warnings do not apply.
-//  - If there is already an error, this call is ignored.
-// . 
-func (p *FSItem) Refresh() error {
-     	// Refreshable ? 
-     	if !(p.Exists && (nil != p.FPs)) { return nil }
-     	crePath := p.FPs.CreationPath()
-        pp, e := NewFSItem(crePath)
-	if pp == nil && e != nil {
-	   fmt.Fprintf(os.Stderr, "FSItem.Refresh<%s> failed: %w \n",
-	   	p.Name(), e)
-	}
-	if p.Exists != pp.Exists {
-	   fmt.Fprintf(os.Stderr, "Existence changed! (%s) \n", crePath)
-	}
-	if p.Size() != pp.Size() {
-	   fmt.Printf("Size changed! (%s) %d => %d \n",
-	   	crePath, p.Size(), pp.Size())
-	}
-	if !p.ModTime().Equal(pp.ModTime()) {
-	   fmt.Printf("ModTime changed! (%s) %s => %s \n",
-	   	crePath, p.ModTime(), pp.ModTime())
-	}
-	*p = *pp
-	return nil
-}
 
 // ===========
 //  TYPE INFO 

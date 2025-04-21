@@ -87,17 +87,9 @@ func ReadDir(inpath string) ([]FSItem, error) {
 	}
      for _, E := range entries {
      	    // NOTE this could probably be a relative path;
-	    // it might or might not add value. 
-     	    pFSI, e = NewFSItem(FP.Join(theAbsPath, E))
-	    // If error, return an FSItem that
-	    // has the paths and the error.
-	    if e != nil {
-	       	 if pFSI == nil {
-		    pFSI = new(FSItem)
-		    pFSI.FPs,_ = NewFilepaths(theAbsPath)
-		    }
-	       	 pFSI.SetError(e)
-		 }
+	    // it might or might not add value.
+	    // If error, is in embedded struct Errer.
+     	    pFSI = NewFSItem(FP.Join(theAbsPath, E))
 	    FSIs = append (FSIs, *pFSI)
      }
      return FSIs, nil

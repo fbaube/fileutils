@@ -9,14 +9,36 @@ import(
 	SU "github.com/fbaube/stringutils"
 )
 
+// Path validity and path locality are very closely related.
+
+// Notes about ValidPath, from https://pkg.go.dev/io/fs#ValidPath:
+//  - func ValidPath(name string) bool
+//  - It reports whether the given path name is valid for use in a call to Open.
+//  - Path names passed to open are UTF-8-encoded, UNROOTED (i.e. relative), 
+//    slash-separated sequences of path elements, like “x/y/z”.
+//  - Path names must not contain an element that is “.” or “..” or the empty
+//    string, except for the special case that the name "." may be used for
+//    the [local] root directory. (Maybe use func path.Clean(path string) ?)
+//  - Paths must not start or end with a slash: “/x” and “x/” are invalid.
+//  - Note that paths are slash-separated on all systems, even Windows.
+//    Paths containing other characters such as backslash and colon are
+//    accepted as valid, but those characters must never be interpreted
+//    by an FS implementation as path element separators.
+
 // Notes about Local, from https://go.dev/blog/osroot and Go API docs:
 //  - Func path/filepath.IsLocal reports whether a path is “local”,
 //    i.e. one which:
-//  - Does not escape the directory in which it is evaluated
-//    ("../etc/passwd" is not allowed);
-//  - Is not an absolute path ("/etc/passwd" is not allowed);
-//  - Is not empty ("" is not allowed);
-//  - On Windows, is not a reserved name (“COM1” is not allowed).
+//  - * Does not escape the directory in which it is evaluated
+//      ("../etc/passwd" is not allowed), i.e. it is within the
+//      subtree rooted at the directory in which path is evaluated
+//  - * Is not an absolute path ("/etc/passwd" is not allowed);
+//  - * Is not empty ("" is not allowed);
+//  - * On Windows, is not a reserved name (“COM1” is not allowed).
+//  - It use lexical processing only, i.e. it does not account for
+//    the effect of any symbolic links in the filesystem.
+//  - If IsLocal(path) returns true, then
+//  - * FP.Join(base, path) is always a path contained within base, and
+//  - * FP.Clean(path) is always an unrooted path with no ".." path elements.
 //  - Func path/filepath.Localize converts a /-separated path into
 //    a local operating system path; the input path must be a valid
 //    path as reported by io/fs.ValidPath; it returns an error if
@@ -36,21 +58,22 @@ import(
 //  - os.Root ensures that symbolic links pointing outside the root
 //    directory cannot be followed, providing additional security.
 
-// Filepaths should always have all three fields set, even if the third
-// ([ShortFP]) is tipicly session-specific. Note that directories always
-// have a slash (or OS sep) appended, and symlinks *never* should.
+
+// Filepath has three paths, and tipicly all three are set, even if the 
+// third([ShortFP]) is normally session-specific. Note that directories 
+// always have a slash (or OS sep) appended, and symlinks never should.
 //
 // Input from os.Stdin probably uses a local file to capture the input,
 // and that file will need special handling. 
 //
 // Note that the file name (aka [FP.Base], the part of the full path 
 // after the last directory separator) is not stored separately: it 
-// is stored in AbsFP *and* RelFP. Note also that all this path & 
-// name information duplicates what is stored in an instance of
+// is stored in both AbsFP and RelFP. Note also that all this path 
+// and name information duplicates what is stored in an instance of
 // [orderednodes.Nord] .
 // . 
 type Filepaths struct {
-     // RelFP is tipicly the path given (e.g.) on the command line and is
+     // RelFP is tipicly the path given (e.g.) on the command line, and is
      // useful for resolving relative paths in batches of content items.
      // The value might be valid only for the current CLI invocation or
      // user session, but it is persistable to preserve relationships
@@ -59,14 +82,14 @@ type Filepaths struct {
      // AbsFP is the authoritative field when processing individual files. 
      AbsFP string
      // GotAbs (from [path/filepath/IsAbs]) says that this struct was
-     // created using a relative FP, not an absolute FP, and so the
+     // created using an absolute FP, not a relative FP, and so the
      // field [RelFP] is calculated. 
      GotAbs bool
-     // Local (from [path/filepath/IsLocal]) is OK but not-Local might
+     // Local (from func [path/filepath/IsLocal]) is OK; not-Local might
      // be a security hole.
      Local bool
-     // Valid (from [path/filepath/ValidPath]) fails for absolute paths,
-     // but can be set to `true` for them. 
+     // Valid (from func [path/filepath/ValidPath]) fails for absolute 
+     // paths, but can be set to `true` for them. 
      Valid bool
      // ShortFP is the path shortened by using "." (CWD) or "~" (user's
      // home directory), so it might only be valid for the current CLI
@@ -82,45 +105,36 @@ func (p *Filepaths) String() string {
 
 // NewFilepaths relies on the std lib, and accepts
 // either an absolute or a relative filepath. It
-// does, however, not accept an empty filepath.
+// does not, however, accept an empty filepath.
 // 
 // It takes care to remove a trailing slash (or OS
 // sep) before calling functions in [path/filepath],
 // so that symlinks are not unintentionally followed.
 //
-// NOTE the stdlib functions called here (Valid, IsLocal)
-// do not like absolute filepaths, so it might be better
-// to call this with a relative filepath when possible. 
+// NOTE that the stdlib funcs called here (Valid, IsLocal)
+// reject absolute filepaths, so it might be better to
+// call this with a relative filepath when possible. 
 //
+// Possible error returns: input filepath is... 
+//  - empty (0-length) 
+//  - neither absolute nor [fs.ValidPath] 
+//  - failing in a call to [path/filepath.Abs] 
+// 
 // Ref: type PathError struct {	Op string Path string Err error }
 // .
 func NewFilepaths(anFP string) (*Filepaths, error) {
      var pFPs *Filepaths 
      if anFP == "" {
-     	return nil, errors.New("NewFilepaths: empty path")
+     	return nil, errors.New("newfilepaths: empty path")
 	} 
      // Normalize it ("using only lexical analysis") 
      anFP = FP.Clean(anFP)
-     // Allocate the storage now, to use the filag fields. 
+     // Allocate the storage now, to use the flag fields. 
      pFPs = new(Filepaths)
      // Validate it (altho we expect this 
      // call to fail if it is an absolute FP) 
      pFPs.Valid = fs.ValidPath(anFP)
      // Check whether it is local.
-     // func FP.IsLocal(path string) bool
-     // IsLocal reports whether path, using lexical
-     // analysis only, has all of these properties:
-     //  - is within the subtree rooted at the 
-     //    directory in which path is evaluated
-     //  - is not an absolute path
-     //  - is not empty
-     //  - on Windows, is not a reserved name such as "NUL"
-     // If IsLocal(path) returns true, then
-     //  - FP.Join(base, path) is always a path contained within base, and
-     //  - FP. Clean(path) is always an unrooted path with no ".." path elements.
-     // IsLocal is a purely lexical operation. In particular,
-     // it does not account for the effect of any symbolic
-     // links that may exist in the filesystem.
      pFPs.Local = FP.IsLocal(anFP) 
      pFPs.GotAbs = FP.IsAbs(anFP)
      // fmt.Fprintf(os.Stderr, "<%s> Abs<%t> Local<%t> Valid <%t> \n",
