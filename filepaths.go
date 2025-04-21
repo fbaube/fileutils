@@ -9,14 +9,45 @@ import(
 	SU "github.com/fbaube/stringutils"
 )
 
-// Filepaths shuld always have all three fields set, even if the third
+// Notes about Local, from https://go.dev/blog/osroot and Go API docs:
+//  - Func path/filepath.IsLocal reports whether a path is “local”,
+//    i.e. one which:
+//  - Does not escape the directory in which it is evaluated
+//    ("../etc/passwd" is not allowed);
+//  - Is not an absolute path ("/etc/passwd" is not allowed);
+//  - Is not empty ("" is not allowed);
+//  - On Windows, is not a reserved name (“COM1” is not allowed).
+//  - Func path/filepath.Localize converts a /-separated path into
+//    a local operating system path; the input path must be a valid
+//    path as reported by io/fs.ValidPath; it returns an error if
+//    the path cannot be represented by the operating system.
+//  - A program may defend against unintended symlink traversal 
+//    by using func path/filepath.EvalSymlinks to resolve links in
+//    untrusted names before validation, but this two-step process
+//    is vulnerable to TOCTOU races.
+//  - Func path/filepath.EvalSymlinks returns the path name after
+//    evaluating of any symbolic links; if path is relative, the
+//    result will be relative to the current directory, unlessc one
+//    of the components is an absolute symbolic link; EvalSymlinks
+//    calls Clean on the result.
+//  - A program that takes potentially attacker-controlled paths
+//    should almost always use filepath.IsLocal or filepath.Localize
+//    to validate or sanitize those paths.
+//  - os.Root ensures that symbolic links pointing outside the root
+//    directory cannot be followed, providing additional security.
+
+// Filepaths should always have all three fields set, even if the third
 // ([ShortFP]) is tipicly session-specific. Note that directories always
-// have a slash (or OS sep) appended, and symlinks never should. 
+// have a slash (or OS sep) appended, and symlinks *never* should.
 //
-// NOTE that the file name (aka [FP.Base], the part of the full path after
-// the last directory separator) is not stored separately: it is stored in
-// AbsFP *and* RelFP. Note also that all this path & name information
-// duplicates what is stored in an instance of [orderednodes.Nord] .
+// Input from os.Stdin probably uses a local file to capture the input,
+// and that file will need special handling. 
+//
+// Note that the file name (aka [FP.Base], the part of the full path 
+// after the last directory separator) is not stored separately: it 
+// is stored in AbsFP *and* RelFP. Note also that all this path & 
+// name information duplicates what is stored in an instance of
+// [orderednodes.Nord] .
 // . 
 type Filepaths struct {
      // RelFP is tipicly the path given (e.g.) on the command line and is

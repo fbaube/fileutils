@@ -288,14 +288,11 @@ func NewFSItemMetaFromDirEntry(de fs.DirEntry) (*FSItem, error) {
 // setFSItemType sets field [FSItem_type] based on the
 // contents of field [FI], and also returns the value. 
 func (p *FSItem) setFSItemType() FSItem_type {
-     if p.IsDir() {
-     	p.FSItem_type = FSItem_type_DIRR
-     } else if p.Mode().IsRegular() {
-        p.FSItem_type = FSItem_type_FILE
-     } else if 0 != (p.Mode() & fs.ModeSymlink) {
-        p.FSItem_type = FSItem_type_SYML
-     } else {
-        p.FSItem_type = FSItem_type_OTHR
-     }
+     if p.Mode().IsRegular() {
+     		    p.FSItem_type = FSItem_type_FILE } else
+     if p.IsDir() { p.FSItem_type = FSItem_type_DIRR } else
+     if 0 != (p.Mode() & fs.ModeSymlink) {
+     	     	    p.FSItem_type = FSItem_type_SYML } else
+		  { p.FSItem_type = FSItem_type_OTHR }
      return p.FSItem_type
 }

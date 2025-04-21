@@ -87,8 +87,8 @@ type FSItem struct { // this has (Typed) Raw
 	// and carefully; also it is implementing interfaces
 	// FileInfo, DirEntry, FSItemer.
 	fs.FileInfo
-	// FSItem_type is closely linked to FI and they
-	// should always be updated in lockstep.
+	// FSItem_type is closely linked to FileInfo and 
+	// they should always be updated in lockstep.
 	FSItem_type
 	// TypedRaw is a ptr, to allow for lazy loading.
 	*CT.TypedRaw
@@ -121,31 +121,6 @@ func (p *FSItem) IsDir() bool {
      if p.FileInfo == nil { println("IsDir got a nil ptr") ; return false } 
      return p.FileInfo.IsDir()
 }
-
-/*
-// Code4L is for TBS.
-func (p *FSItem) Code4L() string {
-        var ret string
-	if !p.Exists { ret = "!EXS:" }
-	ret = ret + FICode4L(p.FI)
-	return ret 
-	/*
-	if p.IsFile() {
-		return "FILE"
-	}
-	if p.IsDir() {
-		return "DIRR"
-	}
-	if p.IsSymlink() {
-		return "SYML"
-	}
-	if p.Exists() {
-		return "OTHR"
-	}
-	return "!EXS" // "Non-existent"
-	* /
-}
-*/
 
 // ResolveSymlinks will follow links until it finds
 // something else. NOTE that this can be a SECURITY HOLE. 

@@ -1,19 +1,12 @@
 package fileutils
 
-// FSItemInfo is an interface that extends the three other common
-// interfaces implemented by [FSItem], namely [fs.FileInfo] and
-// [fs.DirEntry] and [Stringser], and can be implemented by using 
-// only information provided by those three interfaces.
+// FSItemInfo is an interface that supplements the three
+// other common interfaces implemented by [FSItem], namely
+// [fs.FileInfo] and [fs.DirEntry] and [Stringser], and
+// can be implemented by using only information provided
+// by those three interfaces.
 //
-// FIXME: Maybe these first three sub-interfaces should just
-// be listed at struct [FSInfo] as being implemented by it;
-// its embedded [fs.FileInfo] does a lot of the work, and an
-// embedded [Errer] would also; also, don't forget interface
-// [stringutils.Stringser] too, as defined for an FSItem,
-// separate from defining Stringser for a Contentity. 
-// FSItemInfo is not really used anywhere, so [FSItem] 
-// could just have a func init that verifies that the 
-// four(!) interfaces are implemented. 
+// FSItemInfo is not really used anywhere.
 //
 // FIXME: Index into associated list of CLI directory 
 // specs that were expanded (or their ContentityFS's), 
@@ -34,21 +27,20 @@ type FSItemInfo interface {
      // IsDirty has semantics TBD. 
      // IsDirty() bool
      // 
-     // Refresh (buggy: TBS) was sposta be a simple-to-call func 
-     // to update the embedded [fs.FileInfo] and check four things:
+     // Refresh was sposta be a simple-to-call func to update 
+     // the embedded [fs.FileInfo] and check four things:
      // existence, item type, file size, modification time.
-     // However it was buggy, exhibiting unwanted recursion. Also,
-     // it is not really necessary, cos we do not envision such a
-     // dynamic system. If this func is srsly needed, try instead 
-     // to make a new instance and then compare it field-by-field
-     // to the old one.
+     // However it was buggy, exhibiting unwanted recursion. 
+     // Also, the func is not really necessary, cos we do not 
+     // envision such a dynamic system. If this func is srsly 
+     // needed, try instead to make a new instance and then 
+     // compare it field-by-field to the old one.
      // Refresh() error
 
      // TYPE INFO
 
-     // FICode4L returns one of "FILE", "DIRR", "SYML", "OTHR".
-     FICode4L() string 
-     // IsFile says whether it is a regular file. 
+     // IsFile says whether it is a regular file,
+     // i.e.. Mode().IsRegular().
      IsFile() bool
      // IsDir says whether it is a directory. It is
      // pass-thru from the embedded [fs.FileInfo].
