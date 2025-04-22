@@ -26,7 +26,8 @@ func init() {
      de /* ,okde */ = fs.DirEntry(fsi)
      sr /* ,oksr */ = SU.Stringser(fsi)
      // if ! (okde && oksr) { panic("FSItem ifc's") }
-     fmt.Printf("de<%v> sr<%d> \n", de, sr)
+     fmt.Printf("DirrEntry: %v \n", de)
+     fmt.Printf("Stringser: %v \n", sr)
 }
 
 // FSItem is an item identified by a filepath (plus its contents) 
@@ -38,7 +39,7 @@ func init() {
 //  - [fs.FileInfo]
 //  - [fs.DirEntry]
 //  - [Errer] (actually, via an embed) 
-//  - [stringutils.Stringser]
+//  - [stringutils.Stringser] (Echo, Infos, Debug)
 //
 // It might be just a path where nothing exists but we intend to do
 // something. Its filepath(s) can be empty ("") if (for example) its

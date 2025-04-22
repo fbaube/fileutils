@@ -1,6 +1,9 @@
 package fileutils
 
-import "io/fs"
+import(
+	"io/fs"
+	"errors"
+)
 
 // Errer is a struct that can be used to embed 
 // an error in another struct, when we want to 
@@ -68,6 +71,13 @@ func (p *Errer) Error() string {
 func (p *Errer) SetError(e error) {
 	p.Err = e
 	_, p.isPE = e.(*fs.PathError)
+}
+
+// SetErrorString is a convenience func.
+// .
+func (p *Errer) SetErrorString(s string) {
+	p.Err = errors.New(s)
+	p.isPE = false
 }
 
 // GetError is a convenience func because getting
