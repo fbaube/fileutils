@@ -18,14 +18,17 @@ import (
 // which may not be the desired behavior; in 
 // such case, use NewFSItemRelativeTo (below).
 //
-// There is only one return value, a pointer, always non-nil. 
-// Any error to be returned is in embedded struct [Errer];
-// if there is an error, the rest of the returned struct
-// may be empty/invalid, except (probably) embedded struct
-// FPs [Filepaths]. 
+// This func does not use [os.Root], ao its security is
+// not known. However this func does not follow symlinks:
+// it returns information about the symbolic link itself. 
 //
-// Note that an empty path is not OK; instead create
-// (by hand) a new pathless FSItem from the content. 
+// There is only one return value, a pointer, always non-nil. 
+// If there is an error to be returned is in embedded struct 
+// [Errer], and the rest of the returned struct may be empty
+// & invalid, except (probably) embedded struct FPs [Filepaths]. 
+//
+// Note that passing in an empty path is not OK; instead 
+// create (by hand) a new pathless FSItem from the content. 
 // .
 func NewFSItem(fp string) *FSItem {
      	var e error
@@ -64,7 +67,7 @@ func NewFSItem(fp string) *FSItem {
         	}
 		return Empty
 	}
-	// Now we have valid info. We can return 
+	// Now we have a valid FileInfo. We can return 
 	// a valid FSItem rather than var Empty. 
 	var pI  *FSItem
 	pI = new(FSItem)

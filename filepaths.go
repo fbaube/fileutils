@@ -118,7 +118,7 @@ func (p *Filepaths) String() string {
 // Possible error returns: input filepath is... 
 //  - empty (0-length) 
 //  - neither absolute nor [fs.ValidPath] 
-//  - failing in a call to [path/filepath.Abs] 
+//  - failing in a call to [path/filepath.Abs]
 // 
 // Ref: type PathError struct {	Op string Path string Err error }
 // .
@@ -166,7 +166,7 @@ func NewFilepaths(anFP string) (*Filepaths, error) {
 	// If there is some exotic problem with 
 	// the input path, it could surface here.
 	var e error 
-	pFPs.AbsFP, e = FP.Abs(anFP)
+	pFPs.AbsFP, e = FP.Abs(anFP) // need not be PathError 
 	if e != nil {
 	   return nil, &fs.PathError{ Op:"FP.Abs", Err:e, Path:anFP }
 	}
