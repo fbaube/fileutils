@@ -114,6 +114,13 @@ func NewFSItemSandboxed(fp string, rt os.Root) *FSItem {
 	if fi.IsDir() {
 	   pFSI.FPs.EnsurePathSepSuffixes()
 	   }
+	// If it's a symbolic link, (for now) issue a big note.
+	if pFSI.FSItem_type == FSItem_type_SYML {
+	// func (r *Root) os.Readlink(name string) (string, error)
+	   slS, slE := os.Readlink(pFSI.FPs.AbsFP)
+	   fmt.Fprintf(os.Stderr, "SYMLINK: src|%s| tgt|%s| err|%s| \n",
+	   	pFSI.FPs.AbsFP, slS, slE)
+	}
 	// Now we try to fetch the fields that might be OS-dependent
 	s, ok := fi.Sys().(*syscall.Stat_t)
         if !ok {
