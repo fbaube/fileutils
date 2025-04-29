@@ -4,13 +4,6 @@ import (
 	"fmt"
 	"os"
 	SU "github.com/fbaube/stringutils"
-/*	
-	DRS "github.com/fbaube/datarepo/sqlite"
-	"github.com/fbaube/m5cli/exec"
-	L "github.com/fbaube/mlog" // Bring in global var L
-	// mime "github.com/fbaube/fileutils/contentmime"
-	// "github.com/fbaube/tags"
-*/
 	"errors"
 	"io/fs"
 	FP "path/filepath"
@@ -40,8 +33,7 @@ func fpt(path string) string {
      rF.Close()
      return fmt.Sprintf("Path: %s \n" +
      	    "Rel:%s LV:%s%s Abs<%s:%s> Lcl<%s:%s> \n" +
-     	    "norm.Open.error: %s \n" +
-	    "root.Open.error: %s \n", 
+     	    "norm.Open.error: %s \n" + "root.Open.error: %s \n", 
      	    path, SU.Yn(!A), SU.Yn(L), SU.Yn(V), sA, eA, sL, eL, nE, rE)
 }
 
@@ -67,7 +59,7 @@ func PathDemo() {
 	println(fpt("tstat/L-file-OK"))
 	println("=> tilde")
 	println(fpt("tstat/L-tilde"))
-	// println("=> double dot:")
+	// println("=> double dot:") // panics/crashes 
 	// println(fpt("tstat/L-par-dbldot"))
 	
 }
