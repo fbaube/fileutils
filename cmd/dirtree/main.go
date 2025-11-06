@@ -13,6 +13,10 @@ var mid = []string { "/#", "/." } // incl .git, .DS_Store
 var pst = []string { "~" }
 
 func main() {
+     if len(os.Args) == 1 {
+     	println("Provide an argument")
+	os.Exit(1)
+	}
      arg := os.Args[1]
      
      FileSlc := FU.GatherDirTreeList(arg)

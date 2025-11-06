@@ -27,8 +27,9 @@ import (
 // [Errer], and the rest of the returned struct may be empty
 // & invalid, except (probably) embedded struct FPs [Filepaths]. 
 //
-// Note that passing in an empty path is not OK; instead 
-// create (by hand) a new pathless FSItem from the content. 
+// If you wish to create a blank FSItem that has no path,
+// simply use a nil ptr instead of calling this func. 
+// Passing an empty path to this func is not OK.
 // .
 func NewFSItem(fp string) *FSItem {
      	var e error
@@ -150,10 +151,7 @@ func NewFSItemFromContent(s string) (*FSItem, error) {
 
 // ==================
 
-// TODO maybe generalize
-// it to have the funcs
-//  - MustNoContent
-//  - MustBeLeaf 
+// TODO: Maybe generalize it to have the funcs MustNoContent & MustBeLeaf 
 
 /* REF: ifc fs.FileInfo
 Name() string       // base name of the item

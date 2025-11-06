@@ -27,18 +27,18 @@ func main() {
      // fmt.Printf("Mode: " + p.Type().String() + "\n")
      // fmt.Printf(p.StringWithPermissions() + "\n")
      if p.IsFile() {
-     	// p.LoadContents() 
-     	PA, e := CA.NewPathAnalysis(p)
+     	// p.LoadContents()
+     	pCA, e := CA.NewContentAnalysis(p)
 	if e != nil {
 	   println("ERROR:main:NPAerr:", e.Error())
 	   }
-	if PA == nil {
-	   println("ERROR:main:NPA PAAnil")
+	if pCA == nil {
+	   println("ERROR:main:NPA pCAnil")
 	   }
 	if p.TypedRaw == nil { 
 	   println("ERROR:mail:nil TypedRaw")
 	   }
-     	p.TypedRaw.Raw_type = PA.RawType()
+     	p.TypedRaw.Raw_type = pCA.RawType()
 	}
      fmt.Printf(p.ListingString()+ "\n")
      if p.IsSymlink() { 

@@ -14,8 +14,11 @@ import (
 	L "github.com/fbaube/mlog"
 )
 
-// MAX_FILE_SIZE is set (arbitrarily) to 100 megabytes
+// MAX_FILE_SIZE is set (arbitrarily) to 100 megabytes.
 const MAX_FILE_SIZE = 100_000_000
+// MIN_FILE_SIZE is the minimum that can be analysed for
+// MIME/content type, and is set (arbitrarily) to 6 bytes.
+const MIN_FILE_SIZE = 6
 
 func init() {
      var fsi *FSItem
@@ -34,6 +37,8 @@ func init() {
 // that we have tried to or will try to read, write, or create. It 
 // might be a directory or symlink, either of which requires further
 // processing elsewhere. In the most common usage, it is a file.
+//
+// CONTAINS RAW, in *CT.TypedRaw 
 //
 // It implements four interfaces:
 //  - [fs.FileInfo]
@@ -197,7 +202,7 @@ func (p *FSItem) LoadContents() error {
 		// println("LoadContents: file size zero")
 		p.TypedRaw.Raw_type = SU.Raw_type_NIL
 		return nil
-	} else if p.Size() < 6 { // Suspiciously tiny ?
+	} else if p.Size() < MIN_FILE_SIZE { // Suspiciously tiny ?
 		L.L.Warning("pp.LoadContents: tiny "+
 			"file [%d]: %s", p.Size(), shortFP)
 		p.TypedRaw.Raw_type = SU.Raw_type_NIL
@@ -246,7 +251,7 @@ func (p *FSItem) LoadContents() error {
 	// p.Hash = *new([16]byte)
         p.Hash = md5.Sum(bb)
 
-	// TODO try to set CT.RawMT?
+	// TODO: Try to set CT.RawMT?
 	
 	return nil
 }
