@@ -11,7 +11,7 @@ require (
 	github.com/fbaube/mlog v0.0.0-20240425064535-3b89e3b28a76
 	github.com/fbaube/parseutils v0.0.0-20230622205737-06d517672cd1
 	github.com/fbaube/stringutils v0.0.0-20251125151320-5e1c5dd007a1
-	github.com/fbaube/wasmutils v0.0.0-20251125133131-2d1ba986cea7
+	github.com/fbaube/wasmutils v0.0.0-20251129222829-80044fd986ff
 	github.com/fbaube/xmlutils v0.0.0-20240425064631-d7c56373bd9a
 	github.com/mgutz/str v1.2.0
 	github.com/nbio/xml v0.0.0-20251125030431-7a0f0bfe9935
@@ -25,10 +25,10 @@ require (
 	github.com/gabriel-vasile/mimetype v1.4.5 // indirect
 	github.com/mattn/go-colorable v0.1.14 // indirect
 	github.com/mattn/go-isatty v0.0.20 // indirect
-	github.com/yuin/goldmark v1.5.4 // indirect
+	github.com/yuin/goldmark v1.7.13 // indirect
 	golang.org/x/exp v0.0.0-20251125195548-87e1e737ad39 // indirect
 	golang.org/x/net v0.47.0 // indirect
 	golang.org/x/sys v0.38.0 // indirect
-	golang.org/x/tools v0.39.0 // indirect
+	golang.org/x/tools/godoc v0.1.0-deprecated // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 )
