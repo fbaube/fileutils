@@ -4,17 +4,17 @@ go 1.24.0
 
 require (
 	github.com/fbaube/contentanalysis v0.0.0-20240922163721-6efac0cb86da
-	github.com/fbaube/ctoken v0.0.0-20250202175820-4a3ade2fbe7c
+	github.com/fbaube/ctoken v0.0.0-20251106121702-333021124221
 	github.com/fbaube/dsmnd v0.0.0-20250421183122-a8998ca05628
 	github.com/fbaube/gtoken v0.0.0-20230421173215-d97b8767dfae
 	github.com/fbaube/humanbytes v0.0.0-20250119091546-d58fbfdd444c
 	github.com/fbaube/mlog v0.0.0-20240425064535-3b89e3b28a76
 	github.com/fbaube/parseutils v0.0.0-20230622205737-06d517672cd1
-	github.com/fbaube/stringutils v0.0.0-20250417165306-e5b66aefb1de
-	github.com/fbaube/wasmutils v0.0.0-20250302100751-c3d5b233f416
+	github.com/fbaube/stringutils v0.0.0-20251125151320-5e1c5dd007a1
+	github.com/fbaube/wasmutils v0.0.0-20251125133131-2d1ba986cea7
 	github.com/fbaube/xmlutils v0.0.0-20240425064631-d7c56373bd9a
 	github.com/mgutz/str v1.2.0
-	github.com/nbio/xml v0.0.0-20251016084110-a619c1115f34
+	github.com/nbio/xml v0.0.0-20251125030431-7a0f0bfe9935
 )
 
 require (
@@ -26,9 +26,9 @@ require (
 	github.com/mattn/go-colorable v0.1.14 // indirect
 	github.com/mattn/go-isatty v0.0.20 // indirect
 	github.com/yuin/goldmark v1.5.4 // indirect
-	golang.org/x/exp v0.0.0-20251023183803-a4bb9ffd2546 // indirect
-	golang.org/x/net v0.46.0 // indirect
-	golang.org/x/sys v0.37.0 // indirect
-	golang.org/x/tools v0.38.0 // indirect
+	golang.org/x/exp v0.0.0-20251125195548-87e1e737ad39 // indirect
+	golang.org/x/net v0.47.0 // indirect
+	golang.org/x/sys v0.38.0 // indirect
+	golang.org/x/tools v0.39.0 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 )

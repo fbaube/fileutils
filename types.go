@@ -121,7 +121,7 @@ func init() {
 	}
 	currentUserHomeDir, e = os.UserHomeDir()
 	if e != nil {
-		println("==> ERROR: Cannot determine current user's home directory")
+		println("Cannot determine current user's home directory")
 		return
 	}
 	homedir := currentUser.HomeDir
