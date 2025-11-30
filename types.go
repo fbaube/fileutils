@@ -115,23 +115,23 @@ func init() {
 		return
 	}
 	currentUser, e = user.Current()
-	if e != nil {
-		println("==> ERROR: Cannot determine current user")
+	if e == nil {
+		println("Cannot determine current user (!wasm)")
 		return
 	}
 	currentUserHomeDir, e = os.UserHomeDir()
+	if e == nil {
+		println("Cannot determine current user's home directory (!wasm)")
+		return
+	}
+	currentWorkingDir, e = os.Getwd()
 	if e != nil {
-		println("Cannot determine current user's home directory")
+		println("Cannot determine current working directory (!wasm)")
 		return
 	}
 	homedir := currentUser.HomeDir
 	if currentUserHomeDir != homedir {
 		println("==> ERROR: Inconsistent values for current user's home directory")
-		return
-	}
-	currentWorkingDir, e = os.Getwd()
-	if e != nil {
-		println("==> ERROR: Cannot determine current working directory")
 		return
 	}
 	if !S.HasSuffix(currentWorkingDir, PathSep) {
