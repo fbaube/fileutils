@@ -52,14 +52,16 @@ func ReadDir(inpath string) ([]FSItem, error) {
      // Ordinarily ´func NewFilepaths` should be called with
      // a relative filepath when possible, but here in this
      // use case it doesn't really bring any extra benefit. 
-     FPs, e = NewFilepaths(inpath)
-     if e != nil {
-     	return nil, &fs.PathError{ Op:"NewFilepaths", Path:inpath, Err:e }
+     FPs = NewFilepaths(inpath)
+     if FPs.HasError() {
+     	return nil, &fs.PathError{
+	       Op:"NewFilepaths", Path:inpath, Err:FPs.GetError() }
 	}
      var theAbsPath = FPs.AbsFP
      var sAbsRel = "Rel" 
      if FPs.GotAbs { sAbsRel = "Abs" } 
-     fmt.Printf("Readdir: %s: %sPath Local:%t \n", inpath, sAbsRel, FPs.Local)
+     fmt.Printf("Readdir: %s: %sPath Local:%t \n",
+     		inpath, sAbsRel, FPs.IsLocal)
      var theDir *os.File
      theDir, e = os.Open(theAbsPath)
      if e != nil {

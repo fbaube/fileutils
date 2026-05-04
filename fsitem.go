@@ -5,7 +5,6 @@ import (
 	"errors"
 	"io"
 	"os"
-	"time"
 	"io/fs"
 	"crypto/md5"
 	FP "path/filepath"
@@ -87,11 +86,13 @@ func init() {
 // .
 type FSItem struct { // this has (Typed) Raw
      	// LastCheckTime is TBS.
-	LastCheckTime time.Time 
+	// LastCheckTime time.Time
+
      	// FileInfo should be an unexported, lower case "fi", 
-	// because it is relied on heavily and updated often 
-	// and carefully; also it is implementing interfaces
-	// FileInfo, DirEntry, FSItemer.
+	// because it is relied on heavily (and might be updated 
+	// often and carefully); also it is implementing interfaces
+	// FileInfo, DirEntry, FSItemer. Use it as a struct and not
+	// as a ptr to struct, so as not to be shared-writable. 
 	fs.FileInfo
 	// FSItem_type is closely linked to FileInfo and 
 	// they should always be updated in lockstep.
@@ -100,8 +101,8 @@ type FSItem struct { // this has (Typed) Raw
 	*CT.TypedRaw
 	// FPs is a ptr, to allow for items that are not (yet) on disk 
 	// or are kept only in memory. Each path includes the [FP.Base].
-	// Paths are used mainly for func [Refresh] and for reproducing
-	// the tree structure of import batches; other uses TBD. 
+	// Paths are used mainly for func [Refresh] (TBD) and for repro-
+	// ducing the tree structure of import batches; other uses TBD. 
 	// 
 	// Paths follow our rules:
 	//  - a directory MUST end in a slash (or OS sep)
@@ -110,12 +111,16 @@ type FSItem struct { // this has (Typed) Raw
 	// Note that an [fs.FileInfo] does not preserve or provide path
 	// info, which is part of the motivstion for this large struct. 
 	FPs *Filepaths
-	// Exists is false when [os.Lstat] returns ´(nil, nil)´. 
-	Exists bool
-	// Dirty has semantics TBD.
-	Dirty bool
+	// Exists is false when [os.Lstat] returns ´(nil, nil)´.
+	// NOTE that this field is now in `FPs`, so `Exists` will
+	// not exist for an item that is not a filesystem item. 
+	// Exists bool
+	// Dirty has dodgy semantics TBD.
+	// Dirty bool
+	
 	// Perms is UNIX-style "rwx" user/group/world
-	Perms string 
+	Perms string
+	
 	// Inode and NLinks are for hard link detection. 
 	Inode, NLinks int // uint64
 	// Errer provides an NPE-proof error field

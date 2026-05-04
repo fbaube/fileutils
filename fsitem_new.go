@@ -3,8 +3,7 @@ package fileutils
 import (
 	"io/fs"
 	"os"
-	"fmt"
-	"time"
+	// "fmt"
 	"errors"
 	"syscall"
 	// FP "path/filepath"
@@ -23,30 +22,36 @@ import (
 // it returns information about the symbolic link itself. 
 //
 // There is only one return value, a pointer, always non-nil. 
-// If there is an error to be returned is in embedded struct 
-// [Errer], and the rest of the returned struct may be empty
-// & invalid, except (probably) embedded struct FPs [Filepaths]. 
+// If there is an error to be returned, it is in embedded 
+// struct [Errer], and the rest of the returned struct may 
+// be empty and invalid, except (maybe!) embedded struct
+// [FPs] (a [Filepaths]). 
+//
+// Note that passing in an empty path is not OK; instead
+// create (by hand) a new pathless FSItem from the content.
 //
 // If you wish to create a blank FSItem that has no path,
 // simply use a nil ptr instead of calling this func. 
 // Passing an empty path to this func is not OK.
 // .
-func NewFSItem(fp string) *FSItem {
+func NewFSItem(anFP string) *FSItem {
      	var e error
-        var Empty *FSItem
-	Empty = &(FSItem{})
-	
+	var pEmpty = new(FSItem)
      	// Check the path
-     	if fp == "" {
-	   Empty.SetError(errors.New("newfsitem: empty path"))
-	   return Empty
+     	if anFP == "" {
+	   pEmpty.SetError(errors.New("newfsitem: empty path"))
+	   return pEmpty
 	   }
-	var pFPs *Filepaths
-	pFPs, e = NewFilepaths(fp)
-	Empty.FPs = pFPs
-	if e != nil {
-	   Empty.SetError(&fs.PathError{ Op:"newfilepaths", Path:fp, Err:e })
-	   return Empty
+	   
+	var pFPs = NewFilepaths(anFP)
+	var pPE  = new(os.PathError { Path: anFP })
+	pEmpty.FPs = pFPs
+	
+	if pFPs.HasError() {
+	   pPE.Op = "newfilepaths"
+	   pPE.Err = e
+	   pEmpty.SetError(pPE)
+	   return pEmpty
 	}
 	// L.L.Dbg("NewFilepaths: %#v", *pFPs)
 	// Before we can call os.Lstat, we have to strip off any trailing
@@ -55,36 +60,39 @@ func NewFSItem(fp string) *FSItem {
 	// opposition to os.Stat) 
 	pFPs.TrimPathSepSuffixes()
 
-	// Now we can proceed 
+	// --------------------
+	//  Now we can proceed
+	// --------------------	
 	var fi fs.FileInfo
 	fi, e = os.Lstat(pFPs.AbsFP)
+	// But maybe the path does not exist !
+	//  We mark this as an error. 
 	if fi == nil || e != nil {
+		pPE.Op = "os.lstat"
+		pPE.Err = e
+		pEmpty.SetError(pPE)
                 if e != nil && errors.Is(e, fs.ErrNotExist) {
-		   Empty.SetError(&fs.PathError{ Op:"os.lstat",
-		   	 Path:pFPs.AbsFP, Err:errors.New("does not exist")})
-		} else {
-		   Empty.SetError(&fs.PathError{
-			 Op:"os.lstat", Path:pFPs.AbsFP, Err:e })
-        	}
-		return Empty
+ 		     pFPs.DoesNotExist = true 
+		} 
+		return pEmpty
 	}
-	// Now we have a valid FileInfo. We can return 
-	// a valid FSItem rather than var Empty. 
-	var pI  *FSItem
-	pI = new(FSItem)
-	pI.FPs = pFPs
-	pI.FileInfo = fi
-	pI.Exists = true
+	// Now we have a valid FileInfo. From here, on we
+        // can return  a valid FSItem rather than var Empty.
+	var pFSI  *FSItem
+	pFSI = new(FSItem)
+	pFSI.FPs = pFPs
+	pFSI.FileInfo = fi
+	// pFSI.Exists = true
 	// Also set the time of access
-	pI.LastCheckTime = time.Now()
+	// pFSI.LastCheckTime = time.Now()
 
 	// Set the FSItem_type, important for calling code. 
-	pI.setFSItemType()
+	pFSI.setFSItemType()
 	
-	// Now we can check for a directory, and if
-	// it is, add the trailing slashes back in
+	// (Now we can) Check for a directory, and if
+	// it is, add the trailing slashes back in.
 	if fi.IsDir() {
-	   pI.FPs.EnsurePathSepSuffixes()
+	   pFSI.FPs.EnsurePathSepSuffixes()
 	   }
 	// Now we try to fetch the fields that might be OS-dependent
 	s, ok := fi.Sys().(*syscall.Stat_t)
@@ -92,33 +100,25 @@ func NewFSItem(fp string) *FSItem {
 	       // Non-fatal error
 	       // FIXME: This might be difficult to debug 
 	       pe := &fs.PathError{ Op:"fs.fileinfo.sys", 
-	       	      Path:pI.FPs.AbsFP, Err:errors.New(
+	       	      Path:pFSI.FPs.AbsFP, Err:errors.New(
 		     "cannot convert Stat.Sys() to syscall.Stat_t " +
 		     "(should NOT be fatal!)") }
-		pI.SetError(pe)
+		pFSI.SetError(pe)
 		// Do not return, from here 
 	       }
         var nlinks int
         nlinks = int(s.Nlink)
         if nlinks > 1 && (fi.Mode()&fs.ModeSymlink == 0) {
                 // The index number of this file's inode:
-                pI.Inode  = int(s.Ino)
-                pI.NLinks = int(s.Nlink)
+                pFSI.Inode  = int(s.Ino)
+                pFSI.NLinks = int(s.Nlink)
         }
         // TODO: FILE PERMS
         // inode, nlinks int64
 
-	var perms, world, group, yuser int 
-	perms = int(fi.Mode().Perm()) // 0777 or 0x1ff
-	world =  perms & 7
-	group = (perms >> 3) & 7
-	yuser = (perms >> 6) & 7
-	var ww, gg, yu string
-	ww = permStr(world)
-	gg = permStr(group)
-	yu = permStr(yuser)
-	pI.Perms = fmt.Sprintf("%s,%s,%s", yu, gg, ww) 
-        return pI 
+	pFSI.Perms = permString(fi)
+	
+        return pFSI 
 }
 
 func permStr(i int) string {

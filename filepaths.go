@@ -2,6 +2,7 @@ package fileutils
 
 import(
 	"fmt"
+	"os"
 	"io/fs"
 	"errors"
 	S "strings"
@@ -13,19 +14,21 @@ import(
 
 // Notes about ValidPath, from https://pkg.go.dev/io/fs#ValidPath:
 //  - func ValidPath(name string) bool
-//  - It reports whether the given path name is valid for use in a call to Open.
+//  - It says whether the given path name is valid for use in a call to Open.
 //  - Path names passed to open are UTF-8-encoded, UNROOTED (i.e. relative), 
 //    slash-separated sequences of path elements, like “x/y/z”.
 //  - Path names must not contain an element that is “.” or “..” or the empty
 //    string, except for the special case that the name "." may be used for
 //    the [local] root directory. (Maybe use func path.Clean(path string) ?)
 //  - Paths must not start or end with a slash: “/x” and “x/” are invalid.
+//    (Note that the latter conflicts with our app's internal rules.) 
 //  - Note that paths are slash-separated on all systems, even Windows.
 //    Paths containing other characters such as backslash and colon are
 //    accepted as valid, but those characters must never be interpreted
 //    by an FS implementation as path element separators.
 
-// Notes about Local, from https://go.dev/blog/osroot and Go API docs:
+// Notes about Local (the concept is like [os.Root]), 
+// from https://go.dev/blog/osroot and Go API docs:
 //  - Func path/filepath.IsLocal reports whether a path is “local”,
 //    i.e. one which:
 //  - * Does not escape the directory in which it is evaluated
@@ -61,16 +64,22 @@ import(
 
 // Filepath has three paths, and tipicly all three are set, even if the 
 // third([ShortFP]) is normally session-specific. Note that directories 
-// always have a slash (or OS sep) appended, and symlinks never should.
+// SHOULD always have a slash (or OS sep) appended, and that symlinks
+// never should.
 //
-// Input from os.Stdin probably uses a local file to capture the input,
-// and that file will need special handling. 
+// It should execute fairly quickly, because it probably only needs
+// to read the inode, not any disk sectors containing content.
+// 
+// Input from os.Stdin will probably normally use a local file to
+// capture and store the input, and such a file needs special handling. 
 //
 // Note that the file name (aka [FP.Base], the part of the full path 
 // after the last directory separator) is not stored separately: it 
-// is stored in both AbsFP and RelFP. Note also that all this path 
-// and name information duplicates what is stored in an instance of
-// [orderednodes.Nord] .
+// is stored in both AbsFP and RelFP.
+//
+// The truth values of fields `IsExist` and `IsDir` are subject to
+// change by the actions of a caller, so it is up to the caller to
+// use and maintain the fields properly. 
 // . 
 type Filepaths struct {
      // RelFP is tipicly the path given (e.g.) on the command line, and is
@@ -81,16 +90,28 @@ type Filepaths struct {
      RelFP string
      // AbsFP is the authoritative field when processing individual files. 
      AbsFP string
-     // GotAbs (from [path/filepath/IsAbs]) says that this struct was
-     // created using an absolute FP, not a relative FP, and so the
-     // field [RelFP] is calculated. 
+     // Errer helps sometimes.
+     Errer 
+     // GotAbs (from [path/filepath/IsAbs]) says that this struct 
+     // was created using an absolute FP, not a relative FP, and 
+     // so the field [RelFP] is calculated. 
      GotAbs bool
-     // Local (from func [path/filepath/IsLocal]) is OK; not-Local might
-     // be a security hole.
-     Local bool
-     // Valid (from func [path/filepath/ValidPath]) fails for absolute 
-     // paths, but can be set to `true` for them. 
-     Valid bool
+     // DoesNotExist is made very visible. If a path does not 
+     // exist, then as noted in func `NewFilepaths`,
+     //  - the error (a `*PathError`) is put in field `Errer`
+     //  - the field `DoesNotExist` is set to `true`
+     //  - no other fields in the struct are set, including paths
+     DoesNotExist bool
+     IsDir  bool
+     IsFile  bool
+     IsSymlink bool 
+     IsDirlike bool // dir or symlink 
+     // Local (from func [path/filepath/IsLocal]) means OK; 
+     // not-Local might flag the possibility of a security hole.
+     IsLocal bool
+     // Valid (from func [path/filepath/ValidPath]) fails for 
+     // absolute paths, but can be set to `true` for them. 
+     IsValid bool
      // ShortFP is the path shortened by using "." (CWD) or "~" (user's
      // home directory), so it might only be valid for the current CLI
      // invocation or user session and it is def not persistable. 
@@ -100,54 +121,124 @@ type Filepaths struct {
 func (p *Filepaths) String() string {
      	var src = "rel"
 	if p.GotAbs { src = "abs" }
-	return fmt.Sprintf("FPs(%s)%s:%s", src, p.RelFP, p.AbsFP)
+	return fmt.Sprintf("FPs(%s)%s:%s(ex:%s,dir:%s)",
+	       src, p.RelFP, p.AbsFP, SU.Yn(
+	       !p.DoesNotExist), SU.Yn(p.IsDir))
 }
 
-// NewFilepaths relies on the std lib, and accepts
-// either an absolute or a relative filepath. It
-// does not, however, accept an empty filepath.
+// NewFilepaths turns a filesystem path into a struct with
+// abs & rel paths, and flags for existence, isaDirectory,
+// isDirlike, isaFile, isaSymlink. It relies on the std lib,
+// and accepts either an absolute or a relative filepath. It
+// does not, however, accept an empty filepath. It probably
+// accepts ".".
+//
+// NOTE that if the path does NOT exist then this func
+// returns AN ERROR but it DOES provide precise info:
+//  - it sets field [DoesNotExist] AND
+//  - it puts the error [fs.ErrNotExist] in field [Errer]
+//  - other errors that might be returned are for files 
+//    & dirs that DO exist, and they are distinguished by
+//     - [DoesNotExist] remains `false` (its zero value) AND
+//     - the field [Errer] is NOT [fs.ErrNotExist] 
 // 
-// It takes care to remove a trailing slash (or OS
-// sep) before calling functions in [path/filepath],
-// so that symlinks are not unintentionally followed.
+// Therefore a caller that doesn't necessarily expect anything to
+// be existing yet - at its target filepath - forcing an item to 
+// be created - should be ready to check that for an error return,
+// the flag field `DoesNoExist` is set, and then correctly handle
+// (and comprehend) the error. 
 //
-// NOTE that the stdlib funcs called here (Valid, IsLocal)
-// reject absolute filepaths, so it might be better to
-// call this with a relative filepath when possible. 
-//
-// Possible error returns: input filepath is... 
-//  - empty (0-length) 
+// NOTE that if HasError(), 
+//  - the error (a `*PathError`) is put in field `Errer`
+//  - no other fields in the struct are set, including paths 
+// 
+// Possible errors: input filepath is...
+//  - non-existent (or other error from `Lstat`) 
 //  - neither absolute nor [fs.ValidPath] 
 //  - failing in a call to [path/filepath.Abs]
 // 
-// Ref: type PathError struct {	Op string Path string Err error }
+// It takes care to remove a trailing slash (or OS sep)
+// before calling functions in [path/filepath], so that
+// symlinks are not unintentionally followed.
+//
+// NOTE that some of the stdlib funcs called here (`Valid`,
+// `IsLocal`) reject absolute filepaths, so it's probably 
+// better to call this with a relative filepath when possible. 
+//
+// Ref: type PathError struct {	Op string; Path string; Err error }
 // .
-func NewFilepaths(anFP string) (*Filepaths, error) {
-     var pFPs *Filepaths 
-     if anFP == "" {
-     	return nil, errors.New("newfilepaths: empty path")
-	} 
-     // Normalize it ("using only lexical analysis") 
+func NewFilepaths(anFP string) *Filepaths {
+     var pFPs *Filepaths
+     var pPE *os.PathError 
+     // Normalize the FP ("using only lexical analysis") 
      anFP = FP.Clean(anFP)
-     // Allocate the storage now, to use the flag fields. 
+     // Allocate a PathError now, just in case.
+     pPE = new(os.PathError)
+     pPE.Path = anFP
+     pPE.Op = "newfilepaths: "
+     // Allocate the storage now, so we can 
+     // use the fields `Errer` and flags.
      pFPs = new(Filepaths)
+     if anFP == "" {
+     	pFPs.SetError(errors.New("empty path"))
+     	return pFPs
+	}
+     // -----------
+     //  Let's GO!     
+     // -----------
+     // We do not want to accidentally follow symlinks. 
+     // If the path is a directory and needs a trailing 
+     // slash (or OS sep), it will be added later. 
+     pFPs.TrimPathSepSuffixes()
+     // func Lstat(name string) (FileInfo, error)
+     // returns a FileInfo describing the named file. 
+     // If the file is a symlink, the returned FileInfo 
+     // describes the symlink; Lstat does not try to 
+     // follow the link. Any error is of type *PathError.
+     pFI, e := os.Lstat(anFP)
+     if e != nil {
+	     // Do not set ANY other fields in pFPs.
+	     pPE.Op += "Lstat" 
+	     pFPs.SetError(e) 
+	     if errors.Is(e, fs.ErrNotExist) {
+		pFPs.DoesNotExist = true
+	     } 
+	     return pFPs 
+     	}
+     // ---------------------------
+     //  Basic checks using stdlib 
+     // ---------------------------
      // Validate it (altho we expect this 
      // call to fail if it is an absolute FP) 
-     pFPs.Valid = fs.ValidPath(anFP)
+     pFPs.IsValid = fs.ValidPath(anFP)
      // Check whether it is local.
-     pFPs.Local = FP.IsLocal(anFP) 
+     pFPs.IsLocal = FP.IsLocal(anFP) 
      pFPs.GotAbs = FP.IsAbs(anFP)
-     // fmt.Fprintf(os.Stderr, "<%s> Abs<%t> Local<%t> Valid <%t> \n",
-     //	 anFP, pFPs.GotAbs, pFPs.Local, pFPs.Valid)
+     // "It's an absolute path" and "It is a valid path"
+     // should be mutually exclusive. I think. 
      if pFPs.GotAbs {
-     	if pFPs.Valid { println("Abs is valid ?!:", anFP) } /* else
+     	if pFPs.IsValid { println("Abs is valid ?!:", anFP) } /* else
 	// Comment this out, cos it does not help. 
 	 { println("Abs.FP is invalid, as expected:", anFP) } // ;panic("OOPS")}
 	*/ } 
-     if !(pFPs.Valid || pFPs.GotAbs) {
-     	return nil, &fs.PathError{
-	       Op: "fs.ValidPath(RelFP)", Path: anFP, Err: fs.ErrInvalid }
+     if !(pFPs.IsValid || pFPs.GotAbs) {
+     	pPE.Op = "fs.ValidPath(RelFP)"
+	pPE.Err = fs.ErrInvalid
+	pFPs.SetError(pPE)
+	return pFPs
 	}
+     // --------------------------
+     //  Use the FileInfo in *pFI 
+     //  for setting other flags 
+     // --------------------------
+//   pFPs.IsNotExist = PathExists(string)
+     pFPs.IsFile = pFI.Mode().IsRegular() && !pFI.IsDir()
+     pFPs.IsDir  = pFI.IsDir()
+     pFPs.IsSymlink = (0 != (pFI.Mode() & os.ModeSymlink))
+     pFPs.IsDirlike = pFPs.IsDir || pFPs.IsSymlink
+     // fmt.Fprintf(os.Stderr, "<%s> Abs<%t> Local<%t> Valid <%t> \n",
+     //	 anFP, pFPs.GotAbs, pFPs.Local, pFPs.Valid)
+     
      // Maybe required somewhere near here for Windoze:
      // func Localize(path string) (string, error)
      // Localize converts a slash-separated path into an OS path.
@@ -168,16 +259,14 @@ func NewFilepaths(anFP string) (*Filepaths, error) {
 	var e error 
 	pFPs.AbsFP, e = FP.Abs(anFP) // need not be PathError 
 	if e != nil {
-	   return nil, &fs.PathError{ Op:"FP.Abs", Err:e, Path:anFP }
+	   pPE.Op = "FP.Abs"
+	   pPE.Err = e
+	   pFPs.SetError(pPE)
+	   return pFPs
 	}
      	pFPs.ShortFP = SU.Tildotted(pFPs.AbsFP)
      }
-     // Strip off any trailing slash (or OS sep), cos we do 
-     // not want func [os.Lstat] to auto-follow symlinks. If 
-     // the path is a directory and needs a traililng slash 
-     // (or OS sep), it will be added later elsewhere. 
-     pFPs.TrimPathSepSuffixes() 
-     return pFPs, nil
+     return pFPs 
 }
 
 // CreationPath is the path (abs or rel) used to create it.

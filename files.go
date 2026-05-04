@@ -83,18 +83,27 @@ func SameContents(f1, f2 *os.File) bool {
 	return true
 }
 
-// Exists returns true *iff* the file
+// FileExists returns true *iff* the file
 // exists and is in fact a file.
-func Exists(path string) bool {
+func FileExists(path string) bool {
 	fi, err := os.Lstat(path)
 	return (err == nil && fi.Mode().IsRegular())
 }
 
 // Exists returns true *iff* the file
 // exists and is in fact a file.
-func (afp AbsFilePath) Exists() bool {
+func (afp AbsFilePath) FileExists() bool {
 	fi, err := os.Lstat(afp.S())
 	return (err == nil && fi.Mode().IsRegular())
+}
+
+// PathExists returns true IFF there is a filesystem
+// item at the path (can be file or directory). 
+// Note that it is not proven/confirmed that: 
+// `Lstat` returns error IFF the item does not exist. 
+func PathExists(path string) bool {
+	_, err := os.Lstat(path)
+	return (err == nil)
 }
 
 // IsNonEmpty returns true *iff* the file exists
