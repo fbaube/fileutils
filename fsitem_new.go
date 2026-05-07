@@ -9,13 +9,13 @@ import (
 	// FP "path/filepath"
 )
 
-// NewFSItem takes a filepath (absolute or relative) and
+// NewFSObject takes a filepath (absolute or relative) and
 // analyzes the object (assuming one exists) at the path.
 // This func does not load and analyse the content.
 //
 // A relative path is appended to the CWD,
 // which may not be the desired behavior; in 
-// such case, use NewFSItemRelativeTo (below).
+// such case, use NewFSObjectRelativeTo (below).
 //
 // This func does not use [os.Root], ao its security is
 // not known. However this func does not follow symlinks:
@@ -28,15 +28,15 @@ import (
 // [FPs] (a [Filepaths]). 
 //
 // Note that passing in an empty path is not OK; instead
-// create (by hand) a new pathless FSItem from the content.
+// create (by hand) a new pathless FSObject from the content.
 //
-// If you wish to create a blank FSItem that has no path,
+// If you wish to create a blank FSObject that has no path,
 // simply use a nil ptr instead of calling this func. 
 // Passing an empty path to this func is not OK.
 // .
-func NewFSItem(anFP string) *FSItem {
+func NewFSObject(anFP string) *FSObject {
      	var e error
-	var pEmpty = new(FSItem)
+	var pEmpty = new(FSObject)
      	// Check the path
      	if anFP == "" {
 	   pEmpty.SetError(errors.New("newfsitem: empty path"))
@@ -45,7 +45,7 @@ func NewFSItem(anFP string) *FSItem {
 	   
 	var pFPs = NewFilepaths(anFP)
 	var pPE  = new(os.PathError { Path: anFP })
-	pEmpty.FPs = pFPs
+	pEmpty.FPs = *pFPs
 	
 	if pFPs.HasError() {
 	   pPE.Op = "newfilepaths"
@@ -77,18 +77,15 @@ func NewFSItem(anFP string) *FSItem {
 		return pEmpty
 	}
 	// Now we have a valid FileInfo. From here, on we
-        // can return  a valid FSItem rather than var Empty.
-	var pFSI  *FSItem
-	pFSI = new(FSItem)
-	pFSI.FPs = pFPs
+        // can return  a valid FSObject rather than var Empty.
+	var pFSI  *FSObject
+	pFSI = new(FSObject)
+	pFSI.FPs = *pFPs
 	pFSI.FileInfo = fi
 	// pFSI.Exists = true
 	// Also set the time of access
 	// pFSI.LastCheckTime = time.Now()
 
-	// Set the FSItem_type, important for calling code. 
-	pFSI.setFSItemType()
-	
 	// (Now we can) Check for a directory, and if
 	// it is, add the trailing slashes back in.
 	if fi.IsDir() {
@@ -130,24 +127,10 @@ func permStr(i int) string {
 }
 
 /*
-// NewFSItemRelativeTo simply appends a relative filepath 
-// to an absolute filepath being referenced, and then uses 
-// it to create a new FSItem. So, it's pretty dumb.
-// This func does not load & analyse the content.
-func NewFSItemRelativeTo(rfp, relTo string) (*FSItem, error) {
-	if !FP.IsAbs(relTo) {
-		return nil, &fs.PathError{Op:"fp.isRelTo.notAbs",
-		Err:errors.New("relFP must be rel to an absFP"),
-		Path:fmt.Sprintf("relFP<%s>.relTo.nonAbsFP<%s>",rfp,relTo)}
-	}
-	afp := FP.Join(relTo, rfp)
-	return NewFSItem(afp)
-}
-*/
-
-func NewFSItemFromContent(s string) (*FSItem, error) {
+func NewFSObjectFromContent(s string) (*FSObject, error) {
      return nil, nil
 }
+*/
 
 // ==================
 
@@ -174,134 +157,20 @@ Type() FileMode
 Info() (FileInfo, error)
 */
 
-/* REF: os.FileMode:
-ModeDir        // d: is a directory
-ModeAppend     // a: append-only
-ModeExclusive  // l: exclusive use
-ModeSymlink    // L: symbolic link
-ModeDevice     // D: device file
-ModeNamedPipe  // p: named pipe (FIFO)
-ModeSocket     // S: Unix domain socket
-ModeSetuid     // u: setuid
-ModeSetgid     // g: setgid
-ModeCharDevice // c: Unix char device, if also ModeDevice is set
-ModeSticky     // t: sticky
-ModeIrregular  // ?: non-regular file; nothing else is known
-*/
-
 /*
-// NewFSItemMeta replaces a call to [os.LStat]. This is necessary because
-// a call of the form NewFSItemMeta(FileInfo) won't work because an error
-// return from [os.LStat] indicates whether the file or dir (or symlink)
-// exists. However no further analysis of the path is performed in this
-// func, because that is more properly done by the caller.
-//
-// NOTE that if the file/dir does not exist, this returns (nil, nil).
-//
-// NOTE that if some fields are unavailable due to portability issues,
-// this returns (non-nil, non-nil), so the error should not be fatal.
-//
-// NOTE that by convention, directories should (welll, MUST) 
-// have a trailing path separator, and it is enforced here. 
-//
-// NOTE not 100% sure how it behaves with relative filepaths. 
-// .
-func NewFSItemMeta(inpath string) (*FSItem, error) {
-     	if inpath == "" {
-	   return nil, errors.New("NewFSItemMeta: empty path")
-	   }
-	// TODO: CHECK THAT PATH IS VALID 
-	var fi fs.FileInfo
-	var e error
-	fi, e = os.Lstat(inpath)
-	if e != nil {
-	     	if errors.Is(e, fs.ErrNotExist) {
-		   	// Does not exist!
-			return nil, nil
-			}
-		return nil, fmt.Errorf("NewFSItemMeta<%s>: %w", inpath, e)
-	}
-	return NewFSItemMetaFromFileInfo(fi)
-}
-
-func NewFSItemMetaFromFileInfo(fi fs.FileInfo) (*FSItem, error) {
-     	var e error 
-        if fi == nil {
-	   return nil, errors.New("NewFSItemMeta: empty path")
-	   }
-	p := new(FSItem)
-	p.fi = fi 
-	/*
-	Fields to set:
-	fs.FileInfo
-	path string
-	exists bool
-	modTime time.Time
-	inode, nlinks int64
-	Errer
-	* /
-	var inpath string 
-	inpath, e = FP.Abs(fi.Name())
-	// If we got this far, we now assume that the item's path is valid. 
-	// If this assumption does not hold, we be in a heap o'trouble. 
-	if e != nil {
-	     	return nil, fmt.Errorf("NewFSItemMetaFromFileInfo<%s>: %w",
-		       inpath, e)
-		}
-	// CHECK FOR "/" symlink !!
-	// Field inpath is only used internally, for func `Refresh`.
-	// Still tho, we want to enforce trailing slashes on dirs.
-	if fi.IsDir() { inpath = EnsureTrailingPathSep(inpath) }
-	
-	p.FPs, e = NewFilepaths(inpath) 
-	// If we got this far, we now assume that the item exists.
-	// If this assumption does not hold, we be in a heap o'trouble. 
-	p.Exists = true
-	s, ok := fi.Sys().(*syscall.Stat_t)
-	if !ok {
-               return p, fmt.Errorf("NewFSItemMeta: " +
-	       	      "can't convert Stat.Sys() to syscall.Stat_t: %s", inpath)
-	}
-	var nlinks int 
-	nlinks = int(s.Nlink) 
-	if nlinks > 1 && (fi.Mode()&fs.ModeSymlink == 0) {
- 	   	// The index number of this file's inode:
-		p.Inode = int(s.Ino)
-		p.NLinks = int(s.Nlink)
-	}
-	// TODO: FILE PERMS 
-	// inode, nlinks int64
-	/*
-	if fi.Name() != inpath {
-	   // NOTE false warning if they differ on trailing slash 
-	   println(fmt.Sprintf("NewFSItemMeta: path mismatch: " +
-	   	"FSitemMeta.path<%s> inpath<%s>", 
-		 fi.Name(), inpath))
-	} * /
-	return p, nil
-}
-
-func NewFSItemMetaFromDirEntry(de fs.DirEntry) (*FSItem, error) {
-     var fi fs.FileInfo
-     var e error 
-     fi, e = de.Info()
-     if e != nil {
-     	  return nil, fmt.Errorf("NewFSItemMetaFromDirEntry<%s>: %w",
-	  	 de.Name(), e)
-	  }     
-     return NewFSItemMetaFromFileInfo(fi)
-}
-
+TODO
+Change this to FSO
+Make it a func that uses the FileInfo
+Delete the field from the struct
 */
 
-// setFSItemType sets field [FSItem_type] based on the
-// contents of field [FI], and also returns the value. 
-func (p *FSItem) setFSItemType() FSItem_type {
-     if p.Mode().IsRegular() {
-     		    p.FSItem_type = FSItem_type_FILE } else
-     if p.IsDir() { p.FSItem_type = FSItem_type_DIRR } else
+// FSObjectType examines the embedded [os.FileInfo] 
+// to return a value in the set of FSO_type_* 
+func (p *FSObject) FSObjectType() FSO_type {
+     if p.Mode().IsRegular() { return FSO_type_FILE } 
+     if p.IsDir() { return FSO_type_DIRR } 
      if 0 != (p.Mode() & fs.ModeSymlink) {
-     	     	    p.FSItem_type = FSItem_type_SYML } else
-		  { p.FSItem_type = FSItem_type_OTHR }
-     return p.FSItem_type
+     	      return FSO_type_SYML } 
+     return FSO_type_OTHR 
 }
+

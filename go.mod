@@ -5,7 +5,7 @@ go 1.26.0
 require (
 	github.com/fbaube/contentanalysis v0.0.0-20240922163721-6efac0cb86da
 	github.com/fbaube/ctoken v0.0.0-20251106121702-333021124221
-	github.com/fbaube/dsmnd v0.0.0-20250421183122-a8998ca05628
+	github.com/fbaube/dsmnd v0.0.0-20260423181020-c1c848686981
 	github.com/fbaube/gtoken v0.0.0-20230421173215-d97b8767dfae
 	github.com/fbaube/humanbytes v0.0.0-20250119091546-d58fbfdd444c
 	github.com/fbaube/mlog v0.0.0-20240425064535-3b89e3b28a76
@@ -24,7 +24,7 @@ require (
 	github.com/fbaube/miscutils v0.0.0-20250126181629-6a2fa9af43b7 // indirect
 	github.com/gabriel-vasile/mimetype v1.4.5 // indirect
 	github.com/mattn/go-colorable v0.1.14 // indirect
-	github.com/mattn/go-isatty v0.0.21 // indirect
+	github.com/mattn/go-isatty v0.0.22 // indirect
 	github.com/yuin/goldmark v1.7.13 // indirect
 	golang.org/x/exp v0.0.0-20260410095643-746e56fc9e2f // indirect
 	golang.org/x/net v0.47.0 // indirect

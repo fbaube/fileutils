@@ -116,6 +116,9 @@ type Filepaths struct {
      // home directory), so it might only be valid for the current CLI
      // invocation or user session and it is def not persistable. 
      ShortFP string
+     // ContentInMemoryIsDirty signifies that a program has updated 
+     // the content but that it has not been written out to disk. 
+     ContentInMemoryIsDirty bool
 }
 
 func (p *Filepaths) String() string {

@@ -33,7 +33,7 @@ import (
 type DirectoryDetails struct {
 	DirName 	string
 	DirFileInfo	fs.FileInfo
-	NamesToItems	map[string]*FSItem
+	NamesToItems	map[string]*FSObject
 	NamesToHashes	map[string]string
 	ContentfulFileCount,
 	ContentlessFileCount,
@@ -74,7 +74,7 @@ func ReadDirectoryDetails(aPath string) (*DirectoryDetails, error) {
 		if !p.Mode().IsRegular() { pDD.MiscCount++ } else
 		if 0 == int(p.Size())    { pDD.ContentlessFileCount++ } else
 		     			 { pDD.ContentfulFileCount++ } 
-		e = p.LoadContents()
+		_, e = p.Contents()
 		// permissions problem ? 
 		if e != nil {	return nil, &fs.PathError { 
 			Op: "fu.readdirdetails.loadcontents",
@@ -90,11 +90,11 @@ func ReadDirectoryDetails(aPath string) (*DirectoryDetails, error) {
 	return pDD, nil 
 }
 
-func mapNamesToHashes(inMap map[string]*FSItem) map[string]string {
+func mapNamesToHashes(inMap map[string]*FSObject) map[string]string {
 	var  outMap   map[string]string
 	outMap = make(map[string]string)
 	for inName,pFSI := range inMap {
-		if pFSI == nil { fmt.Printf("nil *FSItem: %s \n",
+		if pFSI == nil { fmt.Printf("nil *FSObject: %s \n",
 			inName); continue  }
 		if pFSI.TypedRaw == nil { fmt.Printf("no Raw: %s \n",
 			inName); continue  }

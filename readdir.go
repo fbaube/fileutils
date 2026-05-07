@@ -1,3 +1,4 @@
+
 package fileutils
 
 import(
@@ -8,9 +9,9 @@ import(
 	FP "path/filepath"
 )
 
-func ReadDirAsPtrs(inpath string) ([]*FSItem, error) {
-     var rFSI []FSItem
-     var outp []*FSItem
+func ReadDirAsPtrs(inpath string) ([]*FSObject, error) {
+     var rFSI []FSObject
+     var outp []*FSObject
      rFSI, e := ReadDir(inpath)
      if rFSI == nil || len(rFSI) == 0 || e != nil { return outp, e }
      for _,fsi := range rFSI {
@@ -21,16 +22,16 @@ func ReadDirAsPtrs(inpath string) ([]*FSItem, error) {
 }
 
 // ReadDirAsMap assumes that file/dir names are case-sensitive. 
-func ReadDirAsMap(inpath string) (map[string]*FSItem, error) {
-     var theMap map[string]*FSItem
-     var rFSI []FSItem
+func ReadDirAsMap(inpath string) (map[string]*FSObject, error) {
+     var theMap map[string]*FSObject
+     var rFSI []FSObject
      rFSI, e := ReadDir(inpath)
      if rFSI == nil || len(rFSI) == 0 || e != nil { return nil, e }
-     theMap = make(map[string]*FSItem)
-     var p *FSItem
+     theMap = make(map[string]*FSObject)
+     var p *FSObject
      for _,fsi := range rFSI {
 	// fmt.Printf("Appending: %d \n", ii)
-	p = new(FSItem)
+	p = new(FSObject)
 	*p = fsi
      	theMap[fsi.Name()] = p
 	}
@@ -44,7 +45,7 @@ func ReadDirAsMap(inpath string) (map[string]*FSItem, error) {
 // It might be more useful in mamny use cases to return a slice of pointers,
 // but the pattern in the stdlib is to return struct instances, not pointers.
 // .
-func ReadDir(inpath string) ([]FSItem, error) {
+func ReadDir(inpath string) ([]FSObject, error) {
      if inpath == "" { return nil, errors.New("ReadDir: nil path") }
      var e error
      // Check the path
@@ -68,7 +69,7 @@ func ReadDir(inpath string) ([]FSItem, error) {
      	  return nil, &fs.PathError{ Op:"Open", Path:theAbsPath, Err:e }
 	  }
      // [fs.FileInfo] and [fs.DirEntry] are useless as arguments 
-     // to [NewFSItem], because they do not have path information.
+     // to [NewFSObject], because they do not have path information.
      // Therefore we use this instead:
      //   func (f *File) Readdirnames(n int) (names []string, err error)
      // Readdirnames reads the contents of the directory associated with
@@ -81,8 +82,8 @@ func ReadDir(inpath string) ([]FSItem, error) {
      //  - If it encounters an error before the end of the directory,
      //    it returns the names read until that point and a non-nil error.
      var entries []string
-     var FSIs []FSItem
-     var pFSI  *FSItem
+     var FSIs []FSObject
+     var pFSI  *FSObject
      entries, e = theDir.Readdirnames(-1)
      if e != nil {
      	return nil, &fs.PathError{ Op: "Readdirnames", Path:theAbsPath, Err:e }
@@ -91,7 +92,7 @@ func ReadDir(inpath string) ([]FSItem, error) {
      	    // NOTE this could probably be a relative path;
 	    // it might or might not add value.
 	    // If error, is in embedded struct Errer.
-     	    pFSI = NewFSItem(FP.Join(theAbsPath, E))
+     	    pFSI = NewFSObject(FP.Join(theAbsPath, E))
 	    FSIs = append (FSIs, *pFSI)
      }
      return FSIs, nil

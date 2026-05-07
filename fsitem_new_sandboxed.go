@@ -32,7 +32,7 @@ links in the directory name. If there is an error, it
 will be of type *PathError.
 */
 
-// NewFSItemInRoot takes a filepath (absolute or relative) 
+// NewFSObjectInRoot takes a filepath (absolute or relative) 
 // and analyzes the object (assuming one exists) at the 
 // path. This func does not load and analyse the content.
 //
@@ -54,15 +54,15 @@ will be of type *PathError.
 // [FPs] (a [Filepaths]). 
 //
 // Note that passing in an empty path is not OK; instead 
-// create (by hand) a new pathless FSItem from the content. 
+// create (by hand) a new pathless FSObject from the content. 
 //
-// If you wish to create a blank FSItem that has no path,
+// If you wish to create a blank FSObject that has no path,
 // simply use a nil ptr instead of calling this func.
 // Passing an empty path to this func is not OK.
 // .
-func NewFSItemSandboxed(anFP string, aRoot os.Root) *FSItem {
+func NewFSObjectSandboxed(anFP string, aRoot os.Root) *FSObject {
      	var e error
-        var pEmpty = new(FSItem)
+        var pEmpty = new(FSObject)
      	// Check the path
      	if anFP == "" {
 	   pEmpty.SetError(errors.New("newfsitem: empty path"))
@@ -72,7 +72,7 @@ func NewFSItemSandboxed(anFP string, aRoot os.Root) *FSItem {
 
 	var pFPs = NewFilepaths(anFP)
 	var pPE  = new(os.PathError { Path: anFP })
-	pEmpty.FPs = pFPs
+	pEmpty.FPs = *pFPs
 	
 	if pFPs.HasError() {
 	   pPE.Op = "newfilepaths"
@@ -103,18 +103,15 @@ func NewFSItemSandboxed(anFP string, aRoot os.Root) *FSItem {
                 return pEmpty
         }
 	// Now we have a valid FileInfo. From here, on we 
-	// can return  a valid FSItem rather than var Empty. 
-	var pFSI  *FSItem
-	pFSI = new(FSItem)
-	pFSI.FPs = pFPs
+	// can return  a valid FSObject rather than var Empty. 
+	var pFSI  *FSObject
+	pFSI = new(FSObject)
+	pFSI.FPs = *pFPs
 	pFSI.FileInfo = fi
 	// pFSI.Exists = true
 	// Also set the time of access
 	// pFSI.LastCheckTime = time.Now()
 
-	// Set the FSItem_type, important for calling code. 
-	pFSI.setFSItemType()
-	
 	// (Now we can) Check for a directory, and if
 	// it is, add the trailing slashes back in. 
 	if fi.IsDir() {
@@ -122,7 +119,7 @@ func NewFSItemSandboxed(anFP string, aRoot os.Root) *FSItem {
 	   }
 	// ----------------------------------------------
 	// If it's a symlink, (for now) issue a big note.
-	if pFSI.FSItem_type == FSItem_type_SYML {
+	if pFSI.FSO_type == FSO_type_SYML {
 	// func (r *Root) os.Readlink(name string) (string, error)
 	   slS, slE := os.Readlink(pFSI.FPs.AbsFP)
 	   fmt.Fprintf(os.Stderr, "SYMLINK: src|%s| tgt|%s| err|%s| \n",

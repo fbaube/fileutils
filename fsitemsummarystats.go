@@ -1,13 +1,13 @@
 package fileutils
 
-// FSItemSummaryStats is so that NrItems equals the sum of
+// FSObjectSummaryStats is so that NrItems equals the sum of
 // NrDirs + NrFiles + NrSymLs + NrMiscs; NrErrors is independent.
-type FSItemSummaryStats struct {
+type FSObjectSummaryStats struct {
      NrItems, NrDirs, NrFiles, NrSymLs, NrMiscs, NrErrors int
 }
 
 /*
-func (pSS *FSItemSummaryStats) AddIn(pI *FSItem) {
+func (pSS *FSObjectSummaryStats) AddIn(pI *FSObject) {
 	if pFSI.IsDir() {
                 if pFSI.TypedRaw == nil {
                    pFSI.TypedRaw = new(CT.TypedRaw)

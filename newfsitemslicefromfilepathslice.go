@@ -8,8 +8,8 @@ import (
 	CT "github.com/fbaube/ctoken"
 )
 
-// NewFSItemSliceFromFilepathSlice creates a [*FSItem] for every input string,
-// and itself has no error return value, because FSItem implements [Errer], so
+// NewFSObjectSliceFromFilepathSlice creates a [*FSObject] for every input string,
+// and itself has no error return value, because FSObject implements [Errer], so
 // that every entry is non-nil and either is valid or has its own error message.
 //
 // It does tho also return summary statistics, so that is is easy to 
@@ -22,14 +22,14 @@ import (
 // Accumulated NewContentity errors are counted
 // in the field CotentityFS.nErrors 
 // .
-func NewFSItemSliceFromFilepathSlice(FPs [] string) ([]*FSItem, *FSItemSummaryStats) {
-	var FSIs []*FSItem
-	var pFSS = new(FSItemSummaryStats)
+func NewFSObjectSliceFromFilepathSlice(FPs [] string) ([]*FSObject, *FSObjectSummaryStats) {
+	var FSIs []*FSObject
+	var pFSS = new(FSObjectSummaryStats)
 
 	for _, sFP := range FPs {
-	    pFSI := NewFSItem(sFP)
+	    pFSI := NewFSObject(sFP)
 	    FSIs = append(FSIs, pFSI)
-	    // Categorise the FSItem (file, dir, wotev).
+	    // Categorise the FSObject (file, dir, wotev).
 	    // Note the hacks to TypedRaw.
 	    if pFSI.IsDir() {
                 if pFSI.TypedRaw == nil {
@@ -57,11 +57,11 @@ func NewFSItemSliceFromFilepathSlice(FPs [] string) ([]*FSItem, *FSItemSummarySt
 	      if pFSI.IsDir() && !S.HasSuffix(sFP, "/") {
 	   // Make sure a dir has a trailing slash (assumed as path separator)
 	   // inPath = FU.EnsureTrailingPathSep(inPath)
-	      panic("Missing trlg path sep in NewFSItemSliceFromFilepathSlice")
+	      panic("Missing trlg path sep in NewFSObjectSliceFromFilepathSlice")
 	    }
 	}
 	if len(FSIs) != len(FPs) {
-	   panic("Mismatched lengths in NewFSItemSliceFromFilepathSlice")
+	   panic("Mismatched lengths in NewFSObjectSliceFromFilepathSlice")
 	}
 	return FSIs, pFSS
 }

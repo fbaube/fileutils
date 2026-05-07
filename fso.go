@@ -7,7 +7,6 @@ import (
 	"os"
 	"io/fs"
 	"crypto/md5"
-	FP "path/filepath"
 	CT "github.com/fbaube/ctoken"
 	SU "github.com/fbaube/stringutils"
 	L "github.com/fbaube/mlog"
@@ -20,19 +19,23 @@ const MAX_FILE_SIZE = 100_000_000
 const MIN_FILE_SIZE = 6
 
 func init() {
-     var fsi *FSItem
-     fsi = &(FSItem {})
+     var fso *FSObject
+     fso = &(FSObject {})
      var de fs.DirEntry  // ifc
      var sr SU.Stringser // ifc
      // var okde, oksr bool 
-     de /* ,okde */ = fs.DirEntry(fsi)
-     sr /* ,oksr */ = SU.Stringser(fsi)
-     // if ! (okde && oksr) { panic("FSItem ifc's") }
+     de /* ,okde */ = fs.DirEntry(fso)
+     sr /* ,oksr */ = SU.Stringser(fso)
+     // if ! (okde && oksr) { panic("FSObject ifc's") }
      fmt.Printf("DirrEntry: %v \n", de)
      fmt.Printf("Stringser: %v \n", sr)
 }
 
-// FSItem is an item identified by a filepath (plus its contents) 
+// func (p *FSObject) Echo()  string { return "ECHO" }
+// func (p *FSObject) Infos() string { return "INFOS" }
+// func (p *FSObject) Debug() string { return "DEBUG" }
+
+// FSObject is an item identified by a filepath (plus its contents) 
 // that we have tried to or will try to read, write, or create. It 
 // might be a directory or symlink, either of which requires further
 // processing elsewhere. In the most common usage, it is a file.
@@ -57,14 +60,14 @@ func init() {
 // the AbsFP *and* the RelFP. Note also that this path & name information
 // duplicates what is stored in an instance of orderednodes.Nord . 
 //
-// NOTE that it embeds an [fs.FileInfo], and implements interfaces [FSItemer],
+// NOTE that it embeds an [fs.FileInfo], and implements interfaces [FSObjecter],
 // [fs.FileInfo], and [fs.DirEntry]), and contains basic file system metadata
 // PLUS the path to the item (whicih FIleInfo does not contain) AND the item
 // contents (but only after lazy loading). The `FileInfo` is the results of
 // a call to [os.LStat]/[fs.Lstat] (or perhaps alternatively the contents
 // of a record in sqlar or zip), parsed.
 // 
-// FSItem is embedded in struct [datarepo/rowmodels/ContentityRow].
+// FSObject is embedded in struct [datarepo/rowmodels/ContentityRow].
 //
 // This struct is rather large and all-encompassing, but this follows from
 // certain design decisions and certain behavior in the stahdard library.
@@ -84,163 +87,148 @@ func init() {
 // This struct might be somehow applicable to non-file FS nodes and also
 // other hierarchical structures (like XML), but this is not explored yet.
 // .
-type FSItem struct { // this has (Typed) Raw
+type FSObject struct { // this has (Typed) Raw
      	// LastCheckTime is TBS.
 	// LastCheckTime time.Time
 
-     	// FileInfo should be an unexported, lower case "fi", 
-	// because it is relied on heavily (and might be updated 
-	// often and carefully); also it is implementing interfaces
-	// FileInfo, DirEntry, FSItemer. Use it as a struct and not
-	// as a ptr to struct, so as not to be shared-writable. 
-	fs.FileInfo
-	// FSItem_type is closely linked to FileInfo and 
-	// they should always be updated in lockstep.
-	FSItem_type
-	// TypedRaw is a ptr, to allow for lazy loading.
+	// TypedRaw is an outlier, because it is the only 
+	// field in this struct that cannot be deduced from 
+	// the FileInfo. Therefore it is a candidate to be
+	// removed. It is a ptr, to allow for lazy loading.
 	*CT.TypedRaw
-	// FPs is a ptr, to allow for items that are not (yet) on disk 
-	// or are kept only in memory. Each path includes the [FP.Base].
-	// Paths are used mainly for func [Refresh] (TBD) and for repro-
-	// ducing the tree structure of import batches; other uses TBD. 
+	
+     	// FileInfo implements interfaces [os.FileInfo] and [fs.DirEntry].
+	// It should probably be an unexported, lower case "fi", because
+	// its integrity is relied on heavily. We use it as a struct and 
+	// not as a ptr-to-struct, so that (a) it is not shared-writable,
+	// and (b) there is no chance of a NPE. Each path includes the
+	// [FP.Base].
+	fs.FileInfo
+	// FSO_type is closely linked to FileInfo and 
+	// they should always be updated in lockstep.
+	FSO_type
+	// FPs has abs & rel paths, and an indicator of which was used to
+	// instantiate it. We use it as a struct and not as a ptr-to-struct,
+	// so that it is not shared-writable, and so that there is no chance
+	// of a NPE.
 	// 
 	// Paths follow our rules:
 	//  - a directory MUST end in a slash (or OS sep)
 	//  - a symlink MUST NOT end in a slash (or OS sep)
 	// 
-	// Note that an [fs.FileInfo] does not preserve or provide path
-	// info, which is part of the motivstion for this large struct. 
-	FPs *Filepaths
-	// Exists is false when [os.Lstat] returns ´(nil, nil)´.
-	// NOTE that this field is now in `FPs`, so `Exists` will
-	// not exist for an item that is not a filesystem item. 
-	// Exists bool
-	// Dirty has dodgy semantics TBD.
-	// Dirty bool
-	
+	// Note that an [fs.FileInfo] does not preserve or provide path 
+	// info, which is part of the motivstion for this too-large struct. 
+	FPs Filepaths
+
 	// Perms is UNIX-style "rwx" user/group/world
-	Perms string
-	
+	Perms string	
 	// Inode and NLinks are for hard link detection. 
 	Inode, NLinks int // uint64
 	// Errer provides an NPE-proof error field
 	Errer
 }
 
-func (p *FSItem) IsDir() bool {
-     if p == nil { return false } // "should not happen", but does 
-     if p.FileInfo == nil { println("IsDir got a nil ptr") ; return false } 
-     return p.FileInfo.IsDir()
-}
-
-// ResolveSymlinks will follow links until it finds
-// something else. NOTE that this can be a SECURITY HOLE. 
-func (p *FSItem) ResolveSymlinks() *FSItem {
-	if !p.IsSymlink() {
-		return nil
-	}
-	var newPath string
-	var e error
-	for p.IsSymlink() {
-		// func os.Readlink(pathname string) (string, error)
-		// func FP.EvalSymlinks(path string) (string, error)
-		newPath, e = FP.EvalSymlinks(p.FPs.AbsFP)
-		if e != nil {
-			L.L.Error("fu.RslvSymLx <%s>: %s", p.FPs.AbsFP, e.Error())
-			// p.SetError(fmt.Errorf("fu.RslvSymLx <%s>: %w", p.FPs.AbsFP, e))
-			return nil
-		}
-		println("--> Symlink from:", p.FPs.AbsFP)
-		println("     resolved to:", newPath)
-		p.FPs.AbsFP = newPath
-		p = NewFSItem(newPath)
-		if p.HasError() {
-			panic(p.GetError())
-			return nil
-		}
-		// CHECK IT
-	}
-	return p
-}
-
-// LoadContents reads the file (assuming it is a file) into the field
-// [TypedRaw], takes the hash, and quickly checks for XML and HTML5
-// declarations.
+// Contents returns a file's contents. It first 
+// lazy-loads the file into field [TypedRaw] IFF
+//  - it IS a file, and 
+//  - it has not been read in yet
+// and then it
+//  - calculates & stores file file's hash, and 
+//  - quickly checks for XML and HTML5 declarations
 //
-// Before proceeding it calls [Refresh], just in case.
+// Contents should always be fresh, even when files
+// are active, so we first fetch a new [os.FileInfo]
+// to check for changes. If no changes are indicated,
+// and the content has not been changed programmatically
+// (check flag [ContentIsDirty]), do a fast return.
+// 
+// It is tolerant about non-files, non-existent 
+// objects, and empty files, returning nil error.
 //
-// It is tolerant about non-files, and empty files,returning nil for error.
-//
-// NOTE the call to [os.Open] defaults to R/W mode, altho R/O might suffice.
+// NOTE The call to [os.Open] defaults to R/W mode,
+// even tho R/O might often suffice.
 // .
-func (p *FSItem) LoadContents() error {
-     	var e error 
-	/*
-	// println("LoadContents: Entering!")
-     	// Update the metadata (fs.FileInfo)
-	// OOPS Causes infinite recursion !!
-	e = p.Refresh()
-	if e != nil {
-	     p.SetError(e)
-	     return &fs.PathError{
-	     	    Op:"LoadContents.Refresh", Path:p.FPs.AbsFP, Err:e }
+func (p *FSObject) Contents() (string, error) {
+	// Exists ?
+	if p.FPs.DoesNotExist {
+	   return "", fmt.Errorf("fso.contents(%s): %w", os.ErrNotExist) 
 	}
-	*/
-	// println("LoadContents: chkpt 1")
-	var shortFP = p.FPs.ShortFP
-	if p.TypedRaw != nil {
-		L.L.Warning("pp.LoadContents: already "+
-			"loaded [%d]: %s", len(p.Raw), shortFP)
-		// println("LoadContents: already loaded")
-		// >> return nil
-	}
-	// Allocate this to prevent NPEs
-	p.TypedRaw = new(CT.TypedRaw)
+	// Not a file ? 
 	if !p.IsFile() {
-		// No-op
-		// println("LoadContents: not a file")
-		p.TypedRaw.Raw_type = SU.Raw_type_DIRLIKE 
-		return nil
+	   	// p.TypedRaw.Raw_type =  SU.Raw_type_DIRLIKE
+		// if p.IsDir() { p.TypedRaw.Raw_type = SU.Raw_type_DIR }
+		return "", nil
 	}
+     	var e error
+	var hasChanged bool 
+	var newFI os.FileInfo
+	var shortFP = p.FPs.ShortFP
+
+	// Get a fresh FileInfo
+	newFI, e = os.Lstat(p.FPs.AbsFP)
+	if e != nil {
+	   return "", fmt.Errorf("fso.contents(%s): %w", p.FPs.AbsFP, e)
+	}
+	// The content has previously been fetched
+	// but the object has changed somehow ? 
+	if p.FPs.ContentInMemoryIsDirty ||
+	  (p.FileInfo.ModTime() != newFI.ModTime() &&
+	  !p.FileInfo.ModTime().IsZero()) {
+	   p.FileInfo = newFI
+	   hasChanged = true	   
+	}
+	// If the object hasn't changed and we
+	// already have the contents, return now
+	if p.TypedRaw != nil && !hasChanged {
+		return p.TypedRaw.S(), nil
+	}
+	// Allocate this now to prevent NPEs
+	p.TypedRaw = new(CT.TypedRaw)
+	
 	if p.Size() == 0 {
-		// No-op
-		// println("LoadContents: file size zero")
-		p.TypedRaw.Raw_type = SU.Raw_type_NIL
-		return nil
-	} else if p.Size() < MIN_FILE_SIZE { // Suspiciously tiny ?
-		L.L.Warning("pp.LoadContents: tiny "+
+	   // No-op
+	   // This might be repetitive
+	   p.TypedRaw.Raw_type = SU.Raw_type_NIL
+	   return "", nil
+	} else if // Suspiciously tiny ?
+	        p.Size() < MIN_FILE_SIZE { 
+		L.L.Warning("fso.contents: tiny "+
 			"file [%d]: %s", p.Size(), shortFP)
 		p.TypedRaw.Raw_type = SU.Raw_type_NIL
 	}
 	// println("LoadContents: chkpt 2")
 	// If it's too big, BARF!
 	if p.Size() > MAX_FILE_SIZE {
-		return &fs.PathError{Op:"FSI.LoadContents",
-		       Err:errors.New(fmt.Sprintf(
+		return "[TOO BIG]", &fs.PathError {
+		        Op:"fso.contents", Err:errors.New(fmt.Sprintf(
 		       "file too large: %d", p.Size())), Path:shortFP}
 	}
 	// println("LoadContents: chkpt 3")
 	// Open it, just to check (and then immediately close it)
 	var pF *os.File
+	// NOTE FIXME This might fail in a RootFS
 	pF, e = os.Open(p.FPs.AbsFP)
-	// Note that this defer'd Close() (i.e. the file is left open)
-	// is not a problem for the call to [io.Readall].
 	defer pF.Close()
 	if e != nil {
 		// We could check for file non-existence here.
 		// And we could panic if it happens, altho a race
 		// for a just-deleted file is also conceivable.
-		return &fs.PathError{Op:"os.Open",Err:e,Path:shortFP}
+		return "", &fs.PathError{Op:"fso.content:os.open",
+		       Err:e, Path:shortFP }
 	}
+	// -------------------
+	//  NOW READ THE FILE
+	// -------------------
 	var bb []byte
 	bb, e = io.ReadAll(pF)
 	if e != nil {
-		return &fs.PathError{Op:"io.ReadAll",Err:e,Path:shortFP}
+		return "", &fs.PathError{
+		       Op:"fso.contents:io.readall", Err:e,Path:shortFP }
 	}	
 	// NOTE: 2023.03 Trimming leading whitespace and ensuring
 	// that there is a trailing newline are probably unnecessary
-	// AND unhelpful - they violate the Principle of Least Surprise.
-	// They might also conflict with digital signings. 
+	// AND unhelpful - they violate the Principle of Least Surprise
+	// - and they might also conflict with digital signings. 
 	// pPI.Raw = S.TrimSpace(pPI.TypedRaw.S() + "\n")
 	// pPI.size = len(pPI.Raw)
 
@@ -258,13 +246,6 @@ func (p *FSItem) LoadContents() error {
 
 	// TODO: Try to set CT.RawMT?
 	
-	return nil
+	return p.TypedRaw.S(), nil
 }
-
-/*
-func FileInfoString(p fs.FileInfo) string {
-     if p == nil { return "<FI:NIL>" }
-     return fmt.Sprintf("%s<%s>%d", p.Name(), p.FSItem_type, p.Size())
-}
-*/
 
