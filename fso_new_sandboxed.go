@@ -70,7 +70,7 @@ func NewFSObjectSandboxed(anFP string, aRoot os.Root) *FSObject {
 	   }
 	checkFP(anFP)
 
-	var pFPs = NewFilepaths(anFP)
+	var pFPs = newFilepaths(anFP)
 	var pPE  = new(os.PathError { Path: anFP })
 	pEmpty.FPs = *pFPs
 	

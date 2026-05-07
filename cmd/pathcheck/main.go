@@ -20,7 +20,7 @@ func main() {
      	"Usage: %s file-or-dir-name \n", os.Args[0]); os.Exit(0) }
      nam2chk := os.Args[1]
      // fmt.Printf("arg is: " + nam2chk + "\n")
-     p, e := FU.NewFSItem(nam2chk)
+     p, e := FU.NewFSObject(nam2chk)
      chkerr(e)
      if p == nil { fmt.Printf("%s: %s: does not exist \n",
      	  os.Args[0], os.Args[1]); os.Exit(0) }

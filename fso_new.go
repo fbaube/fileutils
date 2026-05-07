@@ -43,7 +43,7 @@ func NewFSObject(anFP string) *FSObject {
 	   return pEmpty
 	   }
 	   
-	var pFPs = NewFilepaths(anFP)
+	var pFPs = newFilepaths(anFP)
 	var pPE  = new(os.PathError { Path: anFP })
 	pEmpty.FPs = *pFPs
 	

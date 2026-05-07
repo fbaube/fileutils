@@ -97,7 +97,7 @@ type Filepaths struct {
      // so the field [RelFP] is calculated. 
      GotAbs bool
      // DoesNotExist is made very visible. If a path does not 
-     // exist, then as noted in func `NewFilepaths`,
+     // exist, then as noted in func `newFilepaths`,
      //  - the error (a `*PathError`) is put in field `Errer`
      //  - the field `DoesNotExist` is set to `true`
      //  - no other fields in the struct are set, including paths
@@ -129,7 +129,7 @@ func (p *Filepaths) String() string {
 	       !p.DoesNotExist), SU.Yn(p.IsDir))
 }
 
-// NewFilepaths turns a filesystem path into a struct with
+// newFilepaths turns a filesystem path into a struct with
 // abs & rel paths, and flags for existence, isaDirectory,
 // isDirlike, isaFile, isaSymlink. It relies on the std lib,
 // and accepts either an absolute or a relative filepath. It
@@ -170,7 +170,7 @@ func (p *Filepaths) String() string {
 //
 // Ref: type PathError struct {	Op string; Path string; Err error }
 // .
-func NewFilepaths(anFP string) *Filepaths {
+func newFilepaths(anFP string) *Filepaths {
      var pFPs *Filepaths
      var pPE *os.PathError 
      // Normalize the FP ("using only lexical analysis") 

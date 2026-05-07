@@ -13,7 +13,7 @@ func GetRootPaths(path string) (rt *os.Root, fp *Filepaths, e error) {
            return nil, nil, &fs.PathError{ Path:path, Err:e,
                   Op:"fu.GetRootPaths: os.OpenRoot" }
                 }
-        fp = NewFilepaths(path)
+        fp = newFilepaths(path)
         if fp.HasError() {
            return nil, nil, &fs.PathError{ Path:path, Err:fp.GetError(),
                   Op:"fu.getRootPaths.newFPs" }
