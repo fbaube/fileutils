@@ -62,10 +62,10 @@ import(
 //    directory cannot be followed, providing additional security.
 
 
-// Filepath has three paths, and tipicly all three are set, even if the 
-// third([ShortFP]) is normally session-specific. Note that directories 
-// SHOULD always have a slash (or OS sep) appended, and that symlinks
-// never should.
+// Filepath has an Errer and containd three paths, and tipicly 
+// all three are set, even if the third([ShortFP]) is normally
+// session-specific. Note that directories SHOULD always have
+// a slash (or OS sep) appended, and that symlinks never should.
 //
 // It should execute fairly quickly, because it probably only needs
 // to read the inode, not any disk sectors containing content.
