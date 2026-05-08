@@ -129,6 +129,11 @@ func (p *Filepaths) String() string {
 	       !p.DoesNotExist), SU.Yn(p.IsDir))
 }
 
+func (p *Filepaths) OrigPath() string {
+      if p.GotAbs { return p.AbsFP }
+      return p.RelFP
+      }
+
 // NewFilepaths turns a filesystem path into a struct with
 // abs & rel paths, and flags for existence, isaDirectory,
 // isDirlike, isaFile, isaSymlink. It relies on the std lib,
