@@ -50,13 +50,13 @@ func ReadDir(inpath string) ([]FSObject, error) {
      var e error
      // Check the path
      var FPs *Filepaths
-     // Ordinarily ´func NewFilepaths` should be called with
+     // Ordinarily ´func newFilepaths` should be called with
      // a relative filepath when possible, but here in this
      // use case it doesn't really bring any extra benefit. 
-     FPs = newFilepaths(inpath)
+     FPs = NewFilepaths(inpath)
      if FPs.HasError() {
      	return nil, &fs.PathError{
-	       Op:"NewFilepaths", Path:inpath, Err:FPs.GetError() }
+	       Op:"newFPs", Path:inpath, Err:FPs.GetError() }
 	}
      var theAbsPath = FPs.AbsFP
      var sAbsRel = "Rel" 

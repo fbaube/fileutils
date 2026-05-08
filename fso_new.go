@@ -41,14 +41,13 @@ func NewFSObject(anFP string) *FSObject {
      	if anFP == "" {
 	   pEmpty.SetError(errors.New("newfsitem: empty path"))
 	   return pEmpty
-	   }
-	   
-	var pFPs = newFilepaths(anFP)
+	   }	   
+	var pFPs = NewFilepaths(anFP)
 	var pPE  = new(os.PathError { Path: anFP })
 	pEmpty.FPs = *pFPs
 	
 	if pFPs.HasError() {
-	   pPE.Op = "newfilepaths"
+	   pPE.Op = "newFPs"
 	   pPE.Err = e
 	   pEmpty.SetError(pPE)
 	   return pEmpty

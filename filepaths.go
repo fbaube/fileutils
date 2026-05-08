@@ -129,7 +129,7 @@ func (p *Filepaths) String() string {
 	       !p.DoesNotExist), SU.Yn(p.IsDir))
 }
 
-// newFilepaths turns a filesystem path into a struct with
+// NewFilepaths turns a filesystem path into a struct with
 // abs & rel paths, and flags for existence, isaDirectory,
 // isDirlike, isaFile, isaSymlink. It relies on the std lib,
 // and accepts either an absolute or a relative filepath. It
@@ -170,7 +170,7 @@ func (p *Filepaths) String() string {
 //
 // Ref: type PathError struct {	Op string; Path string; Err error }
 // .
-func newFilepaths(anFP string) *Filepaths {
+func NewFilepaths(anFP string) *Filepaths {
      var pFPs *Filepaths
      var pPE *os.PathError 
      // Normalize the FP ("using only lexical analysis") 
