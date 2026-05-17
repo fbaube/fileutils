@@ -28,6 +28,8 @@ github.com/fbaube/stringutils v0.0.0-20251125151320-5e1c5dd007a1 h1:y7TPFJxNVjSd
 github.com/fbaube/stringutils v0.0.0-20251125151320-5e1c5dd007a1/go.mod h1:prND58zPOTp1HSQ59bQl4w239JV0KNPYQZnNDRu5gjk=
 github.com/fbaube/stringutils v0.0.0-20251201154235-ad2e563d9cda h1:uQfCIFb1v20byONoe7iWNqVOu6tuDmOLZDtTghjP7YI=
 github.com/fbaube/stringutils v0.0.0-20251201154235-ad2e563d9cda/go.mod h1:prND58zPOTp1HSQ59bQl4w239JV0KNPYQZnNDRu5gjk=
+github.com/fbaube/stringutils v0.0.0-20260511123541-ab996b555f8d h1:aVchLvgOjt7ZkT4xOyl0BwOOI298EORLsu1W9hYqRdY=
+github.com/fbaube/stringutils v0.0.0-20260511123541-ab996b555f8d/go.mod h1:prND58zPOTp1HSQ59bQl4w239JV0KNPYQZnNDRu5gjk=
 github.com/fbaube/wasmutils v0.0.0-20251129222829-80044fd986ff h1:HzGot5LeI+ls9FEXSoGEKF8YnJ+ajVFvgysHI+zPoP0=
 github.com/fbaube/wasmutils v0.0.0-20251129222829-80044fd986ff/go.mod h1:0toxIvnxI8IGqg8bRnvbHiVCWlplqXAlrbGNrmCgtMA=
 github.com/fbaube/xmlutils v0.0.0-20240425064631-d7c56373bd9a h1:BBUKU9STuOJ20/fWJTvdxROGnKEo9eREMaG/A+cphPk=
@@ -54,6 +56,8 @@ golang.org/x/exp v0.0.0-20251125195548-87e1e737ad39 h1:DHNhtq3sNNzrvduZZIiFyXWOL
 golang.org/x/exp v0.0.0-20251125195548-87e1e737ad39/go.mod h1:46edojNIoXTNOhySWIWdix628clX9ODXwPsQuG6hsK0=
 golang.org/x/exp v0.0.0-20260410095643-746e56fc9e2f h1:W3F4c+6OLc6H2lb//N1q4WpJkhzJCK5J6kUi1NTVXfM=
 golang.org/x/exp v0.0.0-20260410095643-746e56fc9e2f/go.mod h1:J1xhfL/vlindoeF/aINzNzt2Bket5bjo9sdOYzOsU80=
+golang.org/x/exp v0.0.0-20260508232706-74f9aab9d74a h1:+3jdDGGB8NGb1Zktc737jlt3/A5f6UlwSzmvqUuufxw=
+golang.org/x/exp v0.0.0-20260508232706-74f9aab9d74a/go.mod h1:d2fgXJLVs4dYDHUk5lwMIfzRzSrWCfGZb0ZqeLa/Vcw=
 golang.org/x/net v0.47.0 h1:Mx+4dIFzqraBXUugkia1OOvlD6LemFo1ALMHjrXDOhY=
 golang.org/x/net v0.47.0/go.mod h1:/jNxtkgq5yWUGYkaZGqo27cfGZ1c5Nen03aYrrKpVRU=
 golang.org/x/sys v0.6.0/go.mod h1:oPkhp1MJrh7nUepCBck5+mAzfO9JrbApNNgaTdGDITg=

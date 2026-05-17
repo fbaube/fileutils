@@ -91,11 +91,17 @@ type Filepaths struct {
      // AbsFP is the authoritative field when processing individual files. 
      AbsFP string
      // Errer helps sometimes.
-     Errer 
-     // GotAbs (from [path/filepath/IsAbs]) says that this struct 
-     // was created using an absolute FP, not a relative FP, and 
-     // so the field [RelFP] is calculated. 
+     Errer
+     // GotAbs (from [path/filepath/IsAbs]) describes field [creatPath]
+     // and says that this struct was created using an absolute FP, not
+     // a relative FP, and so the field [RelFP] is calculated. 
      GotAbs bool
+     // creatPath is the path used to instantiate the node.
+     // It is not validated, and should conform to package 
+     // [path] (not [path/filepath]), and should be ignored 
+     // after another path is available in an embedding struct.
+     // It always uses forward slash "/" as the path separator.
+     creatPath string 
      // DoesNotExist is made very visible. If a path does not 
      // exist, then as noted in func `newFilepaths`,
      //  - the error (a `*PathError`) is put in field `Errer`
@@ -277,11 +283,10 @@ func NewFilepaths(anFP string) *Filepaths {
      return pFPs 
 }
 
-// CreationPath is the path (abs or rel) used to create it.
-// It can be "", if the item wasn't/isn't on disk.
-func (p *Filepaths) CreationPath() string {
-        if p.GotAbs { return p.AbsFP }
-        return p.RelFP
+// CreatPath is the path (whether abs or rel) used to 
+// create it. It is "" if the item wasn't/isn't on disk.
+func (p *Filepaths) CreatPath() string {
+        return p.creatPath
 }
 
 func (p *Filepaths) TrimPathSepSuffixes() {
