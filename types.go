@@ -114,19 +114,21 @@ func init() {
 		}
 		return
 	}
+	CDC := "Cannot determine current %s (is wasm?) \n"
+	
 	currentUser, e = user.Current()
-	if e == nil {
-		println("Cannot determine current user (!wasm)")
+	if e != nil {
+		fmt.Printf(CDC, "user")
 		return
 	}
 	currentUserHomeDir, e = os.UserHomeDir()
-	if e == nil {
-		println("Cannot determine current user's home directory (!wasm)")
+	if e != nil {
+		fmt.Printf(CDC, "user's home directory")
 		return
 	}
 	currentWorkingDir, e = os.Getwd()
 	if e != nil {
-		println("Cannot determine current working directory (!wasm)")
+		fmt.Printf(CDC, "working directory")
 		return
 	}
 	homedir := currentUser.HomeDir

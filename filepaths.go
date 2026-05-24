@@ -62,10 +62,16 @@ import(
 //    directory cannot be followed, providing additional security.
 
 
-// Filepath has an Errer and containd three paths, and tipicly 
+// Filepath embads [Errer] and containd three paths, and tipicly 
 // all three are set, even if the third([ShortFP]) is normally
 // session-specific. Note that directories SHOULD always have
 // a slash (or OS sep) appended, and that symlinks never should.
+//
+// Important assumptions to bear in mind: 
+//  - If the input path is absolute, the relative path is calculated
+//    (and maybe unreliable).
+//  - If the input path is relative, the absolute path is gotten
+//    from the stdlib, which assumes relative to the CWD. 
 //
 // It should execute fairly quickly, because it probably only needs
 // to read the inode, not any disk sectors containing content.

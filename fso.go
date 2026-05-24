@@ -18,18 +18,20 @@ const MAX_FILE_SIZE = 100_000_000
 // MIME/content type, and is set (arbitrarily) to 6 bytes.
 const MIN_FILE_SIZE = 6
 
+/*
 func init() {
      var fso *FSObject
      fso = &(FSObject {})
      var de fs.DirEntry  // ifc
      var sr SU.Stringser // ifc
      // var okde, oksr bool 
-     de /* ,okde */ = fs.DirEntry(fso)
-     sr /* ,oksr */ = SU.Stringser(fso)
+     de /* ,okde * / = fs.DirEntry(fso)
+     sr /* ,oksr * / = SU.Stringser(fso)
      // if ! (okde && oksr) { panic("FSObject ifc's") }
      fmt.Printf("DirrEntry: %v \n", de)
      fmt.Printf("Stringser: %v \n", sr)
 }
+*/
 
 // func (p *FSObject) Echo()  string { return "ECHO" }
 // func (p *FSObject) Infos() string { return "INFOS" }
