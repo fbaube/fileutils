@@ -3,10 +3,10 @@ package fileutils
 import (
 	"io/fs"
 	"os"
-	// "fmt"
+	"fmt"
 	"errors"
 	"syscall"
-	// FP "path/filepath"
+//  FP "path/filepath"
 )
 
 // NewFSObject takes a filepath (absolute or relative) and
@@ -35,13 +35,15 @@ import (
 // Passing an empty path to this func is not OK.
 // .
 func NewFSObject(anFP string) *FSObject {
-     	var e error
+    var e error
 	var pEmpty = new(FSObject)
-     	// Check the path
-     	if anFP == "" {
+    // Check the path
+    if anFP == "" {
 	   pEmpty.SetError(errors.New("newfsitem: empty path"))
 	   return pEmpty
-	   }	   
+	}
+    checkFP(anFP)
+    
 	var pFPs = NewFilepaths(anFP)
 	var pPE  = new(os.PathError { Path: anFP })
 	pEmpty.FPs = *pFPs
@@ -53,21 +55,24 @@ func NewFSObject(anFP string) *FSObject {
 	   return pEmpty
 	}
 	// L.L.Dbg("NewFilepaths: %#v", *pFPs)
-	// Before we can call os.Lstat, we have to strip off any trailing
-	// slash (or OS sep), cos it would make Lstat follow a symlink
-	// (which kind of defeats the whole purpose of defining it in
-	// opposition to os.Stat) 
-	pFPs.TrimPathSepSuffixes()
+	// If we were to call [os.Lstat], we'd have to strip off 
+	// any trailing slash (or OS sep), cos it would make Lstat 
+	// follow a symlink (which kinda defeats the whole purpose 
+	// of defining it in opposition to os.Stat)
+    // But ecause we call Stat and not LStat, we do not
+    // have to strip off any trailing slash (or OS sep).
+	// pFPs.TrimPathSepSuffixes()
 
 	// --------------------
 	//  Now we can proceed
 	// --------------------	
 	var fi fs.FileInfo
-	fi, e = os.Lstat(pFPs.AbsFP)
+	// fi, e = os.Lstat(pFPs.AbsFP)
+    fi, e = os.Stat(pFPs.AbsFP)
 	// But maybe the path does not exist !
 	//  We mark this as an error. 
 	if fi == nil || e != nil {
-		pPE.Op = "os.lstat"
+		pPE.Op = "os.stat"
 		pPE.Err = e
 		pEmpty.SetError(pPE)
                 if e != nil && errors.Is(e, fs.ErrNotExist) {
@@ -90,6 +95,15 @@ func NewFSObject(anFP string) *FSObject {
 	if fi.IsDir() {
 	   pFSI.FPs.EnsurePathSepSuffixes()
 	   }
+    // ----------------------------------------------
+    // If it's a symlink, (for now) issue a big note.
+    if pFSI.FSO_type == FSO_type_SYML {
+    // func (r *Root) os.Readlink(name string) (string, error)
+       slS, slE := os.Readlink(pFSI.FPs.AbsFP)
+       fmt.Fprintf(os.Stderr, "SYMLINK: src|%s| tgt|%s| err|%s| \n",
+        pFSI.FPs.AbsFP, slS, slE)
+    }
+    // -----------------------------------------------
 	// Now we try to fetch the fields that might be OS-dependent
 	s, ok := fi.Sys().(*syscall.Stat_t)
         if !ok {
@@ -116,20 +130,6 @@ func NewFSObject(anFP string) *FSObject {
 	
         return pFSI 
 }
-
-func permStr(i int) string {
-     var s string
-     if 0 != (i&4) { s  = "r" } else { s  = "-" }
-     if 0 != (i&2) { s += "w" } else { s += "-" }
-     if 0 != (i&1) { s += "x" } else { s += "-" }
-     return s
-}
-
-/*
-func NewFSObjectFromContent(s string) (*FSObject, error) {
-     return nil, nil
-}
-*/
 
 // ==================
 

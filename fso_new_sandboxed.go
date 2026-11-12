@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"errors"
 	"syscall"
-	FP "path/filepath"
+//	FP "path/filepath"
 )
 
 /*
@@ -33,8 +33,8 @@ will be of type *PathError.
 */
 
 // NewFSObjectInRoot takes a filepath (absolute or relative) 
-// and analyzes the object (assuming one exists) at the 
-// path. This func does not load and analyse the content.
+// and analyzes the object (assuming one exists) at the path.
+// This func does not load and analyse the content.
 //
 // A relative path is used w.r.t. the input [os.Root],
 // so the func should be secure. If it can fetch a
@@ -61,13 +61,13 @@ will be of type *PathError.
 // Passing an empty path to this func is not OK.
 // .
 func NewFSObjectSandboxed(anFP string, aRoot os.Root) *FSObject {
-     	var e error
-        var pEmpty = new(FSObject)
-     	// Check the path
-     	if anFP == "" {
+    var e error
+    var pEmpty = new(FSObject)
+    // Check the path
+    if anFP == "" {
 	   pEmpty.SetError(errors.New("newfsitem: empty path"))
 	   return pEmpty
-	   }
+	}
 	checkFP(anFP)
 
 	var pFPs = NewFilepaths(anFP)
@@ -75,7 +75,7 @@ func NewFSObjectSandboxed(anFP string, aRoot os.Root) *FSObject {
 	pEmpty.FPs = *pFPs
 	
 	if pFPs.HasError() {
-	   pPE.Op = "newfilepaths"
+	   pPE.Op = "newFPs"
            pPE.Err = e
            pEmpty.SetError(pPE)
            return pEmpty
@@ -89,12 +89,12 @@ func NewFSObjectSandboxed(anFP string, aRoot os.Root) *FSObject {
 	//  Now we can proceed
 	// --------------------
 	var fi fs.FileInfo
-	//     os.Lstat(pFPs.AbsFP)
+	//        os.Lstat(pFPs.AbsFP)
 	fi, e = aRoot.Stat(pFPs.AbsFP)
 	// But maybe the path does not exist !	
         //  We mark this as an error.
         if fi == nil || e != nil {
-                pPE.Op = "os.lstat"
+                pPE.Op = "os.stat"
                 pPE.Err = e
                 pEmpty.SetError(pPE)
                 if e != nil && errors.Is(e, fs.ErrNotExist) {
@@ -151,31 +151,5 @@ func NewFSObjectSandboxed(anFP string, aRoot os.Root) *FSObject {
 	pFSI.Perms = permString(fi)
 	
         return pFSI 
-}
-
-func checkFP(anFP string) {
-	// *** START FOR ROOT ***
-	isValid := fs.ValidPath(anFP)
-	isLocal := FP.IsLocal(anFP)
-	isAbsol := FP.IsAbs(anFP)
-	if isAbsol  { println("******** os.Root v AbsFP: " + anFP) }
-	if isValid != isLocal {
-	   	      println("******** os.Root: isValid != isLocal: "+anFP) }
-	if !isValid { println("******** os.Root v !Valid: " + anFP) }
-	if !isLocal { println("******** os.Root v !Local: " + anFP) }
-	// *** END FOR ROOT ***
-}
-
-func permString(pFI fs.FileInfo) string { 
-	var perms, world, group, yuser int 
-	perms = int(pFI.Mode().Perm()) // 0777 or 0x1ff
-	world =  perms & 7
-	group = (perms >> 3) & 7
-	yuser = (perms >> 6) & 7
-	var ww, gg, yu string
-	ww = permStr(world)
-	gg = permStr(group)
-	yu = permStr(yuser)
-	return fmt.Sprintf("%s,%s,%s", yu, gg, ww)
 }
 
