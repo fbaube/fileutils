@@ -92,7 +92,7 @@ func ReadDir(inpath string) ([]FSObject, error) {
      	    // NOTE this could probably be a relative path;
 	    // it might or might not add value.
 	    // If error, is in embedded struct Errer.
-     	    pFSI = NewFSObject(FP.Join(theAbsPath, E))
+     	    pFSI = NewFSObject(FP.Join(theAbsPath, E), nil)
 	    FSIs = append (FSIs, *pFSI)
      }
      return FSIs, nil

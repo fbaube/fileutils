@@ -27,7 +27,7 @@ func NewFSObjectSliceFromFilepathSlice(FPs [] string) ([]*FSObject, *FSObjectSum
 	var pFSS = new(FSObjectSummaryStats)
 
 	for _, sFP := range FPs {
-	    pFSI := NewFSObject(sFP)
+	    pFSI := NewFSObject(sFP, nil)
 	    FSIs = append(FSIs, pFSI)
 	    // Categorise the FSObject (file, dir, wotev).
 	    // Note the hacks to TypedRaw.

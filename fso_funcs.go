@@ -88,7 +88,7 @@ func (p *FSObject) ResolveSymlinks() *FSObject {
 		println("--> Symlink from:", p.FPs.AbsFP)
 		println("     resolved to:", newPath)
 		p.FPs.AbsFP = newPath
-		p = NewFSObject(newPath)
+		p = NewFSObject(newPath, nil)
 		if p.HasError() {
 			panic(p.GetError())
 			return nil
