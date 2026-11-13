@@ -5,7 +5,7 @@ go 1.27.3
 require (
 	github.com/fbaube/contentanalysis v0.0.0-20260526142648-abe4bb358695
 	github.com/fbaube/ctoken v0.0.0-20251106121702-333021124221
-	github.com/fbaube/dsmnd v0.0.0-20261101054938-29c6ca544c49
+	github.com/fbaube/dsmnd v0.0.0-20261113173103-6353600e4d91
 	github.com/fbaube/gtoken v0.0.0-20250202180149-400361451572
 	github.com/fbaube/humanbytes v0.0.0-20250119091546-d58fbfdd444c
 	github.com/fbaube/mlog v0.0.0-20260906153105-a92fb895decf

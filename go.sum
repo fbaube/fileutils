@@ -6,6 +6,8 @@ github.com/fbaube/ctoken v0.0.0-20251106121702-333021124221 h1:7c4QGJmjCuUSaLUjl
 github.com/fbaube/ctoken v0.0.0-20251106121702-333021124221/go.mod h1:xoci0RjipFQZ+DSVQwyaDlXDNmzrbCPJaePltp2JP7g=
 github.com/fbaube/dsmnd v0.0.0-20261101054938-29c6ca544c49 h1:UBkGyuOSZHCC+iBigmyA8K9cWL5SQlm8cuNSxJJAgqI=
 github.com/fbaube/dsmnd v0.0.0-20261101054938-29c6ca544c49/go.mod h1:bumODHnZVXkAqv1jfnzYY84yDR5OAJmwtWNQKYZ6efI=
+github.com/fbaube/dsmnd v0.0.0-20261113173103-6353600e4d91 h1:SCJphD7ua0krTBoodNIr7ZV73gP977qJ6yIxDkQAmZg=
+github.com/fbaube/dsmnd v0.0.0-20261113173103-6353600e4d91/go.mod h1:bumODHnZVXkAqv1jfnzYY84yDR5OAJmwtWNQKYZ6efI=
 github.com/fbaube/gtoken v0.0.0-20250202180149-400361451572 h1:FDXLbFFjf1RBxIEfC32c0NFuikEbSxxAnqp5HgzTxB0=
 github.com/fbaube/gtoken v0.0.0-20250202180149-400361451572/go.mod h1:rJWEbpRLAjfknKvrx6cOy65ZrgIdUpYlYRFmYUcWB9M=
 github.com/fbaube/humanbytes v0.0.0-20250119091546-d58fbfdd444c h1:k6VDhhlL+FI8nrBAwQDoXyPEKN+MuOtSMaDJfzwnA7E=
