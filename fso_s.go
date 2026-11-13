@@ -3,6 +3,7 @@ package fileutils
 import (
 	"fmt"
 	S "strings"
+    TL "github.com/fbaube/treelinks"
 	HB "github.com/fbaube/humanbytes"
 )
 
@@ -57,6 +58,7 @@ func (p *FSObject) Infos() string {
 		s = "FSObject:?uninitialized "
 	}
 	s += p.FPs.ShortFP
+    s += " " + TL.StringOfUUID(&p.UUID)    
 	return s
 }
 

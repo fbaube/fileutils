@@ -6,6 +6,7 @@ import (
 	"io"
 	"os"
 	"io/fs"
+    "uuid"
 	"crypto/md5"
 	CT "github.com/fbaube/ctoken"
 	SU "github.com/fbaube/stringutils"
@@ -62,10 +63,10 @@ func init() {
 // the AbsFP *and* the RelFP. Note also that this path & name information
 // duplicates what is stored in an instance of orderednodes.Nord . 
 //
-// NOTE that it embeds an [fs.FileInfo], and implements interfaces [FSObjecter],
-// [fs.FileInfo], and [fs.DirEntry]), and contains basic file system metadata
-// PLUS the path to the item (whicih FIleInfo does not contain) AND the item
-// contents (but only after lazy loading). The `FileInfo` is the results of
+// NOTE that it embeds an [fs.FileInfo], and implements stdlib interfaces 
+// [fs.FileInfo], and [fs.DirEntry]), and holds basic file system metadata
+// PLUS the path to the item (which FIleInfo does not contain) AND the item
+// contents (but only after lazy loading). The [FileInfo] is the results of
 // a call to [os.LStat]/[fs.Lstat] (or perhaps alternatively the contents
 // of a record in sqlar or zip), parsed.
 // 
@@ -90,8 +91,11 @@ func init() {
 // other hierarchical structures (like XML), but this is not explored yet.
 // .
 type FSObject struct { // this has (Typed) Raw
-     	// LastCheckTime is TBS.
+    // LastCheckTime is TBS. Recursion happened. 
 	// LastCheckTime time.Time
+
+    // UUID is version 7, and does not yet have the TableName set here. 
+    uuid.UUID 
 
 	// TypedRaw is an outlier, because it is the only 
 	// field in this struct that cannot be deduced from 
@@ -99,7 +103,7 @@ type FSObject struct { // this has (Typed) Raw
 	// removed. It is a ptr, to allow for lazy loading.
 	*CT.TypedRaw
 	
-     	// FileInfo implements interfaces [os.FileInfo] and [fs.DirEntry].
+    // FileInfo implements interfaces [os.FileInfo] and [fs.DirEntry].
 	// It should probably be an unexported, lower case "fi", because
 	// its integrity is relied on heavily. We use it as a struct and 
 	// not as a ptr-to-struct, so that (a) it is not shared-writable,

@@ -4,6 +4,7 @@ import (
 	"io/fs"
 	"os"
 	"fmt"
+    "uuid"
 	"errors"
 	"syscall"
     FP "path/filepath"
@@ -141,28 +142,33 @@ func NewFSObject(anFP string, aRoot *os.Root) *FSObject {
 		} 
 		return pEmpty
 	}
+    // ==================================================
 	// Now we have a valid FileInfo. From here, on we
-        // can return  a valid FSObject rather than var Empty.
-	var pFSI  *FSObject
-	pFSI = new(FSObject)
-	pFSI.FPs = *pFPs
-	pFSI.FileInfo = fi
-	// pFSI.Exists = true
+    // can return  a valid FSObject rather than var Empty.
+    // This is also where we can assign a UUID.
+    // ==================================================
+	var pFSO  *FSObject
+	pFSO = new(FSObject)
+	pFSO.FPs = *pFPs
+	pFSO.FileInfo = fi
+    // Do not set the TableName tho 
+    pFSO.UUID = uuid.NewV7()
+	// pFSO.Exists = true
 	// Also set the time of access
-	// pFSI.LastCheckTime = time.Now()
+	// pFSO.LastCheckTime = time.Now()
 
 	// (Now we can) Check for a directory, and if
 	// it is, add the trailing slashes back in.
 	if fi.IsDir() {
-	   pFSI.FPs.EnsurePathSepSuffixes()
+	   pFSO.FPs.EnsurePathSepSuffixes()
 	   }
     // ----------------------------------------------
     // If it's a symlink, (for now) issue a big note.
-    if pFSI.FSO_type == FSO_type_SYML {
+    if pFSO.FSO_type == FSO_type_SYML {
     // func (r *Root) os.Readlink(name string) (string, error)
-       slS, slE := os.Readlink(pFSI.FPs.AbsFP)
+       slS, slE := os.Readlink(pFSO.FPs.AbsFP)
        fmt.Fprintf(os.Stderr, "SYMLINK: src|%s| tgt|%s| err|%s| \n",
-        pFSI.FPs.AbsFP, slS, slE)
+        pFSO.FPs.AbsFP, slS, slE)
     }
     // -----------------------------------------------
 	// Now we try to fetch the fields that might be OS-dependent
@@ -171,25 +177,25 @@ func NewFSObject(anFP string, aRoot *os.Root) *FSObject {
 	       // Non-fatal error
 	       // FIXME: This might be difficult to debug 
 	       pe := &fs.PathError{ Op:"fs.fileinfo.sys", 
-	       	      Path:pFSI.FPs.AbsFP, Err:errors.New(
+	       	      Path:pFSO.FPs.AbsFP, Err:errors.New(
 		     "cannot convert Stat.Sys() to syscall.Stat_t " +
 		     "(should NOT be fatal!)") }
-		pFSI.SetError(pe)
+		pFSO.SetError(pe)
 		// Do not return, from here 
 	       }
         var nlinks int
         nlinks = int(s.Nlink)
         if nlinks > 1 && (fi.Mode()&fs.ModeSymlink == 0) {
                 // The index number of this file's inode:
-                pFSI.Inode  = int(s.Ino)
-                pFSI.NLinks = int(s.Nlink)
+                pFSO.Inode  = int(s.Ino)
+                pFSO.NLinks = int(s.Nlink)
         }
         // TODO: FILE PERMS
         // inode, nlinks int64
 
-	pFSI.Perms = permString(fi)
+	pFSO.Perms = permString(fi)
 	
-        return pFSI 
+        return pFSO 
 }
 
 // ==================

@@ -1,6 +1,6 @@
 module github.com/fbaube/fileutils
 
-go 1.27.1
+go 1.27.3
 
 require (
 	github.com/fbaube/contentanalysis v0.0.0-20260526142648-abe4bb358695
@@ -11,6 +11,7 @@ require (
 	github.com/fbaube/mlog v0.0.0-20260906153105-a92fb895decf
 	github.com/fbaube/parseutils v0.0.0-20260519121606-fe9b77608d6f
 	github.com/fbaube/stringutils v0.0.0-20261104124143-eebd30447f9d
+	github.com/fbaube/treelinks v0.0.0-20261113115506-670fe923acee
 	github.com/fbaube/wasmutils v0.0.0-20251129222829-80044fd986ff
 	github.com/fbaube/xmlutils v0.0.0-20251106122139-7e9277a71ff9
 	github.com/mgutz/str v1.2.0
@@ -26,7 +27,6 @@ require (
 	github.com/mattn/go-colorable v0.1.16 // indirect
 	github.com/mattn/go-isatty v0.0.24 // indirect
 	github.com/yuin/goldmark v1.8.2 // indirect
-	golang.org/x/exp v0.0.0-20260824195058-e88cd73687aa // indirect
 	golang.org/x/net v0.54.0 // indirect
 	golang.org/x/sys v0.50.0 // indirect
 	golang.org/x/tools/godoc v0.1.0-deprecated // indirect
