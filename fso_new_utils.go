@@ -4,6 +4,7 @@ import (
 	"io/fs"
 	"fmt"
 	FP "path/filepath"
+    SU "github.com/fbaube/stringutils"
 )
 
 func checkFP(anFP string) {
@@ -11,6 +12,9 @@ func checkFP(anFP string) {
 	isValid := fs.ValidPath(anFP)
 	isLocal := FP.IsLocal(anFP)
 	isAbsol := FP.IsAbs(anFP)
+    if isValid && isLocal && !isAbsol { return }
+    fmt.Printf("****>> isValid:%s isLocal:%s isAbsol:%s / %s \n",
+               SU.Yn(isValid), SU.Yn(isLocal), SU.Yn(isAbsol), anFP)
 	if isAbsol  { println("******** os.Root v AbsFP: " + anFP) }
 	if isValid != isLocal {
 	   	      println("******** os.Root: isValid != isLocal: "+anFP) }
