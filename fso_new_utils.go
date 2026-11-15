@@ -9,17 +9,15 @@ import (
 
 func checkFP(anFP string) {
 	// *** START FOR ROOT ***
+    // isValid is returning odd results.
+    // func ValidPath(name string) bool
+    // reports whether "name" is valid for a call to Open.
 	isValid := fs.ValidPath(anFP)
 	isLocal := FP.IsLocal(anFP)
 	isAbsol := FP.IsAbs(anFP)
     if isValid && isLocal && !isAbsol { return }
     fmt.Printf("****>> isValid:%s isLocal:%s isAbsol:%s / %s \n",
                SU.Yn(isValid), SU.Yn(isLocal), SU.Yn(isAbsol), anFP)
-	if isAbsol  { println("******** os.Root v AbsFP: " + anFP) }
-	if isValid != isLocal {
-	   	      println("******** os.Root: isValid != isLocal: "+anFP) }
-	if !isValid { println("******** os.Root v !Valid: " + anFP) }
-	if !isLocal { println("******** os.Root v !Local: " + anFP) }
 	// *** END FOR ROOT ***
 }
 
