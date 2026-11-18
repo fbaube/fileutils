@@ -14,6 +14,15 @@ import (
 // optional [os.Root], and analyzes the object at the path (if 
 // it exists). It does not load and analyse the content.
 //
+// Argument handling
+//
+// This takes only one path argument, rather than separate
+// abs & rel components, so it necessarily creates the FSO
+// using an abs path. An alternate version might keep them
+// separate. So when a FilePaths is created, it will be up
+// to NewFP to try to extract a rel from the abs. Except
+// that this might not make a whole lot of sense. 
+// 
 // A relative path is either appended to the CWD or resolved
 // by a non-nil Root. Using the CWD may not be the desired
 // behavior, in which case, use NewFSObjectRelativeTo. 
@@ -95,6 +104,7 @@ func NewFSObject(anFP string, aRoot *os.Root) *FSObject {
     if aRoot != nil && !FP.IsAbs(anFP) {
        anFP = FP.Join(aRoot.Name(), anFP)
        }
+    // This will be an abs FP 
     pFPs = NewFilepaths(anFP)
 	var pPE  = new(os.PathError { Path: anFP })
 	pEmpty.FPs = *pFPs
